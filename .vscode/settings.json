@@ -1,0 +1,22 @@
+{
+  "configurations": [
+      {
+          "name": "Linux",
+          "includePath": [
+              "${workspaceFolder}/**",
+              "${workspaceFolder}/external/imgui",
+              "${workspaceFolder}/external/imgui/backends",
+              "/usr/include",
+              "/usr/include/c++/9",
+              "/usr/include/x86_64-linux-gnu",
+              "/usr/include/c++/9/backward"  // Include additional paths as needed for your system
+          ],
+          "defines": [],
+          "compilerPath": "/usr/bin/g++", // Path to your compiler
+          "intelliSenseMode": "linux-gcc-x64", // Change if you're using another toolchain
+          "cStandard": "c11",
+          "cppStandard": "c++23"
+      }
+  ],
+  "version": 4
+}

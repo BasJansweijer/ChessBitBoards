@@ -1,6 +1,12 @@
 add_library(core STATIC
-    source/core.cpp
-    source/math_utils.cpp
+    source/chessBoard.cpp
+    source/bitBoardHelpers.cpp
+    source/boardVisualizer.cpp
+)
+
+target_include_directories(core PUBLIC
+    ${CMAKE_SOURCE_DIR}/external/imgui
+    ${CMAKE_SOURCE_DIR}/external/imgui/backends
 )
 
 # Make headers available to other targets
