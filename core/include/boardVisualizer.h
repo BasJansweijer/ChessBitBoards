@@ -8,5 +8,5 @@ namespace chess
         void showBitboardGUI(bitboard bb);
     }
 
-    // void showBoardGUI(BoardState board);
+    void showBoardGUI(const BoardState &board, bitboard highlights = 0);
 }

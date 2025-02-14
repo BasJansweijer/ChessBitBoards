@@ -2,6 +2,7 @@
 
 #include "bitBoard.h"
 #include <string>
+#include <tuple>
 
 namespace chess
 {
@@ -13,6 +14,20 @@ namespace chess
 
         // custom position
         BoardState(std::string_view fen);
+
+        // Getters for the bitboards
+        bitboard getWhitePawns() const { return m_whitePawns; }
+        bitboard getWhiteKnights() const { return m_whiteKnights; }
+        bitboard getWhiteBishops() const { return m_whiteBishops; }
+        bitboard getWhiteRooks() const { return m_whiteRooks; }
+        bitboard getWhiteQueens() const { return m_whiteQueens; }
+        bitboard getWhiteKing() const { return m_whiteKing; }
+        bitboard getBlackPawns() const { return m_blackPawns; }
+        bitboard getBlackKnights() const { return m_blackKnights; }
+        bitboard getBlackBishops() const { return m_blackBishops; }
+        bitboard getBlackRooks() const { return m_blackRooks; }
+        bitboard getBlackQueens() const { return m_blackQueens; }
+        bitboard getBlackKing() const { return m_blackKing; }
 
     private:
         // We need 12 bit boards (6 for each color)

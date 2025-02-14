@@ -14,3 +14,11 @@ file(GLOB IMGUI_SRC
 
 add_library(imgui STATIC ${IMGUI_SRC})
 target_include_directories(imgui PUBLIC external/imgui external/imgui/backends)
+
+
+# add stb
+file(GLOB STB_SRC
+    external/stb/*.cpp
+)
+
+

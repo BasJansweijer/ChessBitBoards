@@ -5,9 +5,67 @@
 #include <GLFW/glfw3.h>
 #include <algorithm>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+
+static GLuint kingsTexture = 0;
+static GLuint pawnsTexture = 0;
+static GLuint knightsTexture = 0;
+static GLuint rooksTexture = 0;
+static GLuint bishopsTexture = 0;
+static GLuint queensTexture = 0;
+static bool loadedTextures = false;
+
+// Function to load a PNG image and create a texture (GLuint)
+GLuint loadPNGTexture(const char *filename)
+{
+    int width, height, nrChannels;
+
+    // Load the image using stb_image
+    unsigned char *data = stbi_load(filename, &width, &height, &nrChannels, 0);
+    if (!data)
+    {
+        std::cerr << "Failed to load texture: " << filename << std::endl;
+        return 0;
+    }
+
+    GLuint textureID;
+    glGenTextures(1, &textureID);            // Generate texture ID
+    glBindTexture(GL_TEXTURE_2D, textureID); // Bind texture
+
+    // Upload the image data to OpenGL
+    GLenum format = (nrChannels == 3) ? GL_RGB : GL_RGBA; // Depending on image channels
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+
+    // Set texture parameters (e.g., filtering, wrapping)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // Free the image data after loading into OpenGL
+    stbi_image_free(data);
+
+    return textureID; // Return the texture ID (GLuint)
+}
+
+void loadPieces()
+{
+    if (loadedTextures)
+        return;
+
+    kingsTexture = loadPNGTexture("assets/kings.png");
+    pawnsTexture = loadPNGTexture("assets/pawns.png");
+    knightsTexture = loadPNGTexture("assets/knights.png");
+    rooksTexture = loadPNGTexture("assets/rooks.png");
+    bishopsTexture = loadPNGTexture("assets/bishops.png");
+    queensTexture = loadPNGTexture("assets/queens.png");
+    loadedTextures = true;
+}
 
 static int s_width = 600;
 static int s_height = s_width;
@@ -79,6 +137,82 @@ void highlightBitBoard(bitboard bb)
     }
 }
 
+void renderPieceType(bitboard locations, GLuint texture, bool isWhite, float textureSpacing)
+{
+    ImVec2 uv_min;
+    ImVec2 uv_max;
+
+    float scaleMult = 0.75f;
+    float pieceSize = s_squareSize * scaleMult;
+    float xOffset = pieceSize * textureSpacing;
+    if (isWhite)
+    {
+        uv_min = {0.0f, 0.0f};
+        uv_max = {0.5f, 1.0f};
+    }
+    else
+    {
+        xOffset *= -1;
+        uv_min = {0.5f, 0.0f};
+        uv_max = {1.0f, 1.0f};
+    }
+    ImDrawList *drawList = ImGui::GetBackgroundDrawList();
+
+    for (int rank = 0; rank < 8; rank++)
+    {
+        for (int file = 0; file < 8; file++)
+        {
+            int bit = (locations >> (rank * 8 + file)) & 1;
+            if (bit)
+            {
+                ImVec2 topLeft = getSquarePos(rank, file);
+                // center on the square (and add color specific offset)
+                topLeft.x += (s_squareSize - pieceSize) / 2 + xOffset;
+                topLeft.y += (s_squareSize - pieceSize) / 2;
+
+                ImVec2 bottomRight = {topLeft.x + pieceSize, topLeft.y + pieceSize};
+                drawList->AddImage(texture, topLeft, bottomRight, uv_min, uv_max);
+            }
+        }
+    }
+}
+
+void renderPieces(const chess::BoardState &board)
+{
+    // Spacing to account for differing white spaces between white and black piece in the png
+    float pawnSpacing = 0.07f;
+    float rooksSpacing = 0.055f;
+    float knightSpacing = 0.04f;
+    float bishopSpacing = 0.035f;
+    float kingSpacing = 0.04f;
+    float queenSpacing = 0.02f;
+
+    // white pieces
+    renderPieceType(board.getWhitePawns(), pawnsTexture, true, pawnSpacing);
+    renderPieceType(board.getWhiteRooks(), rooksTexture, true, rooksSpacing);
+    renderPieceType(board.getWhiteKnights(), knightsTexture, true, knightSpacing);
+    renderPieceType(board.getWhiteBishops(), bishopsTexture, true, bishopSpacing);
+    renderPieceType(board.getWhiteQueens(), queensTexture, true, queenSpacing);
+    renderPieceType(board.getWhiteKing(), kingsTexture, true, kingSpacing);
+
+    // black pieces
+    renderPieceType(board.getBlackPawns(), pawnsTexture, false, pawnSpacing);
+    renderPieceType(board.getBlackRooks(), rooksTexture, false, rooksSpacing);
+    renderPieceType(board.getBlackKnights(), knightsTexture, false, knightSpacing);
+    renderPieceType(board.getBlackBishops(), bishopsTexture, false, bishopSpacing);
+    renderPieceType(board.getBlackQueens(), queensTexture, false, queenSpacing);
+    renderPieceType(board.getBlackKing(), kingsTexture, false, kingSpacing);
+}
+
+void renderImgTest()
+{
+    ImDrawList *drawList = ImGui::GetBackgroundDrawList();
+    ImVec2 topLeft = getSquarePos(0, 0);
+    ImVec2 bottomRight = {topLeft.x + s_squareSize, topLeft.y + s_squareSize};
+    std::cout << kingsTexture << std::endl;
+    drawList->AddImage(kingsTexture, topLeft, bottomRight, {0.0f, 0.0f}, {1.0f, 1.0f});
+}
+
 void boardRenderGUI(std::function<void()> boardContentRenderer)
 {
     // Initialize GLFW
@@ -102,6 +236,9 @@ void boardRenderGUI(std::function<void()> boardContentRenderer)
     glfwSwapInterval(1); // Enable vsync
     glfwSetFramebufferSizeCallback(window, resizeBoard);
     glfwSetWindowAspectRatio(window, 1, 1);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -159,5 +296,16 @@ namespace chess::bitBoards
     {
         boardRenderGUI([=]()
                        { highlightBitBoard(bb); });
+    }
+}
+
+namespace chess
+{
+    void showBoardGUI(const BoardState &board, bitboard highlights)
+    {
+        boardRenderGUI([=]()
+                       { loadPieces();
+                         highlightBitBoard(highlights);
+                         renderPieces(board); });
     }
 }

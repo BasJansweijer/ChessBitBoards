@@ -28,8 +28,6 @@ namespace chess
         m_whiteCanCastleShort = true;
         m_blackCanCastleLong = true;
         m_blackCanCastleShort = true;
-
-        chess::bitBoards::showBitboardGUI(m_whitePawns);
     }
 
     BoardState::BoardState(std::string_view fen)
