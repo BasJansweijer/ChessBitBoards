@@ -2,13 +2,14 @@ add_library(core STATIC
     source/chessBoard.cpp
     source/bitBoardHelpers.cpp
     source/boardVisualizer.cpp
+    source/moveConstants.h
 )
-
 
 target_include_directories(core PUBLIC
-${CMAKE_SOURCE_DIR}/external/imgui
-${CMAKE_SOURCE_DIR}/external/imgui/backends
+    ${CMAKE_SOURCE_DIR}/external/imgui
+    ${CMAKE_SOURCE_DIR}/external/imgui/backends
 )
+
 
 set(ASSETS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets)
 # configure_file(${ASSETS_DIR}/kings.png ${CMAKE_BINARY_DIR}/kings.png COPYONLY)
