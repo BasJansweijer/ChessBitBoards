@@ -28,6 +28,12 @@ namespace chess
         bitboard getBlackRooks() const { return m_blackRooks; }
         bitboard getBlackQueens() const { return m_blackQueens; }
         bitboard getBlackKing() const { return m_blackKing; }
+        bitboard getEnpassentLocations() const { return m_enpassentLocations; }
+
+        bool canWhiteCastleShort() const { return m_whiteCanCastleShort; }
+        bool CanWhiteCastleLong() const { return m_whiteCanCastleLong; }
+        bool canBlackCastleShort() const { return m_blackCanCastleShort; }
+        bool CanBlackCastleLong() const { return m_blackCanCastleLong; }
 
     private:
         // We need 12 bit boards (6 for each color)
@@ -55,5 +61,7 @@ namespace chess
         bool m_whiteCanCastleShort;
         bool m_blackCanCastleLong;
         bool m_blackCanCastleShort;
+
+        bool m_whitesMove;
     };
 }

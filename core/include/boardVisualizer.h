@@ -5,8 +5,8 @@ namespace chess
 {
     namespace bitBoards
     {
-        void showBitboardGUI(bitboard bb);
+        void showBitboardGUI(bitboard bb, const std::string &windowName = "BitBoard");
     }
 
-    void showBoardGUI(const BoardState &board, bitboard highlights = 0);
+    void showBoardGUI(const BoardState &board, bitboard highlights = 0, const std::string &windowName = "ChessBoard");
 }
