@@ -55,16 +55,12 @@ GLuint loadPNGTexture(const char *filename)
 
 void loadPieces()
 {
-    if (loadedTextures)
-        return;
-
     kingsTexture = loadPNGTexture("assets/kings.png");
     pawnsTexture = loadPNGTexture("assets/pawns.png");
     knightsTexture = loadPNGTexture("assets/knights.png");
     rooksTexture = loadPNGTexture("assets/rooks.png");
     bishopsTexture = loadPNGTexture("assets/bishops.png");
     queensTexture = loadPNGTexture("assets/queens.png");
-    loadedTextures = true;
 }
 
 static int s_width = 600;
@@ -213,7 +209,7 @@ void renderImgTest()
     drawList->AddImage(kingsTexture, topLeft, bottomRight, {0.0f, 0.0f}, {1.0f, 1.0f});
 }
 
-void boardRenderGUI(std::function<void()> boardContentRenderer)
+void boardRenderGUI(std::function<void()> boardContentRenderer, const std::string &windowName)
 {
     // Initialize GLFW
     if (!glfwInit())
@@ -223,7 +219,7 @@ void boardRenderGUI(std::function<void()> boardContentRenderer)
     }
 
     // Create the window
-    GLFWwindow *window = glfwCreateWindow(s_width, s_height, "Chess bitboard", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(s_width, s_height, windowName.c_str(), NULL, NULL);
     if (window == NULL)
     {
         std::cerr << "Window creation failed!" << std::endl;
@@ -292,20 +288,20 @@ void boardRenderGUI(std::function<void()> boardContentRenderer)
 
 namespace chess::bitBoards
 {
-    void showBitboardGUI(bitboard bb)
+    void showBitboardGUI(bitboard bb, const std::string &windowName)
     {
         boardRenderGUI([=]()
-                       { highlightBitBoard(bb); });
+                       { highlightBitBoard(bb); }, windowName);
     }
 }
 
 namespace chess
 {
-    void showBoardGUI(const BoardState &board, bitboard highlights)
+    void showBoardGUI(const BoardState &board, bitboard highlights, const std::string &windowName)
     {
         boardRenderGUI([=]()
                        { loadPieces();
                          highlightBitBoard(highlights);
-                         renderPieces(board); });
+                         renderPieces(board); }, windowName);
     }
 }
