@@ -1,3 +1,8 @@
+/*
+This file contains the implementation of both initializing the start position and initializing
+from a given fen position.
+*/
+
 #include "bitBoard.h"
 #include "chess.h"
 #include "boardVisualizer.h"

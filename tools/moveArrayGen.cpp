@@ -76,6 +76,29 @@ bitboard bishopMoves(int rank, int file)
     return moves;
 }
 
+bitboard kingMoves(int rank, int file)
+{
+    constexpr std::pair<int, int> relativeMoves[8] = {
+        {1, -1},
+        {1, 0},
+        {1, 1},
+        {0, -1},
+        {0, 1},
+        {-1, -1},
+        {-1, 0},
+        {-1, 1}};
+
+    bitboard moves = 0;
+
+    for (auto m : relativeMoves)
+    {
+        if (chess::bitBoards::inBounds(rank + m.first, file + m.second))
+            chess::bitBoards::setBit(moves, rank + m.first, file + m.second);
+    }
+
+    return moves;
+}
+
 void showMoveArray(std::vector<bitboard> legalMoves)
 {
     for (auto bb : legalMoves)
@@ -95,6 +118,8 @@ int main()
     writeArray(knightMoveArr, outFile, "rookMoves");
 
     std::vector<bitboard> bishopMoveArr = genMovesArray(bishopMoves);
-    showMoveArray(bishopMoveArr);
     writeArray(bishopMoveArr, outFile, "bishopMoves");
+
+    std::vector<bitboard> kingMoveArr = genMovesArray(kingMoves);
+    writeArray(kingMoveArr, outFile, "kingMoves");
 }

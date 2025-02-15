@@ -1,8 +1,9 @@
 add_library(core STATIC
-    source/chessBoard.cpp
+    source/chessMoveGen.cpp
     source/bitBoardHelpers.cpp
     source/boardVisualizer.cpp
     source/moveConstants.h
+    source/initBoard.cpp
 )
 
 target_include_directories(core PUBLIC

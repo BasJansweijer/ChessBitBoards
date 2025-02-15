@@ -3,6 +3,7 @@
 #include "bitBoard.h"
 #include <string>
 #include <tuple>
+#include <vector>
 
 namespace chess
 {
@@ -14,6 +15,9 @@ namespace chess
 
         // custom position
         BoardState(std::string_view fen);
+
+        // Returns all of the reachable board states from the current board
+        std::vector<BoardState> nextStates() const;
 
         // Getters for the bitboards
         bitboard getWhitePawns() const { return m_whitePawns; }
