@@ -209,6 +209,27 @@ void renderImgTest()
     drawList->AddImage(kingsTexture, topLeft, bottomRight, {0.0f, 0.0f}, {1.0f, 1.0f});
 }
 
+static int clickedFile, clickedRank;
+
+void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    {
+        double mouseX, mouseY;
+        glfwGetCursorPos(window, &mouseX, &mouseY); // Get cursor position
+
+        int width, height;
+        glfwGetWindowSize(window, &width, &height); // Get window size
+
+        // Flip Y-axis to match OpenGL's coordinate system
+        mouseY = height - mouseY;
+
+        double borderW = borderPercent * width;
+        clickedRank = (mouseY - borderW) / s_squareSize;
+        clickedFile = (mouseX - borderW) / s_squareSize;
+    }
+}
+
 void boardRenderGUI(std::function<void()> boardContentRenderer, const std::string &windowName)
 {
     // Initialize GLFW
@@ -251,6 +272,8 @@ void boardRenderGUI(std::function<void()> boardContentRenderer, const std::strin
     int fbWidth, fbHeight;
     glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
     io.DisplaySize = ImVec2((float)fbWidth, (float)fbHeight);
+
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     int i = 0;
     // Main rendering loop
@@ -295,13 +318,33 @@ namespace chess::bitBoards
     }
 }
 
+void boardRenderer(const chess::BoardState &board, bitboard highlights)
+{
+    loadPieces();
+    highlightBitBoard(highlights);
+    renderPieces(board);
+}
+
 namespace chess
 {
     void showBoardGUI(const BoardState &board, bitboard highlights, const std::string &windowName)
     {
-        boardRenderGUI([=]()
-                       { loadPieces();
-                         highlightBitBoard(highlights);
-                         renderPieces(board); }, windowName);
+        auto renderMethod = [=]() mutable
+        {
+            if (bitBoards::inBounds(clickedRank, clickedFile))
+            {
+                highlights = 0;
+                square clicked = clickedFile + clickedRank * 8;
+                for (auto mv : board.legalMoves())
+                {
+                    if (mv.from != clicked)
+                        continue;
+                    highlights |= 1ULL << mv.to;
+                }
+            }
+
+            boardRenderer(board, highlights);
+        };
+        boardRenderGUI(renderMethod, windowName);
     }
 }
