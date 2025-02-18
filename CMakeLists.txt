@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(ChessBitboards)
 
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")  # Debug: No optimization, full debug symbols
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")  # Release: Full optimizations, no debug
+
+
 # Add subdirectories for core and app
 add_subdirectory(core)
 add_subdirectory(app)

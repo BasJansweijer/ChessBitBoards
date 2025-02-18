@@ -2,11 +2,38 @@
 
 #include "bitBoard.h"
 #include <string>
-#include <tuple>
 #include <vector>
 
 namespace chess
 {
+    enum PieceType
+    {
+        None = 0,
+        Pawn,
+        Knight,
+        Bishop,
+        Rook,
+        King,
+        Queen
+    };
+
+    struct Move
+    {
+        // stores the move locations
+        square from;
+        square to;
+
+        // stores the moved piece (new piece type for promotion)
+        PieceType piece;
+
+        // stores what piece was taken
+        bool takesPiece;
+
+        Move(square from, square to, PieceType piece, bool takesPiece)
+            : from(from), to(to),
+              piece(piece), takesPiece(takesPiece) {}
+    };
+
     class BoardState
     {
     public:
@@ -16,8 +43,25 @@ namespace chess
         // custom position
         BoardState(std::string_view fen);
 
-        // Returns all of the reachable board states from the current board
-        std::vector<BoardState> nextStates() const;
+        /**
+         * @brief returns pseudo legal moves from the current position
+         *
+         * Pseudo legal means we don't consider wether we put ourselfs in check
+         *
+         * @return the moves
+         */
+        std::vector<Move> pseudoLegalMoves() const;
+
+        /**
+         * @brief returns the legal moves in the position
+         *
+         * This performs each pseudo legal move and checks wether it puts us in check.
+         *
+         * @return the moves
+         */
+        std::vector<Move> legalMoves() const;
+
+        void makeMove(const Move &move);
 
         // Getters for the bitboards
         bitboard getWhitePawns() const { return m_whitePawns; }
@@ -32,7 +76,7 @@ namespace chess
         bitboard getBlackRooks() const { return m_blackRooks; }
         bitboard getBlackQueens() const { return m_blackQueens; }
         bitboard getBlackKing() const { return m_blackKing; }
-        bitboard getEnpassentLocations() const { return m_enpassentLocations; }
+        bitboard getEnpassentLocations() const { return 1ULL << m_enpassentSquare; }
 
         bool canWhiteCastleShort() const { return m_whiteCanCastleShort; }
         bool CanWhiteCastleLong() const { return m_whiteCanCastleLong; }
@@ -58,7 +102,7 @@ namespace chess
 
         // Tracking enpassant oppertunities
         //  (1 bit means the square acts as if it can be taken)
-        bitboard m_enpassentLocations;
+        square m_enpassentSquare;
 
         // Tracking for castling
         bool m_whiteCanCastleLong;
@@ -67,5 +111,26 @@ namespace chess
         bool m_blackCanCastleShort;
 
         bool m_whitesMove;
+
+    private:
+        // Piece specific move generation helpers
+        void genPawnMoves(std::vector<Move> &outMoves) const;
+        void genKnightMoves(std::vector<Move> &outMoves) const;
+        void genKingMoves(std::vector<Move> &outMoves) const;
+
+        // helper which adds all moves positions specified in a bitboard
+        inline void addMoves(bitboard moves, square curPos, PieceType piece, std::vector<Move> &outMoves) const;
+
+        bitboard allPieces(bool white) const;
+        bitboard allPieces() const;
+
+        // default move making implementation
+        void makeNormalMove(const Move &move, bitboard &effectedBitboard);
+
+        // Piece specific move making helpers
+        void makePawnMove(const Move &move);
+
+        // Makes the implicit assumption that the 'opponent' is the player whose turn it is NOT.
+        void takeOpponentPiece(square s);
     };
 }

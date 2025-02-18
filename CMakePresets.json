@@ -3,6 +3,15 @@
   "cmakeMinimumRequired": { "major": 3, "minor": 19 },
   "configurePresets": [
     {
+      "name": "debug",
+      "description": "Debug build with debug symbols",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
       "name": "default",
       "generator": "Unix Makefiles",
       "binaryDir": "${sourceDir}/build",

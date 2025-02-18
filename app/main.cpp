@@ -2,6 +2,8 @@
 #include "boardVisualizer.h"
 #include <iostream>
 #include <string>
+#include <random>
+#include <vector>
 
 void testFen(std::string_view fen)
 {
@@ -15,8 +17,31 @@ void testFen(std::string_view fen)
     chess::showBoardGUI(b, b.getEnpassentLocations());
 }
 
+void randomMoves(chess::BoardState &b)
+{
+    std::random_device rd;
+    std::mt19937 gen(rd()); // Mersenne Twister PRNG
+    std::uniform_int_distribution<size_t> dist(0, 100);
+
+    int i = 0;
+    while (i < 100)
+    {
+        chess::showBoardGUI(b);
+        std::vector<chess::Move> possibleMoves = b.legalMoves();
+        b.makeMove(possibleMoves[dist(gen) % possibleMoves.size()]);
+        i++;
+    }
+    dist(gen);
+}
+
 int main()
 {
-    testFen("4r3/2P3R1/R1N2k1P/5Np1/K1p1p3/1pr5/3P4/Bn3Q2 w - - 0 1");
-    testFen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
+    chess::BoardState b;
+    b.makeMove(chess::Move(8, 24, chess::Pawn, false));
+    b.makeMove(chess::Move(8 * 6 + 5, 8 * 5 + 5, chess::Pawn, false));
+
+    b.makeMove(chess::Move(8 * 3, 8 * 4, chess::Pawn, false));
+
+    b.makeMove(chess::Move(8 * 6 + 1, 8 * 4 + 1, chess::Pawn, false));
+    randomMoves(b);
 }

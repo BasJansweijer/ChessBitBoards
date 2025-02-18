@@ -30,7 +30,7 @@ void writeArray(std::vector<bitboard> array, const std::string &outFile, std::st
     {
         if (!first)
             out << ", ";
-        out << i;
+        out << i << "ULL";
         first = false;
     }
     out << "};\n";

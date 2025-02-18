@@ -28,7 +28,7 @@ namespace chess
         m_blackQueens = m_whiteQueens << 8 * 7;
         m_blackKing = m_whiteKing << 8 * 7;
 
-        m_enpassentLocations = 0;
+        m_enpassentSquare = -1;
         m_whiteCanCastleLong = true;
         m_whiteCanCastleShort = true;
         m_blackCanCastleLong = true;
@@ -42,7 +42,7 @@ namespace chess
                                                    m_blackPawns(0), m_blackKnights(0),
                                                    m_blackBishops(0), m_blackRooks(0),
                                                    m_blackQueens(0), m_blackKing(0),
-                                                   m_enpassentLocations(0), m_whiteCanCastleLong(false),
+                                                   m_enpassentSquare(-1), m_whiteCanCastleLong(false),
                                                    m_whiteCanCastleShort(false), m_blackCanCastleLong(false),
                                                    m_blackCanCastleShort(false), m_whitesMove(true)
     {
@@ -148,7 +148,7 @@ namespace chess
         {
             int file = fen.at(curIdx) - 'a';
             int rank = fen.at(curIdx + 1) - '1';
-            chess::bitBoards::setBit(m_enpassentLocations, rank, file);
+            m_enpassentSquare = rank * 8 + file;
         }
     }
 }
