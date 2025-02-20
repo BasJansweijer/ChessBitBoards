@@ -86,10 +86,17 @@ namespace chess
         // Returns wether white/black has a piece attacking square s.
         bool squareAttacked(square s, bool byWhite) const;
 
+        bool whitesMove() const { return m_whitesMove; }
+
         // We need 12 bit boards (6 for each color)
         struct PieceSet
         {
             bitboard pawns, knights, bishops, rooks, queens, king;
+
+            inline bitboard allPieces() const
+            {
+                return pawns | knights | bishops | rooks | queens | king;
+            }
         };
 
     private:
