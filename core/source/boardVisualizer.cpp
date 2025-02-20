@@ -329,6 +329,8 @@ namespace chess
 
     void showBoardGUI(const BoardState &board, bitboard highlights, const std::string &windowName)
     {
+        clickedRank = -1;
+        clickedFile = -1;
         bool piecesLoaded = false;
 
         auto renderMethod = [&]() mutable
