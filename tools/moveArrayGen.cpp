@@ -115,7 +115,7 @@ int main()
     writeArray(knightMoveArr, outFile, "knightMoves");
 
     std::vector<bitboard> rookMoveArr = genMovesArray(rookMoves);
-    writeArray(knightMoveArr, outFile, "rookMoves");
+    writeArray(rookMoveArr, outFile, "rookMoves");
 
     std::vector<bitboard> bishopMoveArr = genMovesArray(bishopMoves);
     writeArray(bishopMoveArr, outFile, "bishopMoves");
