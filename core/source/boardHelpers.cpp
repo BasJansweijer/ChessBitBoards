@@ -6,35 +6,33 @@ namespace chess
 {
     bitboard BoardState::allPieces(bool white) const
     {
-        if (white)
-            return m_white.pawns | m_white.knights |
-                   m_white.bishops | m_white.rooks |
-                   m_white.queens | m_white.king;
-        else
-            return m_black.pawns | m_black.knights |
-                   m_black.bishops | m_black.rooks |
-                   m_black.queens | m_black.king;
+        return white ? m_white.allPieces() : m_black.allPieces();
     }
 
     bitboard BoardState::allPieces() const
     {
-        return m_white.pawns | m_white.knights |
-               m_white.bishops | m_white.rooks |
-               m_white.queens | m_white.king |
-               m_black.pawns | m_black.knights |
-               m_black.bishops | m_black.rooks |
-               m_black.queens | m_black.king;
+        return m_white.allPieces() | m_black.allPieces();
     }
 
     bool BoardState::squareAttacked(square s, bool byWhite) const
     {
         // bitboards of all the pieces that could attack the square
+        const PieceSet &attacker = byWhite ? m_white : m_black;
 
-        const bitboard &pawns = byWhite ? m_white.pawns : m_black.pawns;
-        const bitboard &knights = byWhite ? m_white.knights : m_black.knights;
-        const bitboard &bishops = byWhite ? m_white.bishops : m_black.bishops;
-        const bitboard &rooks = byWhite ? m_white.rooks : m_black.rooks;
-        const bitboard &queens = byWhite ? m_white.queens : m_black.queens;
-        const bitboard &king = byWhite ? m_white.king : m_black.king;
+        bitboard allBlockers = allPieces();
+
+        int8_t rank = s / 8;
+        int8_t file = s % 8;
+        int8_t pawnRank = byWhite ? rank - 1 : rank + 1;
+
+        square pawnAttackRight = file != 7 ? pawnRank * 8 + file + 1 : -1;
+        square pawnAttackLeft = file != 0 ? pawnRank * 8 + file - 1 : -1;
+
+        return attacker.pawns & 1ULL << pawnAttackLeft ||
+               attacker.pawns & 1ULL << pawnAttackRight ||
+               constants::knightMoves[s] & attacker.knights ||
+               constants::kingMoves[s] & attacker.king ||
+               constants::getBishopMoves(s, allBlockers) & (attacker.bishops | attacker.queens) ||
+               constants::getRookMoves(s, allBlockers) & (attacker.rooks | attacker.queens);
     }
 }

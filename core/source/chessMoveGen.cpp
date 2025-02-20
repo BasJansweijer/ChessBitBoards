@@ -129,10 +129,7 @@ namespace chess
         bitboard bishops = m_whitesMove ? m_white.bishops : m_black.bishops;
         forEachSquare(bishops, [&](square bishopPos)
                       {
-            const constants::MagicInfo &m = constants::bishopMagics[bishopPos];
-            // compute the idx into the array by masking to get all blockers and using the magic
-            int idx = m.arrayOffset + (allPieces() & m.mask) * m.magic % m.squareArraySize;
-            bitboard moves = constants::bishopNonBlockedMoves[idx];
+            bitboard moves = constants::getBishopMoves(bishopPos, allPieces());
 
             // remove self captures
             moves &= ~allPieces(m_whitesMove);
@@ -145,10 +142,7 @@ namespace chess
         bitboard rooks = m_whitesMove ? m_white.rooks : m_black.rooks;
         forEachSquare(rooks, [&](square rookPos)
                       {
-            const constants::MagicInfo &m = constants::rookMagics[rookPos];
-            // compute the idx into the array by masking to get all blockers and using the magic
-            int idx = m.arrayOffset + (allPieces() & m.mask) * m.magic % m.squareArraySize;
-            bitboard moves = constants::rookNonBlockedMoves[idx];
+            bitboard moves = constants::getRookMoves(rookPos, allPieces());
 
             // remove self captures
             moves &= ~allPieces(m_whitesMove);
