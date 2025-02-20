@@ -4,6 +4,7 @@ project(ChessBitboards)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")  # Debug: No optimization, full debug symbols
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")  # Release: Full optimizations, no debug
 
+set(CMAKE_CXX_STANDARD 20)
 
 # Add subdirectories for core and app
 add_subdirectory(core)

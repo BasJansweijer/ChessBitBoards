@@ -3,7 +3,6 @@ add_library(core STATIC
     source/makeMove.cpp
     source/bitBoardHelpers.cpp
     source/boardVisualizer.cpp
-    source/moveConstants.h
     source/boardHelpers.cpp
     source/initBoard.cpp
 )

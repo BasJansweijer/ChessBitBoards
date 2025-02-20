@@ -14,7 +14,7 @@
       "defines": [],
       "compilerPath": "/usr/bin/g++", // Path to your compiler
       "intelliSenseMode": "linux-gcc-x64", // Change if you're using another toolchain
-      "cStandard": "c11",
+      "cStandard": "c23",
       "cppStandard": "c++23"
     }
   ],
@@ -74,6 +74,14 @@
     "ratio": "cpp",
     "iomanip": "cpp",
     "sstream": "cpp",
-    "bitset": "cpp"
+    "bitset": "cpp",
+    "set": "cpp",
+    "mutex": "cpp",
+    "condition_variable": "cpp",
+    "semaphore": "cpp",
+    "stop_token": "cpp",
+    "thread": "cpp",
+    "future": "cpp",
+    "regex": "cpp"
   }
 }
