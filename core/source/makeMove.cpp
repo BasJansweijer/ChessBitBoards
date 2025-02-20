@@ -11,19 +11,19 @@ namespace chess
         bitboard mask = ~(1ULL << s);
         if (m_whitesMove)
         {
-            m_blackPawns &= mask;
-            m_blackKnights &= mask;
-            m_blackBishops &= mask;
-            m_blackRooks &= mask;
-            m_blackQueens &= mask;
+            m_black.pawns &= mask;
+            m_black.knights &= mask;
+            m_black.bishops &= mask;
+            m_black.rooks &= mask;
+            m_black.queens &= mask;
         }
         else
         {
-            m_whitePawns &= mask;
-            m_whiteKnights &= mask;
-            m_whiteBishops &= mask;
-            m_whiteRooks &= mask;
-            m_whiteQueens &= mask;
+            m_white.pawns &= mask;
+            m_white.knights &= mask;
+            m_white.bishops &= mask;
+            m_white.rooks &= mask;
+            m_white.queens &= mask;
         }
     }
 
@@ -38,7 +38,7 @@ namespace chess
 
     void BoardState::makePawnMove(const Move &move)
     {
-        bitboard &pawns = m_whitesMove ? m_whitePawns : m_blackPawns;
+        bitboard &pawns = m_whitesMove ? m_white.pawns : m_black.pawns;
         makeNormalMove(move, pawns);
 
         int moveDir = m_whitesMove ? 1 : -1;
@@ -46,7 +46,7 @@ namespace chess
         if (m_enpassentSquare == move.to)
         {
             square takenPawn = move.to + 8 * -moveDir;
-            bitboard &oppPawns = m_whitesMove ? m_blackBishops : m_whitePawns;
+            bitboard &oppPawns = m_whitesMove ? m_black.pawns : m_white.pawns;
             oppPawns ^= 1ULL << takenPawn;
         }
 
@@ -63,7 +63,7 @@ namespace chess
         // Remove the old enpassent location info
         m_enpassentSquare = -1;
 
-        bitboard &pawns = m_whitesMove ? m_whitePawns : m_blackPawns;
+        bitboard &pawns = m_whitesMove ? m_white.pawns : m_black.pawns;
         if (pawns & 1ULL << move.from && move.piece != PieceType::Pawn)
         {
             // This is a promotion so we also need to remove the original pawn
@@ -78,31 +78,31 @@ namespace chess
             break;
         case PieceType::Knight:
         {
-            bitboard &knights = m_whitesMove ? m_whiteKnights : m_blackKnights;
+            bitboard &knights = m_whitesMove ? m_white.knights : m_black.knights;
             makeNormalMove(move, knights);
             break;
         }
         case PieceType::Bishop:
         {
-            bitboard &bishops = m_whitesMove ? m_whiteBishops : m_blackBishops;
+            bitboard &bishops = m_whitesMove ? m_white.bishops : m_black.bishops;
             makeNormalMove(move, bishops);
             break;
         }
         case PieceType::Rook:
         {
-            bitboard &rooks = m_whitesMove ? m_whiteRooks : m_blackRooks;
+            bitboard &rooks = m_whitesMove ? m_white.rooks : m_black.rooks;
             makeNormalMove(move, rooks);
             break;
         }
         case PieceType::Queen:
         {
-            bitboard &queens = m_whitesMove ? m_whiteQueens : m_blackQueens;
+            bitboard &queens = m_whitesMove ? m_white.queens : m_black.queens;
             makeNormalMove(move, queens);
             break;
         }
         case PieceType::King:
         {
-            bitboard &king = m_whitesMove ? m_whiteKing : m_blackKing;
+            bitboard &king = m_whitesMove ? m_white.king : m_black.king;
             makeNormalMove(move, king);
             break;
         }

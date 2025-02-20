@@ -64,18 +64,18 @@ namespace chess
         void makeMove(const Move &move);
 
         // Getters for the bitboards
-        bitboard getWhitePawns() const { return m_whitePawns; }
-        bitboard getWhiteKnights() const { return m_whiteKnights; }
-        bitboard getWhiteBishops() const { return m_whiteBishops; }
-        bitboard getWhiteRooks() const { return m_whiteRooks; }
-        bitboard getWhiteQueens() const { return m_whiteQueens; }
-        bitboard getWhiteKing() const { return m_whiteKing; }
-        bitboard getBlackPawns() const { return m_blackPawns; }
-        bitboard getBlackKnights() const { return m_blackKnights; }
-        bitboard getBlackBishops() const { return m_blackBishops; }
-        bitboard getBlackRooks() const { return m_blackRooks; }
-        bitboard getBlackQueens() const { return m_blackQueens; }
-        bitboard getBlackKing() const { return m_blackKing; }
+        bitboard getWhitePawns() const { return m_white.pawns; }
+        bitboard getWhiteKnights() const { return m_white.knights; }
+        bitboard getWhiteBishops() const { return m_white.bishops; }
+        bitboard getWhiteRooks() const { return m_white.rooks; }
+        bitboard getWhiteQueens() const { return m_white.queens; }
+        bitboard getWhiteKing() const { return m_white.king; }
+        bitboard getBlackPawns() const { return m_black.pawns; }
+        bitboard getBlackKnights() const { return m_black.knights; }
+        bitboard getBlackBishops() const { return m_black.bishops; }
+        bitboard getBlackRooks() const { return m_black.rooks; }
+        bitboard getBlackQueens() const { return m_black.queens; }
+        bitboard getBlackKing() const { return m_black.king; }
         bitboard getEnpassentLocations() const { return 1ULL << m_enpassentSquare; }
 
         bool canWhiteCastleShort() const { return m_whiteCanCastleShort; }
@@ -83,22 +83,18 @@ namespace chess
         bool canBlackCastleShort() const { return m_blackCanCastleShort; }
         bool CanBlackCastleLong() const { return m_blackCanCastleLong; }
 
-    private:
+        // Returns wether white/black has a piece attacking square s.
+        bool squareAttacked(square s, bool byWhite) const;
+
         // We need 12 bit boards (6 for each color)
-        // color white
-        bitboard m_whitePawns;
-        bitboard m_whiteKnights;
-        bitboard m_whiteBishops;
-        bitboard m_whiteRooks;
-        bitboard m_whiteQueens;
-        bitboard m_whiteKing;
-        // color black
-        bitboard m_blackPawns;
-        bitboard m_blackKnights;
-        bitboard m_blackBishops;
-        bitboard m_blackRooks;
-        bitboard m_blackQueens;
-        bitboard m_blackKing;
+        struct PieceSet
+        {
+            bitboard pawns, knights, bishops, rooks, queens, king;
+        };
+
+    private:
+        PieceSet m_white;
+        PieceSet m_black;
 
         // Tracking enpassant oppertunities
         //  (1 bit means the square acts as if it can be taken)

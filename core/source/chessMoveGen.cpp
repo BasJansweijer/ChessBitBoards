@@ -36,7 +36,7 @@ namespace chess
 
     void BoardState::genKnightMoves(std::vector<Move> &outMoves) const
     {
-        bitboard knights = m_whitesMove ? m_whiteKnights : m_blackKnights;
+        bitboard knights = m_whitesMove ? m_white.knights : m_black.knights;
         forEachSquare(knights, [&](square knightPos)
                       {
             bitboard moves = chess::constants::knightMoves[knightPos];
@@ -48,7 +48,7 @@ namespace chess
     void BoardState::genPawnMoves(std::vector<Move> &outMoves) const
     {
         uint8_t moveDir = m_whitesMove ? 1 : -1;
-        bitboard pawns = m_whitesMove ? m_whitePawns : m_blackPawns;
+        bitboard pawns = m_whitesMove ? m_white.pawns : m_black.pawns;
 
         forEachSquare(pawns, [&](square pawnPos)
                       {
@@ -115,7 +115,7 @@ namespace chess
 
     void BoardState::genKingMoves(std::vector<Move> &outMoves) const
     {
-        bitboard kingBB = m_whitesMove ? m_whiteKing : m_blackKing;
+        bitboard kingBB = m_whitesMove ? m_white.king : m_black.king;
         square kingPos = bitBoards::firstSetBit(kingBB);
         bitboard moves = constants::kingMoves[kingPos];
         // remove self captures
@@ -126,7 +126,7 @@ namespace chess
 
     void BoardState::genBishopMoves(std::vector<Move> &outMoves) const
     {
-        bitboard bishops = m_whitesMove ? m_whiteBishops : m_blackBishops;
+        bitboard bishops = m_whitesMove ? m_white.bishops : m_black.bishops;
         forEachSquare(bishops, [&](square bishopPos)
                       {
             const constants::MagicInfo &m = constants::bishopMagics[bishopPos];
@@ -142,7 +142,7 @@ namespace chess
 
     void BoardState::genRookMoves(std::vector<Move> &outMoves) const
     {
-        bitboard rooks = m_whitesMove ? m_whiteRooks : m_blackRooks;
+        bitboard rooks = m_whitesMove ? m_white.rooks : m_black.rooks;
         forEachSquare(rooks, [&](square rookPos)
                       {
             const constants::MagicInfo &m = constants::rookMagics[rookPos];
@@ -158,7 +158,7 @@ namespace chess
 
     void BoardState::genQueenMoves(std::vector<Move> &outMoves) const
     {
-        bitboard queens = m_whitesMove ? m_whiteQueens : m_blackQueens;
+        bitboard queens = m_whitesMove ? m_white.queens : m_black.queens;
         forEachSquare(queens, [&](square queenPos)
                       {
             // Rook moves
