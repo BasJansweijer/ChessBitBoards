@@ -116,6 +116,9 @@ namespace chess
         // Piece specific move generation helpers
         void genPawnMoves(std::vector<Move> &outMoves) const;
         void genKnightMoves(std::vector<Move> &outMoves) const;
+        void genBishopMoves(std::vector<Move> &outMoves) const;
+        void genRookMoves(std::vector<Move> &outMoves) const;
+        void genQueenMoves(std::vector<Move> &outMoves) const;
         void genKingMoves(std::vector<Move> &outMoves) const;
 
         // helper which adds all moves positions specified in a bitboard

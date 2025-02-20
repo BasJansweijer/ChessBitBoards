@@ -15,36 +15,34 @@ namespace chess
         outMoves.emplace_back(from, to, PieceType::Queen, wasCapture);
     }
 
+    // Loops through all the set squares of the bitboard and calls the callback with each set square
+    inline void forEachSquare(bitboard bb, auto callback)
+    {
+        while (bb)
+        {
+            square pos = chess::bitBoards::firstSetBit(bb);
+            callback(pos);
+            bb ^= 1ULL << pos;
+        }
+    }
+
     inline void BoardState::addMoves(bitboard moves, square curPos, PieceType piece, std::vector<Move> &outMoves) const
     {
-        while (moves)
-        {
-            square moveTo = chess::bitBoards::firstSetBit(moves);
-
+        forEachSquare(moves, [&](square moveTo)
+                      {
             bool tookPiece = (allPieces(!m_whitesMove) & 1ULL << moveTo);
-
-            outMoves.emplace_back(curPos, moveTo, piece, tookPiece);
-
-            // remove this move
-            moves ^= 1ULL << moveTo;
-        }
+            outMoves.emplace_back(curPos, moveTo, piece, tookPiece); });
     }
 
     void BoardState::genKnightMoves(std::vector<Move> &outMoves) const
     {
         bitboard knights = m_whitesMove ? m_whiteKnights : m_blackKnights;
-        while (knights)
-        {
-            square knightPos = chess::bitBoards::firstSetBit(knights);
-
-            // remove this knight position
-            knights ^= 1ULL << knightPos;
-
+        forEachSquare(knights, [&](square knightPos)
+                      {
             bitboard moves = chess::constants::knightMoves[knightPos];
             moves &= ~allPieces(m_whitesMove);
 
-            addMoves(moves, knightPos, PieceType::Knight, outMoves);
-        }
+            addMoves(moves, knightPos, PieceType::Knight, outMoves); });
     }
 
     void BoardState::genPawnMoves(std::vector<Move> &outMoves) const
@@ -52,15 +50,11 @@ namespace chess
         uint8_t moveDir = m_whitesMove ? 1 : -1;
         bitboard pawns = m_whitesMove ? m_whitePawns : m_blackPawns;
 
-        while (pawns)
-        {
-            square pawnPos = chess::bitBoards::firstSetBit(pawns);
+        forEachSquare(pawns, [&](square pawnPos)
+                      {
             // gives how many ranks the pawn has moved up/down (0 if not moved and 5 if on the rank before promotion)
             int rank = pawnPos / 8;
             const int ranksMoved = m_whitesMove ? rank - 1 : -rank + 6;
-
-            // remove this pawn position
-            pawns ^= 1ULL << pawnPos;
 
             // generate normal step moves
             square inFront = pawnPos + moveDir * 8;
@@ -116,8 +110,7 @@ namespace chess
                     else // the default pawn capture
                         outMoves.emplace_back(pawnPos, rightTakes, PieceType::Pawn, true);
                 }
-            }
-        }
+            } });
     }
 
     void BoardState::genKingMoves(std::vector<Move> &outMoves) const
@@ -131,12 +124,70 @@ namespace chess
         addMoves(moves, kingPos, PieceType::King, outMoves);
     }
 
+    void BoardState::genBishopMoves(std::vector<Move> &outMoves) const
+    {
+        bitboard bishops = m_whitesMove ? m_whiteBishops : m_blackBishops;
+        forEachSquare(bishops, [&](square bishopPos)
+                      {
+            const constants::MagicInfo &m = constants::bishopMagics[bishopPos];
+            // compute the idx into the array by masking to get all blockers and using the magic
+            int idx = m.arrayOffset + (allPieces() & m.mask) * m.magic % m.squareArraySize;
+            bitboard moves = constants::bishopNonBlockedMoves[idx];
+
+            // remove self captures
+            moves &= ~allPieces(m_whitesMove);
+
+            addMoves(moves, bishopPos, PieceType::Bishop, outMoves); });
+    }
+
+    void BoardState::genRookMoves(std::vector<Move> &outMoves) const
+    {
+        bitboard rooks = m_whitesMove ? m_whiteRooks : m_blackRooks;
+        forEachSquare(rooks, [&](square rookPos)
+                      {
+            const constants::MagicInfo &m = constants::rookMagics[rookPos];
+            // compute the idx into the array by masking to get all blockers and using the magic
+            int idx = m.arrayOffset + (allPieces() & m.mask) * m.magic % m.squareArraySize;
+            bitboard moves = constants::rookNonBlockedMoves[idx];
+
+            // remove self captures
+            moves &= ~allPieces(m_whitesMove);
+
+            addMoves(moves, rookPos, PieceType::Rook, outMoves); });
+    }
+
+    void BoardState::genQueenMoves(std::vector<Move> &outMoves) const
+    {
+        bitboard queens = m_whitesMove ? m_whiteQueens : m_blackQueens;
+        forEachSquare(queens, [&](square queenPos)
+                      {
+            // Rook moves
+            const constants::MagicInfo &rm = constants::rookMagics[queenPos];
+            // compute the idx into the array by masking to get all blockers and using the magic
+            int idx = rm.arrayOffset + (allPieces() & rm.mask) * rm.magic % rm.squareArraySize;
+            bitboard moves = constants::rookNonBlockedMoves[idx];
+
+            // Bishop moves
+            const constants::MagicInfo &bm = constants::bishopMagics[queenPos];
+            // compute the idx into the array by masking to get all blockers and using the magic
+            idx = bm.arrayOffset + (allPieces() & bm.mask) * bm.magic % bm.squareArraySize;
+            moves |= constants::bishopNonBlockedMoves[idx];
+
+            // remove self captures
+            moves &= ~allPieces(m_whitesMove);
+
+            addMoves(moves, queenPos, PieceType::Queen, outMoves); });
+    }
+
     std::vector<Move> BoardState::pseudoLegalMoves() const
     {
         std::vector<Move> moves;
 
         genPawnMoves(moves);
         genKnightMoves(moves);
+        genBishopMoves(moves);
+        genRookMoves(moves);
+        genQueenMoves(moves);
         genKingMoves(moves);
 
         return moves;
