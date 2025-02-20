@@ -320,17 +320,24 @@ namespace chess::bitBoards
 
 void boardRenderer(const chess::BoardState &board, bitboard highlights)
 {
-    loadPieces();
     highlightBitBoard(highlights);
     renderPieces(board);
 }
 
 namespace chess
 {
+
     void showBoardGUI(const BoardState &board, bitboard highlights, const std::string &windowName)
     {
-        auto renderMethod = [=]() mutable
+        bool piecesLoaded = false;
+
+        auto renderMethod = [&]() mutable
         {
+            // prevent loading pieces again on each update
+            if (!piecesLoaded)
+                loadPieces();
+
+            piecesLoaded = true;
             if (bitBoards::inBounds(clickedRank, clickedFile))
             {
                 highlights = 0;
