@@ -9,6 +9,7 @@ namespace chess
 {
     inline void addPromotionMove(square from, square to, bool wasCapture, std::vector<chess::Move> &outMoves)
     {
+        std::cout << "CONTAINS PROMOTION" << std::endl;
         outMoves.emplace_back(from, to, PieceType::Knight, wasCapture);
         outMoves.emplace_back(from, to, PieceType::Bishop, wasCapture);
         outMoves.emplace_back(from, to, PieceType::Rook, wasCapture);
@@ -173,6 +174,60 @@ namespace chess
             addMoves(moves, queenPos, PieceType::Queen, outMoves); });
     }
 
+    void BoardState::tryCastle(std::vector<Move> &outMoves, bool shortCastle) const
+    {
+        // Check wether the spots between the rook and the king are empty
+        bitboard emptySpotMask = shortCastle ? 0b01100000 : 0b00001110;
+        const PieceSet &movingPieces = m_whitesMove ? m_white : m_black;
+        if (!m_whitesMove)
+        {
+            emptySpotMask <<= 8 * 7;
+        }
+
+        if ((allPieces() & emptySpotMask))
+        {
+            // rook missing or pieces in the way
+            return;
+        }
+
+        square kingPos = bitBoards::firstSetBit(movingPieces.king);
+
+        // Check wether the squares inbetween (or the king square) is attacked.
+        bitboard nonAttacked = emptySpotMask | 1ULL << kingPos;
+        while (nonAttacked)
+        {
+            square s = bitBoards::firstSetBit(nonAttacked);
+            nonAttacked ^= 1ULL << s;
+
+            if (squareAttacked(s, !m_whitesMove))
+                return;
+        }
+
+        square newKingPos = kingPos + (shortCastle ? 2 : -2);
+        // We are allowed to castle.
+        outMoves.emplace_back(kingPos, newKingPos, PieceType::King, false);
+    }
+
+    void BoardState::genCastlingMoves(std::vector<Move> &outMoves) const
+    {
+        if (m_whitesMove)
+        {
+            if (m_whiteCanCastleShort)
+                tryCastle(outMoves, true);
+
+            if (m_whiteCanCastleLong)
+                tryCastle(outMoves, false);
+        }
+        else
+        {
+            if (m_blackCanCastleShort)
+                tryCastle(outMoves, true);
+
+            if (m_blackCanCastleLong)
+                tryCastle(outMoves, false);
+        }
+    }
+
     std::vector<Move> BoardState::pseudoLegalMoves() const
     {
         std::vector<Move> moves;
@@ -183,6 +238,7 @@ namespace chess
         genRookMoves(moves);
         genQueenMoves(moves);
         genKingMoves(moves);
+        genCastlingMoves(moves);
 
         return moves;
     }

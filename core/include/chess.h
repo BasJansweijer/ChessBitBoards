@@ -85,6 +85,7 @@ namespace chess
 
         // Returns wether white/black has a piece attacking square s.
         bool squareAttacked(square s, bool byWhite) const;
+        bool kingAttacked(bool white) const;
 
         bool whitesMove() const { return m_whitesMove; }
 
@@ -124,6 +125,10 @@ namespace chess
         void genQueenMoves(std::vector<Move> &outMoves) const;
         void genKingMoves(std::vector<Move> &outMoves) const;
 
+        // helpers to generate the castling moves
+        void genCastlingMoves(std::vector<Move> &outMoves) const;
+        void tryCastle(std::vector<Move> &outMoves, bool shortCastle) const;
+
         // helper which adds all moves positions specified in a bitboard
         inline void addMoves(bitboard moves, square curPos, PieceType piece, std::vector<Move> &outMoves) const;
 
@@ -135,6 +140,8 @@ namespace chess
 
         // Piece specific move making helpers
         void makePawnMove(const Move &move);
+        void makeKingMove(const Move &move); // Needed to also handle castling
+        void makeCastlingMove(const Move &move);
 
         // Makes the implicit assumption that the 'opponent' is the player whose turn it is NOT.
         void takeOpponentPiece(square s);

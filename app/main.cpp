@@ -34,14 +34,43 @@ void randomMoves(chess::BoardState &b)
     dist(gen);
 }
 
+static int exploredPositions = 0;
+static int leafNodePositions = 0;
+static int maxDepth = 6;
+static int checkmates = 0;
+
+void exploreAll(chess::BoardState &b, int depth = 0)
+{
+    exploredPositions++;
+    if (depth >= maxDepth)
+    {
+        leafNodePositions++;
+        return;
+    }
+    bool noLegalMoves = true;
+    for (auto m : b.legalMoves())
+    {
+        chess::BoardState bNew = b;
+        bNew.makeMove(m);
+
+        // if king is under attack on opponents move thats illegal
+        if (bNew.kingAttacked(!bNew.whitesMove()))
+            continue;
+
+        noLegalMoves = false;
+
+        exploreAll(bNew, depth + 1);
+    }
+
+    if (noLegalMoves)
+        checkmates++;
+}
+
 int main()
 {
     chess::BoardState b;
-    b.makeMove(chess::Move(8, 24, chess::Pawn, false));
-    b.makeMove(chess::Move(8 * 6 + 5, 8 * 5 + 5, chess::Pawn, false));
-
-    b.makeMove(chess::Move(8 * 3, 8 * 4, chess::Pawn, false));
-
-    b.makeMove(chess::Move(8 * 6 + 1, 8 * 4 + 1, chess::Pawn, false));
-    randomMoves(b);
+    exploreAll(b);
+    std::cout << "explored: " << exploredPositions << std::endl;
+    std::cout << "found checkmates: " << checkmates << std::endl;
+    std::cout << "positions after the moves: " << leafNodePositions << std::endl;
 }

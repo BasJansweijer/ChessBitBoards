@@ -33,7 +33,29 @@ namespace chess
         effectedBitboard ^= 1ULL << move.to;
 
         if (move.takesPiece)
+        {
+            // Check wether we take a rook and should thus revoke castling rights
+            if ((m_whitesMove ? m_black.rooks : m_white.rooks) & 1ULL << move.to)
+            {
+                switch (move.to)
+                {
+                case 63:
+                    m_blackCanCastleShort = false;
+                    break;
+                case 56:
+                    m_blackCanCastleLong = false;
+                    break;
+                case 0:
+                    m_whiteCanCastleLong = false;
+                    break;
+                case 7:
+                    m_whiteCanCastleShort = false;
+                    break;
+                }
+            }
+
             takeOpponentPiece(move.to);
+        }
     }
 
     void BoardState::makePawnMove(const Move &move)
@@ -45,6 +67,7 @@ namespace chess
 
         if (m_enpassentSquare == move.to)
         {
+            std::cout << "CONTAINS ENPASSENT" << std::endl;
             square takenPawn = move.to + 8 * -moveDir;
             bitboard &oppPawns = m_whitesMove ? m_black.pawns : m_white.pawns;
             oppPawns ^= 1ULL << takenPawn;
@@ -56,6 +79,70 @@ namespace chess
         {
             m_enpassentSquare = move.from + moveDir * 8;
         }
+    }
+
+    void BoardState::makeCastlingMove(const Move &move)
+    {
+        bool shortCastle = (move.to - move.from) == 2;
+        std::cout << "CONTAINS Casteling " << (shortCastle ? "Short" : "LONG") << std::endl;
+        PieceSet &pieces = m_whitesMove ? m_white : m_black;
+
+        if (shortCastle)
+        {
+            pieces.king = 0b01000000;
+
+            square oldRookPos = 7;
+            square newRookPos = 5;
+            if (!m_whitesMove)
+            {
+                pieces.king << 7 * 8;
+                oldRookPos += 7 * 8;
+                newRookPos += 7 * 8;
+            }
+
+            pieces.rooks ^= 1ULL << oldRookPos;
+            pieces.rooks ^= 1ULL << newRookPos;
+        }
+        else
+        {
+            pieces.king = 0b00000100;
+
+            square oldRookPos = 0;
+            square newRookPos = 3;
+            if (!m_whitesMove)
+            {
+                pieces.king << 7 * 8;
+                oldRookPos += 7 * 8;
+                newRookPos += 7 * 8;
+            }
+
+            pieces.rooks ^= 1ULL << oldRookPos;
+            pieces.rooks ^= 1ULL << newRookPos;
+        }
+    }
+
+    void BoardState::makeKingMove(const Move &move)
+    {
+        // Moving king so we revoke castling rights from here on out.
+        if (m_whitesMove)
+        {
+            m_whiteCanCastleLong = false;
+            m_whiteCanCastleShort = false;
+        }
+        else
+        {
+            m_blackCanCastleLong = false;
+            m_blackCanCastleShort = false;
+        }
+
+        if (abs(move.to - move.from) == 2)
+        {
+            makeCastlingMove(move);
+            return;
+        }
+
+        bitboard &king = m_whitesMove ? m_white.king : m_black.king;
+        makeNormalMove(move, king);
     }
 
     void BoardState::makeMove(const Move &move)
@@ -91,6 +178,19 @@ namespace chess
         case PieceType::Rook:
         {
             bitboard &rooks = m_whitesMove ? m_white.rooks : m_black.rooks;
+
+            if (move.from == 7)
+                m_whiteCanCastleShort = false;
+
+            if (move.from == 0)
+                m_whiteCanCastleLong = false;
+
+            if (move.from == 63)
+                m_blackCanCastleShort = false;
+
+            if (move.from == 56)
+                m_blackCanCastleLong = false;
+
             makeNormalMove(move, rooks);
             break;
         }
@@ -102,8 +202,7 @@ namespace chess
         }
         case PieceType::King:
         {
-            bitboard &king = m_whitesMove ? m_white.king : m_black.king;
-            makeNormalMove(move, king);
+            makeKingMove(move);
             break;
         }
         default:

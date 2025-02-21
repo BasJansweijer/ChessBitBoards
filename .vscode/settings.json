@@ -82,6 +82,9 @@
     "stop_token": "cpp",
     "thread": "cpp",
     "future": "cpp",
-    "regex": "cpp"
+    "regex": "cpp",
+    "csignal": "cpp",
+    "unordered_set": "cpp",
+    "optional": "cpp"
   }
 }

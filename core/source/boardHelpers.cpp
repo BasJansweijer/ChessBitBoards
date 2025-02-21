@@ -35,4 +35,10 @@ namespace chess
                constants::getBishopMoves(s, allBlockers) & (attacker.bishops | attacker.queens) ||
                constants::getRookMoves(s, allBlockers) & (attacker.rooks | attacker.queens);
     }
+
+    bool BoardState::kingAttacked(bool white) const
+    {
+        square kingPos = bitBoards::firstSetBit(white ? m_white.king : m_black.king);
+        return squareAttacked(kingPos, !white);
+    }
 }

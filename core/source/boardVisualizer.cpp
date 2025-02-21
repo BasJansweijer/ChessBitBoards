@@ -210,6 +210,7 @@ void renderImgTest()
 }
 
 static int clickedFile, clickedRank;
+static square clicked;
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
@@ -340,10 +341,11 @@ namespace chess
                 loadPieces();
 
             piecesLoaded = true;
-            if (bitBoards::inBounds(clickedRank, clickedFile))
+            square newClickedSquare = clickedFile + clickedRank * 8;
+            if (bitBoards::inBounds(clickedRank, clickedFile) && newClickedSquare != clicked)
             {
                 highlights = 0;
-                square clicked = clickedFile + clickedRank * 8;
+                clicked = clickedFile + clickedRank * 8;
                 for (auto mv : board.legalMoves())
                 {
                     if (mv.from != clicked)
