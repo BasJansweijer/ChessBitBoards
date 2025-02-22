@@ -32,6 +32,22 @@ namespace chess
         Move(square from, square to, PieceType piece, bool takesPiece)
             : from(from), to(to),
               piece(piece), takesPiece(takesPiece) {}
+
+        std::string toUCI() const
+        {
+            // Allocate a string large enough to hold the 4 characters (e.g., "e2e4")
+            std::string uciMove(4, ' ');
+
+            // Calculate the rank and file for the 'from' square
+            uciMove[0] = from % 8 + 'a'; // File (a-h)
+            uciMove[1] = from / 8 + '1'; // Rank (1-8)
+
+            // Calculate the rank and file for the 'to' square
+            uciMove[2] = to % 8 + 'a'; // File (a-h)
+            uciMove[3] = to / 8 + '1'; // Rank (1-8)
+
+            return uciMove;
+        }
     };
 
     class BoardState
@@ -42,6 +58,9 @@ namespace chess
 
         // custom position
         BoardState(std::string_view fen);
+
+        // Retrieves the fen of the current position
+        std::string fen() const;
 
         /**
          * @brief returns pseudo legal moves from the current position
@@ -139,11 +158,14 @@ namespace chess
         void makeNormalMove(const Move &move, bitboard &effectedBitboard);
 
         // Piece specific move making helpers
-        void makePawnMove(const Move &move);
+        void makePawnMove(const Move &move, square prevEnpassentLocation);
         void makeKingMove(const Move &move); // Needed to also handle castling
         void makeCastlingMove(const Move &move);
 
         // Makes the implicit assumption that the 'opponent' is the player whose turn it is NOT.
         void takeOpponentPiece(square s);
+
+        // Helper which returns a char representing the piece (according to fen) int 0 if no piece is there
+        char pieceOnSquare(square s) const;
     };
 }

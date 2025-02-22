@@ -69,6 +69,7 @@ void exploreAll(chess::BoardState &b, int depth = 0)
 int main()
 {
     chess::BoardState b;
+    chess::showBoardGUI(b);
     exploreAll(b);
     std::cout << "explored: " << exploredPositions << std::endl;
     std::cout << "found checkmates: " << checkmates << std::endl;

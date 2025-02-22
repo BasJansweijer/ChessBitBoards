@@ -58,16 +58,15 @@ namespace chess
         }
     }
 
-    void BoardState::makePawnMove(const Move &move)
+    void BoardState::makePawnMove(const Move &move, square prevEnpassentLocation)
     {
         bitboard &pawns = m_whitesMove ? m_white.pawns : m_black.pawns;
         makeNormalMove(move, pawns);
 
         int moveDir = m_whitesMove ? 1 : -1;
 
-        if (m_enpassentSquare == move.to)
+        if (prevEnpassentLocation == move.to)
         {
-            std::cout << "CONTAINS ENPASSENT" << std::endl;
             square takenPawn = move.to + 8 * -moveDir;
             bitboard &oppPawns = m_whitesMove ? m_black.pawns : m_white.pawns;
             oppPawns ^= 1ULL << takenPawn;
@@ -84,7 +83,6 @@ namespace chess
     void BoardState::makeCastlingMove(const Move &move)
     {
         bool shortCastle = (move.to - move.from) == 2;
-        std::cout << "CONTAINS Casteling " << (shortCastle ? "Short" : "LONG") << std::endl;
         PieceSet &pieces = m_whitesMove ? m_white : m_black;
 
         if (shortCastle)
@@ -148,6 +146,7 @@ namespace chess
     void BoardState::makeMove(const Move &move)
     {
         // Remove the old enpassent location info
+        square prevEnpassentLoc = m_enpassentSquare;
         m_enpassentSquare = -1;
 
         bitboard &pawns = m_whitesMove ? m_white.pawns : m_black.pawns;
@@ -161,7 +160,7 @@ namespace chess
         switch (move.piece)
         {
         case PieceType::Pawn:
-            makePawnMove(move);
+            makePawnMove(move, prevEnpassentLoc);
             break;
         case PieceType::Knight:
         {

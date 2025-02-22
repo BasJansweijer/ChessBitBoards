@@ -245,6 +245,19 @@ namespace chess
 
     std::vector<Move> BoardState::legalMoves() const
     {
-        return pseudoLegalMoves();
+        std::vector<Move> legal;
+        for (auto &m : pseudoLegalMoves())
+        {
+            chess::BoardState bNew = *this;
+            bNew.makeMove(m);
+
+            // if king is under attack on opponents move thats illegal
+            if (bNew.kingAttacked(!bNew.whitesMove()))
+                continue;
+
+            legal.push_back(m);
+        }
+
+        return legal;
     }
 }

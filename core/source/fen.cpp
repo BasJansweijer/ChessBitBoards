@@ -1,0 +1,214 @@
+#include "chess.h"
+#include <iostream>
+
+namespace chess
+{
+    BoardState::BoardState(std::string_view fen)
+        : m_white({0, 0, 0, 0, 0, 0}), m_black({0, 0, 0, 0, 0, 0}),
+          m_enpassentSquare(-1), m_whitesMove(true),
+          m_whiteCanCastleLong(false), m_whiteCanCastleShort(false),
+          m_blackCanCastleLong(false), m_blackCanCastleShort(false)
+    {
+        int rank = 7;
+        int file = 0;
+        for (char c : fen)
+        {
+            if (c == ' ')
+                break;
+
+            if (c == '/')
+            {
+                // new rank
+                rank--;
+                file = 0;
+                continue;
+            }
+
+            switch (c)
+            {
+            case 'p':
+                chess::bitBoards::setBit(m_black.pawns, rank, file);
+                break;
+            case 'n':
+                chess::bitBoards::setBit(m_black.knights, rank, file);
+                break;
+            case 'b':
+                chess::bitBoards::setBit(m_black.bishops, rank, file);
+                break;
+            case 'r':
+                chess::bitBoards::setBit(m_black.rooks, rank, file);
+                break;
+            case 'q':
+                chess::bitBoards::setBit(m_black.queens, rank, file);
+                break;
+            case 'k':
+                chess::bitBoards::setBit(m_black.king, rank, file);
+                break;
+            case 'P':
+                chess::bitBoards::setBit(m_white.pawns, rank, file);
+                break;
+            case 'N':
+                chess::bitBoards::setBit(m_white.knights, rank, file);
+                break;
+            case 'B':
+                chess::bitBoards::setBit(m_white.bishops, rank, file);
+                break;
+            case 'R':
+                chess::bitBoards::setBit(m_white.rooks, rank, file);
+                break;
+            case 'Q':
+                chess::bitBoards::setBit(m_white.queens, rank, file);
+                break;
+            case 'K':
+                chess::bitBoards::setBit(m_white.king, rank, file);
+                break;
+            default:
+                break;
+            }
+            if (std::isdigit(c))
+            {
+                file += c - '0';
+            }
+            else
+            {
+                file++;
+            }
+        }
+
+        // parsing whose move it is
+        int spacePos = fen.find(' ');
+        if (spacePos == std::string::npos)
+            throw std::runtime_error("fen format incorrect");
+
+        char color = fen.at(spacePos + 1);
+        m_whitesMove = color == 'w';
+
+        // parsing who can castle
+        int curIdx = spacePos + 3;
+        while (fen.at(curIdx) != ' ')
+        {
+            switch (fen.at(curIdx))
+            {
+            case 'K':
+                m_whiteCanCastleShort = true;
+                break;
+            case 'Q':
+                m_whiteCanCastleLong = true;
+                break;
+            case 'k':
+                m_blackCanCastleShort = true;
+                break;
+            case 'q':
+                m_blackCanCastleLong = true;
+                break;
+            }
+            curIdx++;
+        }
+
+        // parse enpassant square
+        curIdx++;
+        if (fen.at(curIdx) != '-')
+        {
+            int file = fen.at(curIdx) - 'a';
+            int rank = fen.at(curIdx + 1) - '1';
+            m_enpassentSquare = rank * 8 + file;
+        }
+    }
+
+    char BoardState::pieceOnSquare(square s) const
+    {
+        bitboard location = 1ULL << s;
+
+        if (m_white.pawns & location)
+            return 'P';
+        else if (m_black.pawns & location)
+            return 'p';
+        else if (m_white.knights & location)
+            return 'N';
+        else if (m_black.knights & location)
+            return 'n';
+        else if (m_white.bishops & location)
+            return 'B';
+        else if (m_black.bishops & location)
+            return 'b';
+        else if (m_white.rooks & location)
+            return 'R';
+        else if (m_black.rooks & location)
+            return 'r';
+        else if (m_white.queens & location)
+            return 'Q';
+        else if (m_black.queens & location)
+            return 'q';
+        else if (m_white.king & location)
+            return 'K';
+        else if (m_black.king & location)
+            return 'k';
+
+        return 0;
+    }
+
+    std::string BoardState::fen() const
+    {
+        std::string fen = "";
+        int noPieceCount = 0;
+        for (int rank = 7; rank >= 0; rank--)
+        {
+            for (int file = 0; file < 8; file++)
+            {
+                char p = pieceOnSquare(rank * 8 + file);
+                if (p == 0)
+                {
+                    noPieceCount++;
+                    continue;
+                }
+
+                if (noPieceCount > 0)
+                {
+                    fen += (char)noPieceCount + '0';
+                    noPieceCount = 0;
+                }
+
+                fen += p;
+            }
+
+            if (noPieceCount > 0)
+            {
+                fen += (char)noPieceCount + '0';
+                noPieceCount = 0;
+            }
+            fen += '/';
+        }
+
+        fen += m_whitesMove ? " w " : " b ";
+
+        std::string castleRights = "";
+        if (m_whiteCanCastleShort)
+            castleRights += "K";
+        if (m_whiteCanCastleLong)
+            castleRights += "Q";
+        if (m_blackCanCastleShort)
+            castleRights += "k";
+        if (m_blackCanCastleLong)
+            castleRights += "q";
+
+        if (castleRights == "")
+            castleRights = "-";
+
+        fen += castleRights;
+
+        if (m_enpassentSquare != UINT8_MAX)
+        {
+            char rank = m_enpassentSquare / 8 + '1';
+            char file = m_enpassentSquare % 8 + 'a';
+            fen += ' ';
+            fen += file;
+            fen += rank;
+            fen += ' ';
+        }
+        else
+            fen += " - ";
+
+        return fen;
+    }
+
+}

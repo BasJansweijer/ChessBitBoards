@@ -85,6 +85,14 @@
     "regex": "cpp",
     "csignal": "cpp",
     "unordered_set": "cpp",
-    "optional": "cpp"
+    "optional": "cpp",
+    "list": "cpp",
+    "variant": "cpp",
+    "filesystem": "cpp",
+    "any": "cpp",
+    "complex": "cpp",
+    "coroutine": "cpp",
+    "source_location": "cpp",
+    "typeindex": "cpp"
   }
 }

@@ -5,6 +5,7 @@ add_library(core STATIC
     source/boardVisualizer.cpp
     source/boardHelpers.cpp
     source/initBoard.cpp
+    source/fen.cpp
 )
 
 target_include_directories(core PUBLIC
