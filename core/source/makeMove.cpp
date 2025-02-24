@@ -1,6 +1,5 @@
 #include "bitBoard.h"
 #include "chess.h"
-#include "boardVisualizer.h"
 #include <iostream>
 
 namespace chess
@@ -93,7 +92,7 @@ namespace chess
             square newRookPos = 5;
             if (!m_whitesMove)
             {
-                pieces.king << 7 * 8;
+                pieces.king <<= 7 * 8;
                 oldRookPos += 7 * 8;
                 newRookPos += 7 * 8;
             }
@@ -109,7 +108,7 @@ namespace chess
             square newRookPos = 3;
             if (!m_whitesMove)
             {
-                pieces.king << 7 * 8;
+                pieces.king <<= 7 * 8;
                 oldRookPos += 7 * 8;
                 newRookPos += 7 * 8;
             }
