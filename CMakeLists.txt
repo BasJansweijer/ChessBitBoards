@@ -36,7 +36,7 @@ set(STOCKFISH_BINARY ${CMAKE_BINARY_DIR}/stockfish)
 set(STOCKFISH_EXECUTABLE ${STOCKFISH_SRC_DIR}/stockfish)
 
 # Compile stockfish only if the binary does not exist or dependencies change
-add_custom_command(
+add_custom_command(   
     OUTPUT ${STOCKFISH_EXECUTABLE}
     COMMAND make -C ${STOCKFISH_SRC_DIR} -j 4 build
     COMMENT "Compiling stockfish"
