@@ -1,19 +1,20 @@
 #include "bitBoard.h"
 #include "chess.h"
-#include "boardVisualizer.h"
 #include "moveConstants.h"
-#include <iostream>
 #include <vector>
 
 namespace chess
 {
     inline void addPromotionMove(square from, square to, bool wasCapture, std::vector<chess::Move> &outMoves)
     {
-        std::cout << "CONTAINS PROMOTION" << std::endl;
         outMoves.emplace_back(from, to, PieceType::Knight, wasCapture);
+        outMoves.back().promotion = true;
         outMoves.emplace_back(from, to, PieceType::Bishop, wasCapture);
+        outMoves.back().promotion = true;
         outMoves.emplace_back(from, to, PieceType::Rook, wasCapture);
+        outMoves.back().promotion = true;
         outMoves.emplace_back(from, to, PieceType::Queen, wasCapture);
+        outMoves.back().promotion = true;
     }
 
     // Loops through all the set squares of the bitboard and calls the callback with each set square
@@ -76,6 +77,7 @@ namespace chess
                 }
                 case 5: // Promotions
                     addPromotionMove(pawnPos, inFront, false, outMoves);
+                    break;
                 default: // Normal single forward step
                     outMoves.emplace_back(pawnPos, inFront, PieceType::Pawn, false);
                     break;
@@ -84,13 +86,15 @@ namespace chess
 
             // Pawn capture moves
             int file = pawnPos % 8;
-            bitboard oppPieces = allPieces(!m_whitesMove) | 1ULL << m_enpassentSquare;
+            // m_enpassent square larger than 64 has undefined behaviour.
+            bitboard oppPieces = allPieces(!m_whitesMove) | ((m_enpassentSquare < 64) * 1ULL << m_enpassentSquare);
 
             if (file != 0)
             {
                 // Check for capture to file-1;
                 square leftTakes = pawnPos + (moveDir * 8) - 1;
-                if (oppPieces & 1ULL << leftTakes && ranksMoved != 5)
+                bool canCapture = oppPieces & 1ULL << leftTakes;
+                if (canCapture)
                 {
                     if (ranksMoved == 5)
                         addPromotionMove(pawnPos, leftTakes, true, outMoves);
@@ -178,22 +182,23 @@ namespace chess
     {
         // Check wether the spots between the rook and the king are empty
         bitboard emptySpotMask = shortCastle ? 0b01100000 : 0b00001110;
+        bitboard nonAttacked = shortCastle ? 0b01110000 : 0b0011100;
         const PieceSet &movingPieces = m_whitesMove ? m_white : m_black;
         if (!m_whitesMove)
         {
             emptySpotMask <<= 8 * 7;
+            nonAttacked <<= 8 * 7;
         }
 
-        if ((allPieces() & emptySpotMask))
+        if (allPieces() & emptySpotMask)
         {
-            // rook missing or pieces in the way
+            // pieces in the way
             return;
         }
 
         square kingPos = bitBoards::firstSetBit(movingPieces.king);
 
         // Check wether the squares inbetween (or the king square) is attacked.
-        bitboard nonAttacked = emptySpotMask | 1ULL << kingPos;
         while (nonAttacked)
         {
             square s = bitBoards::firstSetBit(nonAttacked);
@@ -204,6 +209,7 @@ namespace chess
         }
 
         square newKingPos = kingPos + (shortCastle ? 2 : -2);
+
         // We are allowed to castle.
         outMoves.emplace_back(kingPos, newKingPos, PieceType::King, false);
     }

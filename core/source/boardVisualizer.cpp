@@ -205,7 +205,6 @@ void renderImgTest()
     ImDrawList *drawList = ImGui::GetBackgroundDrawList();
     ImVec2 topLeft = getSquarePos(0, 0);
     ImVec2 bottomRight = {topLeft.x + s_squareSize, topLeft.y + s_squareSize};
-    std::cout << kingsTexture << std::endl;
     drawList->AddImage(kingsTexture, topLeft, bottomRight, {0.0f, 0.0f}, {1.0f, 1.0f});
 }
 
