@@ -4,7 +4,6 @@
 #include <string>
 #include <boost/process.hpp>
 #include <memory>
-#include <iostream>
 #include <map>
 
 namespace bp = boost::process;
@@ -50,6 +49,8 @@ namespace stockfish
 
         void sendCommand(const std::string &command)
         {
+            // ensure the engine is running
+            startEngine();
             m_outStream << command << std::endl;
         }
     };

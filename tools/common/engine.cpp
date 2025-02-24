@@ -12,14 +12,10 @@ namespace stockfish
 {
     perftResult Engine::perft(int depth)
     {
-        startEngine();
         sendCommand("go perft " + std::to_string(depth));
 
-        std::regex moveFormat("(\\w\\d\\w\\d): (\\d+)");
+        std::regex moveFormat("(\\w\\d\\w\\d\\w?): (\\d+)");
         std::smatch regexMatch;
-
-        bool movesStarted = false;
-        bool foundMoves = false;
 
         perftResult moves;
 
@@ -27,15 +23,9 @@ namespace stockfish
         while (getline(m_inStream, line))
         {
             if (std::regex_search(line, regexMatch, moveFormat))
-            {
-                movesStarted = true;
-                foundMoves = true;
                 moves.emplace(regexMatch[1], std::stoull(regexMatch[2]));
-            }
-            else
-                foundMoves = false;
 
-            if (movesStarted && !foundMoves)
+            if (line.starts_with("Nodes searched:"))
                 break;
         }
 

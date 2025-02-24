@@ -9,11 +9,14 @@ def extract_fens(pgn_text, fenList):
     pgn = io.StringIO(pgn_text)
     game = chess.pgn.read_game(pgn)
     board = game.board()
+
     
     for move in game.mainline_moves():
-        if random.random() < 0.05:
-            fenList.append(board.fen())
         board.push(move)
+
+        # add moves more regularly wen the ply is higher
+        if random.random() < 0.0005 * board.ply():
+            fenList.append(board.fen())
     
 if __name__ == "__main__":
     lichessDB = open("data/lichess_db_standard_rated_2013-01.pgn")

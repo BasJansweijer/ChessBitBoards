@@ -4,6 +4,8 @@
 #include "chess.h"
 #include "stockfish.h"
 #include "boardVisualizer.h"
+#include <thread>
+#include <chrono>
 
 #define GREEN "\033[32m"
 
@@ -99,14 +101,14 @@ MoveListDifference getDifference(stockfish::perftResult stockfishMoves, std::vec
 
 static stockfish::Engine engine;
 
-int findIncorrectMoveGen(chess::BoardState &b, int depth)
+bool testMoveGenCorrectness(chess::BoardState &b, int depth)
 {
     if (depth == 0)
     {
-        return 1;
+        return false;
     }
 
-    static bool foundDiscrepency = false;
+    bool foundDiscrepency = false;
 
     engine.setPosition(b.fen());
     stockfish::perftResult expectedRes = engine.perft(depth);
@@ -119,6 +121,7 @@ int findIncorrectMoveGen(chess::BoardState &b, int depth)
     auto diff = getDifference(expectedRes, legalMoves);
     if (!diff.noDiference())
     {
+        foundDiscrepency = true;
         diff.printDifference();
         chess::showBoardGUI(b);
     }
@@ -142,27 +145,75 @@ int findIncorrectMoveGen(chess::BoardState &b, int depth)
         std::cout << "expected: " << expectedRes[move.toUCI()] << " got: " << countAfterMove << std::endl;
         chess::showBoardGUI(bNew);
 
-        findIncorrectMoveGen(bNew, depth - 1);
+        testMoveGenCorrectness(bNew, depth - 1);
     }
 
-    if (!foundDiscrepency)
-        std::cout << GREEN << "No incorrect move generation found!" << std::endl;
+    return !foundDiscrepency;
+}
 
-    return leafNodes;
+void showTestFens()
+{
+    std::ifstream fens_file("testing/fens.txt");
+
+    std::string fen;
+    while (getline(fens_file, fen))
+    {
+        chess::BoardState b(fen);
+        chess::showBoardGUI(b);
+    }
+}
+
+void updateProgress(int progress)
+{
+    int numChars = 4;
+    for (int i = 0; i < numChars; i++)
+        std::cout << '\b';
+
+    std::string text = std::to_string(progress);
+    text += '%';
+    while (text.size() < numChars)
+        text += ' ';
+    std::cout << text;
+    std::cout.flush();
+}
+
+int numTestFens()
+{
+    std::ifstream fens_file("testing/fens.txt");
+
+    return std::count(std::istreambuf_iterator<char>(fens_file),
+                      std::istreambuf_iterator<char>(), '\n');
+}
+
+void testTestFens(int testDepth)
+{
+
+    int numFens = numTestFens();
+
+    std::ifstream fens_file("testing/fens.txt");
+    std::cout << "Starting movegeneration test on " << numFens << " positions " << std::endl;
+    int progress = 0.0;
+    int fensTested = 0;
+
+    std::string fen;
+    while (getline(fens_file, fen))
+    {
+        chess::BoardState b(fen);
+        bool correct = testMoveGenCorrectness(b, testDepth);
+        if (!correct)
+        {
+            std::cout << "failed on fen:\n"
+                      << fen << std::endl;
+            break;
+        }
+
+        fensTested++;
+        progress = 100 * fensTested / numFens;
+        updateProgress(progress);
+    }
 }
 
 int main()
 {
-    int searchDepth = 7;
-
-    std::string start = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    // chess::BoardState b("rnbqkb1r/pppppp1p/7n/6pP/8/8/PPPPPPP1/RNBQKBNR/ w KQkq g6");
-
-    chess::BoardState b;
-    // findIncorrectMoveGen(b, searchDepth);
-
-    // https://en.wikipedia.org/wiki/Shannon_number
-    uint64_t leafNodes = countLeafNodes(b, searchDepth);
-
-    std::cout << "Our leafNode count: " << leafNodes << std::endl;
+    testTestFens(4);
 }
