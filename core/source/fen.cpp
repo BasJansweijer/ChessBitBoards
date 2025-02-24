@@ -151,8 +151,14 @@ namespace chess
     {
         std::string fen = "";
         int noPieceCount = 0;
+        bool first = true;
         for (int rank = 7; rank >= 0; rank--)
         {
+            if (!first)
+                fen += '/';
+
+            first = false;
+
             for (int file = 0; file < 8; file++)
             {
                 char p = pieceOnSquare(rank * 8 + file);
@@ -176,7 +182,6 @@ namespace chess
                 fen += (char)noPieceCount + '0';
                 noPieceCount = 0;
             }
-            fen += '/';
         }
 
         fen += m_whitesMove ? " w " : " b ";
