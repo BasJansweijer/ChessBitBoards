@@ -28,10 +28,11 @@ namespace chess
 
         // stores what piece was taken
         bool takesPiece;
+        bool promotion;
 
         Move(square from, square to, PieceType piece, bool takesPiece)
             : from(from), to(to),
-              piece(piece), takesPiece(takesPiece) {}
+              piece(piece), takesPiece(takesPiece), promotion(false) {}
 
         std::string toUCI() const
         {
@@ -45,6 +46,25 @@ namespace chess
             // Calculate the rank and file for the 'to' square
             uciMove[2] = to % 8 + 'a'; // File (a-h)
             uciMove[3] = to / 8 + '1'; // Rank (1-8)
+
+            if (promotion)
+            {
+                switch (piece)
+                {
+                case PieceType::Knight:
+                    uciMove += 'n';
+                    break;
+                case PieceType::Bishop:
+                    uciMove += 'b';
+                    break;
+                case PieceType::Rook:
+                    uciMove += 'r';
+                    break;
+                case PieceType::Queen:
+                    uciMove += 'q';
+                    break;
+                }
+            }
 
             return uciMove;
         }
