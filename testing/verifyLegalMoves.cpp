@@ -185,7 +185,7 @@ int numTestFens()
                       std::istreambuf_iterator<char>(), '\n');
 }
 
-void testTestFens(int testDepth)
+void checkTestFens(int testDepth)
 {
 
     int numFens = numTestFens();
@@ -215,5 +215,5 @@ void testTestFens(int testDepth)
 
 int main()
 {
-    testTestFens(4);
+    checkTestFens(4);
 }
