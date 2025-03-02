@@ -5,7 +5,8 @@ stockfishNPS = 190_717_779
 pythonChessNPS = 91_843
 ourPerformance = [
     ("Starting point", 5_980_028),
-    ("replace std::vector with MoveList", 12_245_777)
+    ("replace std::vector with MoveList", 12_245_777),
+    ("memoize allPieces", 12_618_242)
 ]
 labels, values = zip(*ourPerformance)
 

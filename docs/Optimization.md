@@ -39,3 +39,8 @@ The first version of the move generation achieves 5,980,028 nps (Nodes per Secon
 
 In the move generation the move structs were added to a vector that was returned. From the profiling we observed ~50% of the execution time was spend on the `emplace_back` calls to create the move structs on the heap in the vector.
 Using `reserve(30)` improved the performance significantly, but by completely replacing the vector with a MoveList which uses a preallocated array my code achieved an nps of 12,245,777.
+
+### Memoization of allPieces
+
+From the profiling we observed that or'ing together the pieces in the black and white piece sets took >10% of the execution time. Since the bitboards only update when a move is made we decided to memoize the bitboard of all white pieces and of all black pieces in the respective PieceSet instances and update them in when a move is made. 
+This increased performance to 12,618,242 nps. (In the profiling the allPieces now only uses ~6% of the execution time)
