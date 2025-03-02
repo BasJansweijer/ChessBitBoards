@@ -4,15 +4,7 @@
 
 namespace chess
 {
-    bitboard BoardState::allPieces(bool white) const
-    {
-        return white ? m_white.allPieces : m_black.allPieces;
-    }
-
-    bitboard BoardState::allPieces() const
-    {
-        return m_white.allPieces | m_black.allPieces;
-    }
+    
 
     bool BoardState::squareAttacked(square s, bool byWhite) const
     {

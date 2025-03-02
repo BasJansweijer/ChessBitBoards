@@ -210,8 +210,9 @@ namespace chess
         // helper which adds all moves positions specified in a bitboard
         inline void addMoves(bitboard moves, square curPos, PieceType piece, MoveList &outMoves) const;
 
-        bitboard allPieces(bool white) const;
-        bitboard allPieces() const;
+        inline bitboard BoardState::allPieces(bool white) const { return white ? m_white.allPieces : m_black.allPieces; }
+
+        inline bitboard BoardState::allPieces() const { return m_white.allPieces | m_black.allPieces; }
 
         // default move making implementation
         void makeNormalMove(const Move &move, bitboard &effectedBitboard);
