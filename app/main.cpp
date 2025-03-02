@@ -27,7 +27,7 @@ void randomMoves(chess::BoardState &b)
     while (i < 100)
     {
         chess::showBoardGUI(b);
-        std::vector<chess::Move> possibleMoves = b.legalMoves();
+        chess::MoveList possibleMoves = b.legalMoves();
         b.makeMove(possibleMoves[dist(gen) % possibleMoves.size()]);
         i++;
     }

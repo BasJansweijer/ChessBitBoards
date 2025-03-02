@@ -19,6 +19,7 @@ namespace chess
         m_white.rooks = 0b10000001;
         m_white.king = 0b00010000;
         m_white.queens = 0b00001000;
+        m_white.updateAllPieces();
 
         m_black.pawns = m_white.pawns << 8 * 5;
         m_black.knights = m_white.knights << 8 * 7;
@@ -26,6 +27,7 @@ namespace chess
         m_black.rooks = m_white.rooks << 8 * 7;
         m_black.queens = m_white.queens << 8 * 7;
         m_black.king = m_white.king << 8 * 7;
+        m_black.updateAllPieces();
 
         m_enpassentSquare = -1;
         m_whiteCanCastleLong = true;

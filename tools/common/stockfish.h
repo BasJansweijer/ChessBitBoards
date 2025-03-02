@@ -5,6 +5,7 @@
 #include <boost/process.hpp>
 #include <memory>
 #include <map>
+#include <chrono>
 
 namespace bp = boost::process;
 
@@ -12,7 +13,6 @@ namespace stockfish
 {
 
     using perftResult = std::unordered_map<std::string, uint64_t>;
-    const std::string outputFile = "engineOutput.txt";
     class Engine
     {
     public:
@@ -39,7 +39,11 @@ namespace stockfish
             sendCommand("position fen " + fen);
         }
 
+        // Returns a map which for each legal moves gives the leaf nodes at the depth.
         perftResult perft(int depth);
+
+        // Returns the nps (nodes per second)
+        int benchMoveGen(int depth, std::string fenFile);
 
     private:
         bool m_started = false;

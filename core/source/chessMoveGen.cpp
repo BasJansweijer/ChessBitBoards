@@ -5,7 +5,7 @@
 
 namespace chess
 {
-    inline void addPromotionMove(square from, square to, bool wasCapture, std::vector<chess::Move> &outMoves)
+    inline void addPromotionMove(square from, square to, bool wasCapture, MoveList &outMoves)
     {
         outMoves.emplace_back(from, to, PieceType::Knight, wasCapture);
         outMoves.back().promotion = true;
@@ -28,7 +28,7 @@ namespace chess
         }
     }
 
-    inline void BoardState::addMoves(bitboard moves, square curPos, PieceType piece, std::vector<Move> &outMoves) const
+    inline void BoardState::addMoves(bitboard moves, square curPos, PieceType piece, MoveList &outMoves) const
     {
         forEachSquare(moves, [&](square moveTo)
                       {
@@ -36,7 +36,7 @@ namespace chess
             outMoves.emplace_back(curPos, moveTo, piece, tookPiece); });
     }
 
-    void BoardState::genKnightMoves(std::vector<Move> &outMoves) const
+    void BoardState::genKnightMoves(MoveList &outMoves) const
     {
         bitboard knights = m_whitesMove ? m_white.knights : m_black.knights;
         forEachSquare(knights, [&](square knightPos)
@@ -47,7 +47,7 @@ namespace chess
             addMoves(moves, knightPos, PieceType::Knight, outMoves); });
     }
 
-    void BoardState::genPawnMoves(std::vector<Move> &outMoves) const
+    void BoardState::genPawnMoves(MoveList &outMoves) const
     {
         uint8_t moveDir = m_whitesMove ? 1 : -1;
         bitboard pawns = m_whitesMove ? m_white.pawns : m_black.pawns;
@@ -118,7 +118,7 @@ namespace chess
             } });
     }
 
-    void BoardState::genKingMoves(std::vector<Move> &outMoves) const
+    void BoardState::genKingMoves(MoveList &outMoves) const
     {
         bitboard kingBB = m_whitesMove ? m_white.king : m_black.king;
         square kingPos = bitBoards::firstSetBit(kingBB);
@@ -129,7 +129,7 @@ namespace chess
         addMoves(moves, kingPos, PieceType::King, outMoves);
     }
 
-    void BoardState::genBishopMoves(std::vector<Move> &outMoves) const
+    void BoardState::genBishopMoves(MoveList &outMoves) const
     {
         bitboard bishops = m_whitesMove ? m_white.bishops : m_black.bishops;
         forEachSquare(bishops, [&](square bishopPos)
@@ -142,7 +142,7 @@ namespace chess
             addMoves(moves, bishopPos, PieceType::Bishop, outMoves); });
     }
 
-    void BoardState::genRookMoves(std::vector<Move> &outMoves) const
+    void BoardState::genRookMoves(MoveList &outMoves) const
     {
         bitboard rooks = m_whitesMove ? m_white.rooks : m_black.rooks;
         forEachSquare(rooks, [&](square rookPos)
@@ -155,7 +155,7 @@ namespace chess
             addMoves(moves, rookPos, PieceType::Rook, outMoves); });
     }
 
-    void BoardState::genQueenMoves(std::vector<Move> &outMoves) const
+    void BoardState::genQueenMoves(MoveList &outMoves) const
     {
         bitboard queens = m_whitesMove ? m_white.queens : m_black.queens;
         forEachSquare(queens, [&](square queenPos)
@@ -178,7 +178,7 @@ namespace chess
             addMoves(moves, queenPos, PieceType::Queen, outMoves); });
     }
 
-    void BoardState::tryCastle(std::vector<Move> &outMoves, bool shortCastle) const
+    void BoardState::tryCastle(MoveList &outMoves, bool shortCastle) const
     {
         // Check wether the spots between the rook and the king are empty
         bitboard emptySpotMask = shortCastle ? 0b01100000 : 0b00001110;
@@ -214,7 +214,7 @@ namespace chess
         outMoves.emplace_back(kingPos, newKingPos, PieceType::King, false);
     }
 
-    void BoardState::genCastlingMoves(std::vector<Move> &outMoves) const
+    void BoardState::genCastlingMoves(MoveList &outMoves) const
     {
         if (m_whitesMove)
         {
@@ -234,9 +234,9 @@ namespace chess
         }
     }
 
-    std::vector<Move> BoardState::pseudoLegalMoves() const
+    MoveList BoardState::pseudoLegalMoves() const
     {
-        std::vector<Move> moves;
+        MoveList moves;
 
         genPawnMoves(moves);
         genKnightMoves(moves);
@@ -249,9 +249,9 @@ namespace chess
         return moves;
     }
 
-    std::vector<Move> BoardState::legalMoves() const
+    MoveList BoardState::legalMoves() const
     {
-        std::vector<Move> legal;
+        MoveList legal;
         for (auto &m : pseudoLegalMoves())
         {
             chess::BoardState bNew = *this;

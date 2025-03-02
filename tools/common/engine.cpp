@@ -31,4 +31,28 @@ namespace stockfish
 
         return moves;
     }
+
+    int Engine::benchMoveGen(int depth, std::string fensFile)
+    {
+        sendCommand("bench 16 1 " + std::to_string(depth) + ' ' + fensFile + " perft");
+        std::string line;
+
+        std::regex nodesPerSecFormat("Nodes/second    : (\\d+)");
+        std::smatch regexMatch;
+
+        int res = -1;
+
+        while (getline(m_inStream, line))
+        {
+            std::cout << "LINE" << line << std::endl;
+            if (std::regex_search(line, regexMatch, nodesPerSecFormat))
+            {
+                std::cout << "MATCH" << std::endl;
+                res = std::stoi(regexMatch[1]);
+                break;
+            }
+        }
+
+        return res;
+    }
 }

@@ -5,21 +5,6 @@
 #include <bitset>
 #include <chrono>
 
-class Timer
-{
-public:
-    Timer() : start_time(std::chrono::high_resolution_clock::now()) {}
-
-    ~Timer()
-    {
-        auto end_time = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = end_time - start_time;
-        std::cout << "Elapsed time: " << elapsed.count() << " seconds\n";
-    }
-
-private:
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
-};
 
 int myBitScan(bitboard bb)
 {

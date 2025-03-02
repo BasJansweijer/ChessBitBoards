@@ -2,7 +2,7 @@
 
 #include "bitBoard.h"
 #include <string>
-#include <vector>
+#include <array>
 
 namespace chess
 {
@@ -29,6 +29,8 @@ namespace chess
         // stores what piece was taken
         bool takesPiece;
         bool promotion;
+
+        Move() = default;
 
         Move(square from, square to, PieceType piece, bool takesPiece)
             : from(from), to(to),
@@ -70,6 +72,40 @@ namespace chess
         }
     };
 
+    // We assume no possition has more possible moves than this.
+    constexpr int MAX_MOVES = 256;
+
+    class MoveList
+    {
+    public:
+        uint8_t numMoves = 0;
+
+        MoveList() = default;
+
+        int size() { return numMoves; }
+        const Move *end() const { return &moves[numMoves]; }
+        const Move *begin() const { return moves.begin(); }
+
+        Move &operator[](int index) { return moves[index]; }
+
+        void emplace_back(square from, square to, PieceType piece, bool takesPiece)
+        {
+            new (&moves[numMoves]) Move(from, to, piece, takesPiece);
+            ++numMoves;
+        }
+
+        Move &back() { return moves[numMoves - 1]; }
+
+        void push_back(const Move &m)
+        {
+            moves[numMoves] = m;
+            numMoves++;
+        }
+
+    private:
+        std::array<Move, MAX_MOVES> moves;
+    };
+
     class BoardState
     {
     public:
@@ -89,7 +125,7 @@ namespace chess
          *
          * @return the moves
          */
-        std::vector<Move> pseudoLegalMoves() const;
+        MoveList pseudoLegalMoves() const;
 
         /**
          * @brief returns the legal moves in the position
@@ -98,7 +134,7 @@ namespace chess
          *
          * @return the moves
          */
-        std::vector<Move> legalMoves() const;
+        MoveList legalMoves() const;
 
         void makeMove(const Move &move);
 
@@ -133,9 +169,12 @@ namespace chess
         {
             bitboard pawns, knights, bishops, rooks, queens, king;
 
-            inline bitboard allPieces() const
+            // This bitboard is not up to date unless updateAllPieces is called
+            bitboard allPieces;
+
+            void updateAllPieces()
             {
-                return pawns | knights | bishops | rooks | queens | king;
+                allPieces = pawns | knights | bishops | rooks | queens | king;
             }
         };
 
@@ -157,19 +196,19 @@ namespace chess
 
     private:
         // Piece specific move generation helpers
-        void genPawnMoves(std::vector<Move> &outMoves) const;
-        void genKnightMoves(std::vector<Move> &outMoves) const;
-        void genBishopMoves(std::vector<Move> &outMoves) const;
-        void genRookMoves(std::vector<Move> &outMoves) const;
-        void genQueenMoves(std::vector<Move> &outMoves) const;
-        void genKingMoves(std::vector<Move> &outMoves) const;
+        void genPawnMoves(MoveList &outMoves) const;
+        void genKnightMoves(MoveList &outMoves) const;
+        void genBishopMoves(MoveList &outMoves) const;
+        void genRookMoves(MoveList &outMoves) const;
+        void genQueenMoves(MoveList &outMoves) const;
+        void genKingMoves(MoveList &outMoves) const;
 
         // helpers to generate the castling moves
-        void genCastlingMoves(std::vector<Move> &outMoves) const;
-        void tryCastle(std::vector<Move> &outMoves, bool shortCastle) const;
+        void genCastlingMoves(MoveList &outMoves) const;
+        void tryCastle(MoveList &outMoves, bool shortCastle) const;
 
         // helper which adds all moves positions specified in a bitboard
-        inline void addMoves(bitboard moves, square curPos, PieceType piece, std::vector<Move> &outMoves) const;
+        inline void addMoves(bitboard moves, square curPos, PieceType piece, MoveList &outMoves) const;
 
         bitboard allPieces(bool white) const;
         bitboard allPieces() const;

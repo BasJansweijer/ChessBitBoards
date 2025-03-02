@@ -93,6 +93,10 @@
     "complex": "cpp",
     "coroutine": "cpp",
     "source_location": "cpp",
-    "typeindex": "cpp"
+    "typeindex": "cpp",
+    "charconv": "cpp",
+    "span": "cpp",
+    "format": "cpp",
+    "*.ipp": "cpp"
   }
 }

@@ -208,6 +208,10 @@ namespace chess
             break;
         }
 
+        // Update the all pieces bitboards for black and white
+        m_white.updateAllPieces();
+        m_black.updateAllPieces();
+
         // Give the turn to the other player
         m_whitesMove = !m_whitesMove;
     }

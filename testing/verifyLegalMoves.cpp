@@ -57,13 +57,13 @@ struct MoveListDifference
     }
 };
 
-MoveListDifference getDifference(stockfish::perftResult stockfishMoves, std::vector<chess::Move> moves)
+MoveListDifference getDifference(stockfish::perftResult stockfishMoves, chess::MoveList moves)
 {
     MoveListDifference result;
     for (auto &[uciMove, i] : stockfishMoves)
     {
         bool moveFound = false;
-        for (chess::Move &m : moves)
+        for (const chess::Move &m : moves)
         {
             if (m.toUCI() == uciMove)
             {
@@ -78,7 +78,7 @@ MoveListDifference getDifference(stockfish::perftResult stockfishMoves, std::vec
         }
     }
 
-    for (chess::Move &m : moves)
+    for (const chess::Move &m : moves)
     {
         bool moveFound = false;
         for (auto &[uciMove, i] : stockfishMoves)
@@ -115,7 +115,7 @@ bool testMoveGenCorrectness(chess::BoardState &b, int depth)
 
     uint64_t leafNodes = 0;
 
-    std::vector<chess::Move> legalMoves = b.legalMoves();
+    chess::MoveList legalMoves = b.legalMoves();
 
     // We encountered a move with an incorrect count after it.
     auto diff = getDifference(expectedRes, legalMoves);
@@ -177,26 +177,26 @@ void updateProgress(int progress)
     std::cout.flush();
 }
 
-int numTestFens()
+int numTestFens(std::string fensPath)
 {
-    std::ifstream fens_file("testing/fens.txt");
+    std::ifstream fensFile(fensPath);
 
-    return std::count(std::istreambuf_iterator<char>(fens_file),
+    return std::count(std::istreambuf_iterator<char>(fensFile),
                       std::istreambuf_iterator<char>(), '\n');
 }
 
-void checkTestFens(int testDepth)
+void checkTestFens(int testDepth, std::string fensPath)
 {
 
-    int numFens = numTestFens();
+    int numFens = numTestFens(fensPath);
 
-    std::ifstream fens_file("testing/fens.txt");
+    std::ifstream fensFile(fensPath);
     std::cout << "Starting movegeneration test on " << numFens << " positions " << std::endl;
     int progress = 0.0;
     int fensTested = 0;
 
     std::string fen;
-    while (getline(fens_file, fen))
+    while (getline(fensFile, fen))
     {
         chess::BoardState b(fen);
         bool correct = testMoveGenCorrectness(b, testDepth);
@@ -213,7 +213,22 @@ void checkTestFens(int testDepth)
     }
 }
 
-int main()
+int main(int argc, char *argv[])
 {
-    checkTestFens(4);
+    // The quick mode is usefull for faster itteration when experimenting with optimizations
+    bool quickMode = false;
+
+    // Loop through command-line arguments
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string arg = argv[i];
+
+        if (arg == "--quick")
+        {
+            quickMode = true;
+        }
+    }
+
+    std::string fensFile = quickMode ? "testing/fens10.txt" : "testing/fens10000.txt";
+    checkTestFens(4, fensFile);
 }
