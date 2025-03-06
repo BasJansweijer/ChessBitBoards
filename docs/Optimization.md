@@ -42,5 +42,11 @@ Using `reserve(30)` improved the performance significantly, but by completely re
 
 ### Memoization of allPieces
 
-From the profiling we observed that or'ing together the pieces in the black and white piece sets took >10% of the execution time. Since the bitboards only update when a move is made we decided to memoize the bitboard of all white pieces and of all black pieces in the respective PieceSet instances and update them in when a move is made. 
+From the profiling we observed that or'ing together the pieces in the black and white piece sets took >10% of the execution time. Since the bitboards only update when a move is made we decided to memoize the bitboard of all white pieces and of all black pieces in the respective PieceSet instances and update them in when a move is made.
 This increased performance to 12,618,242 nps. (In the profiling the allPieces now only uses ~6% of the execution time)
+
+### replace std::array with c style array in MoveList
+
+Achieved a slight increase to 12,981,934 nps.
+
+### Use template specialization to prevent checking whose move it is.

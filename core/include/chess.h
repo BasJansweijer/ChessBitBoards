@@ -2,7 +2,6 @@
 
 #include "bitBoard.h"
 #include <string>
-#include <array>
 
 namespace chess
 {
@@ -84,7 +83,7 @@ namespace chess
 
         int size() { return numMoves; }
         const Move *end() const { return &moves[numMoves]; }
-        const Move *begin() const { return moves.begin(); }
+        const Move *begin() const { return moves; }
 
         Move &operator[](int index) { return moves[index]; }
 
@@ -103,7 +102,7 @@ namespace chess
         }
 
     private:
-        std::array<Move, MAX_MOVES> moves;
+        Move moves[MAX_MOVES];
     };
 
     class BoardState
