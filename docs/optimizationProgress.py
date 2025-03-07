@@ -8,7 +8,8 @@ ourPerformance = [
     ("replace std::vector with MoveList", 12_245_777),
     ("memoize allPieces", 12_618_242),
     ("c style array in MoveList", 12_981_934),
-    ("Remove bitboards for kings", 13_466_706)
+    ("Remove bitboards for kings", 13_466_706),
+    ("Remove dynamic promotion check", 13_558_534)
 ]
 labels, values = zip(*ourPerformance)
 
@@ -22,8 +23,10 @@ plt.axhline(y=pythonChessNPS, color='green', linestyle='--', label='python-chess
 # Labels and title
 plt.ylabel("Nodes Per Second (NPS)")
 plt.title("Performance Comparison")
+plt.xticks(rotation=30, ha='right')  # Rotate labels
 plt.legend()
 plt.grid(axis='y', linestyle='--', alpha=0.7)
 
+plt.tight_layout()
 # Show plot
 plt.savefig("performanceProgress.png")

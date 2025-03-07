@@ -51,3 +51,7 @@ Achieved a slight increase to 12,981,934 nps.
 ### Store king square instead of bitboard
 Since each side can never have more than one king, we can store kings as a single square instead of as a bitboard. This prevents us from having to find what bit of the bitboard is set to get the kings position. This change lead to an increase in performance to
 13,466,706 nps.
+
+### Use promotion flag instead of dynamically checking for promotion
+In the makeMove function we were checking wether a promotion occured. This was unnecesary since the move already contains a flag for promotion and took up roughly 1% of execution time.
+New performance is 13,558,534.
