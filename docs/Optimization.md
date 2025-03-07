@@ -64,5 +64,3 @@ New performance is 13,688,515.
 Removing the bit from the previous position in `makeNormalMove` was previously done using an and with the negation of the location of the piece. Now we use the fact that the bit should be on to do the placement and removal of the piece in one XOR.
 These seperate opperations were previously 3.44% of execution and are now 2.64%.
 New performance is 13,822,188 nps.
-
-

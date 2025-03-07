@@ -76,12 +76,4 @@ namespace chess::bitBoards
         const uint64_t debruijn64 = 0x03f79d71b4cb0a89;
         return debruijnBitScanTable[((bb & -bb) * debruijn64) >> 58];
     }
-
-    inline square popFirstBit(bitboard &bb)
-    {
-        const square bit = firstSetBit(bb);
-        bb &= bb - 1;
-        return bit;
-    }
-
 }

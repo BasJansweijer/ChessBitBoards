@@ -22,7 +22,8 @@ namespace chess
     {
         while (bb)
         {
-            square pos = chess::bitBoards::popFirstBit(bb);
+            square pos = chess::bitBoards::firstSetBit(bb);
+            bb &= bb - 1;
             callback(pos);
         }
     }
@@ -189,7 +190,10 @@ namespace chess
         // Check wether the squares inbetween (or the king square) is attacked.
         while (nonAttacked)
         {
-            square s = bitBoards::popFirstBit(nonAttacked);
+            square s = bitBoards::firstSetBit(nonAttacked);
+            // remove the bit
+            nonAttacked &= nonAttacked - 1;
+
             if (m_whitesMove ? squareAttacked<false>(s) : squareAttacked<true>(s))
                 return;
         }
