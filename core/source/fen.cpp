@@ -142,9 +142,9 @@ namespace chess
             return 'Q';
         else if (m_black.queens & location)
             return 'q';
-        else if (m_white.king == location)
+        else if (m_white.king == s)
             return 'K';
-        else if (m_black.king == location)
+        else if (m_black.king == s)
             return 'k';
 
         return 0;
