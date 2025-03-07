@@ -150,11 +150,11 @@ namespace chess
         square prevEnpassentLoc = m_enpassentSquare;
         m_enpassentSquare = -1;
 
-        bitboard &pawns = m_whitesMove ? m_white.pawns : m_black.pawns;
-        if (pawns & 1ULL << move.from && move.piece != PieceType::Pawn)
+        if (move.promotion)
         {
             // This is a promotion so we also need to remove the original pawn
             // appart from this we handle it as if it is a normal move by the promoted piece.
+            bitboard &pawns = m_whitesMove ? m_white.pawns : m_black.pawns;
             pawns ^= 1ULL << move.from;
         }
 
