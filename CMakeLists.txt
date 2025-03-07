@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(ChessBitboards)
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")  # Debug: No optimization, full debug symbols
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")  # Release: Full optimizations, no debug
