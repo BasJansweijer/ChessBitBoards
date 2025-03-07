@@ -22,9 +22,8 @@ namespace chess
     {
         while (bb)
         {
-            square pos = chess::bitBoards::firstSetBit(bb);
+            square pos = chess::bitBoards::popFirstBit(bb);
             callback(pos);
-            bb ^= 1ULL << pos;
         }
     }
 
@@ -190,9 +189,7 @@ namespace chess
         // Check wether the squares inbetween (or the king square) is attacked.
         while (nonAttacked)
         {
-            square s = bitBoards::firstSetBit(nonAttacked);
-            nonAttacked ^= 1ULL << s;
-
+            square s = bitBoards::popFirstBit(nonAttacked);
             if (m_whitesMove ? squareAttacked<false>(s) : squareAttacked<true>(s))
                 return;
         }

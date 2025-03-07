@@ -1,7 +1,6 @@
 add_library(core STATIC
     source/chessMoveGen.cpp
     source/makeMove.cpp
-    source/bitBoardHelpers.cpp
     source/boardVisualizer.cpp
     source/boardHelpers.cpp
     source/initBoard.cpp
