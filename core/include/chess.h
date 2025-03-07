@@ -158,10 +158,11 @@ namespace chess
         bool CanBlackCastleLong() const { return m_blackCanCastleLong; }
 
         // Returns wether white/black has a piece attacking square s.
-        bool squareAttacked(square s, bool byWhite) const;
+        template <bool ByWhite>
+        bool squareAttacked(square s) const;
         bool kingAttacked(bool white) const;
 
-        bool whitesMove() const { return m_whitesMove; }
+        inline bool whitesMove() const { return m_whitesMove; }
 
         // We need 12 bit boards (6 for each color)
         struct PieceSet
@@ -173,7 +174,7 @@ namespace chess
             // This bitboard is not up to date unless updateAllPieces is called
             bitboard allPieces;
 
-            void updateAllPieces()
+            inline void updateAllPieces()
             {
                 allPieces = pawns | knights | bishops | rooks | queens | 1ULL << king;
             }

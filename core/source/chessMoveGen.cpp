@@ -193,7 +193,7 @@ namespace chess
             square s = bitBoards::firstSetBit(nonAttacked);
             nonAttacked ^= 1ULL << s;
 
-            if (squareAttacked(s, !m_whitesMove))
+            if (m_whitesMove ? squareAttacked<false>(s) : squareAttacked<true>(s))
                 return;
         }
 
