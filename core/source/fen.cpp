@@ -42,7 +42,7 @@ namespace chess
                 chess::bitBoards::setBit(m_black.queens, rank, file);
                 break;
             case 'k':
-                chess::bitBoards::setBit(m_black.king, rank, file);
+                m_black.king = rank * 8 + file;
                 break;
             case 'P':
                 chess::bitBoards::setBit(m_white.pawns, rank, file);
@@ -60,7 +60,7 @@ namespace chess
                 chess::bitBoards::setBit(m_white.queens, rank, file);
                 break;
             case 'K':
-                chess::bitBoards::setBit(m_white.king, rank, file);
+                m_white.king = rank * 8 + file;
                 break;
             default:
                 break;
@@ -142,9 +142,9 @@ namespace chess
             return 'Q';
         else if (m_black.queens & location)
             return 'q';
-        else if (m_white.king & location)
+        else if (m_white.king == location)
             return 'K';
-        else if (m_black.king & location)
+        else if (m_black.king == location)
             return 'k';
 
         return 0;

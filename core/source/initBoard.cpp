@@ -17,7 +17,7 @@ namespace chess
         m_white.knights = 0b01000010;
         m_white.bishops = 0b00100100;
         m_white.rooks = 0b10000001;
-        m_white.king = 0b00010000;
+        m_white.king = 4;
         m_white.queens = 0b00001000;
         m_white.updateAllPieces();
 
@@ -26,7 +26,7 @@ namespace chess
         m_black.bishops = m_white.bishops << 8 * 7;
         m_black.rooks = m_white.rooks << 8 * 7;
         m_black.queens = m_white.queens << 8 * 7;
-        m_black.king = m_white.king << 8 * 7;
+        m_black.king = 4 + 8 * 7;
         m_black.updateAllPieces();
 
         m_enpassentSquare = -1;

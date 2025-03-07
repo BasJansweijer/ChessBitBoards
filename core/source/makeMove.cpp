@@ -86,13 +86,13 @@ namespace chess
 
         if (shortCastle)
         {
-            pieces.king = 0b01000000;
+            pieces.king = 6;
 
             square oldRookPos = 7;
             square newRookPos = 5;
             if (!m_whitesMove)
             {
-                pieces.king <<= 7 * 8;
+                pieces.king += 7 * 8;
                 oldRookPos += 7 * 8;
                 newRookPos += 7 * 8;
             }
@@ -102,13 +102,13 @@ namespace chess
         }
         else
         {
-            pieces.king = 0b00000100;
+            pieces.king = 2;
 
             square oldRookPos = 0;
             square newRookPos = 3;
             if (!m_whitesMove)
             {
-                pieces.king <<= 7 * 8;
+                pieces.king += 7 * 8;
                 oldRookPos += 7 * 8;
                 newRookPos += 7 * 8;
             }
@@ -138,8 +138,10 @@ namespace chess
             return;
         }
 
-        bitboard &king = m_whitesMove ? m_white.king : m_black.king;
-        makeNormalMove(move, king);
+        square &king = m_whitesMove ? m_white.king : m_black.king;
+        bitboard newLoc = 1ULL << king;
+        makeNormalMove(move, newLoc);
+        king = chess::bitBoards::firstSetBit(newLoc);
     }
 
     void BoardState::makeMove(const Move &move)

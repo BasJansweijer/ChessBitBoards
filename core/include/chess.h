@@ -143,13 +143,13 @@ namespace chess
         bitboard getWhiteBishops() const { return m_white.bishops; }
         bitboard getWhiteRooks() const { return m_white.rooks; }
         bitboard getWhiteQueens() const { return m_white.queens; }
-        bitboard getWhiteKing() const { return m_white.king; }
+        bitboard getWhiteKing() const { return 1ULL << m_white.king; }
         bitboard getBlackPawns() const { return m_black.pawns; }
         bitboard getBlackKnights() const { return m_black.knights; }
         bitboard getBlackBishops() const { return m_black.bishops; }
         bitboard getBlackRooks() const { return m_black.rooks; }
         bitboard getBlackQueens() const { return m_black.queens; }
-        bitboard getBlackKing() const { return m_black.king; }
+        bitboard getBlackKing() const { return 1ULL << m_black.king; }
         bitboard getEnpassentLocations() const { return 1ULL << m_enpassentSquare; }
 
         bool canWhiteCastleShort() const { return m_whiteCanCastleShort; }
@@ -166,14 +166,16 @@ namespace chess
         // We need 12 bit boards (6 for each color)
         struct PieceSet
         {
-            bitboard pawns, knights, bishops, rooks, queens, king;
+            bitboard pawns, knights, bishops, rooks, queens;
+
+            square king;
 
             // This bitboard is not up to date unless updateAllPieces is called
             bitboard allPieces;
 
             void updateAllPieces()
             {
-                allPieces = pawns | knights | bishops | rooks | queens | king;
+                allPieces = pawns | knights | bishops | rooks | queens | 1ULL << king;
             }
         };
 

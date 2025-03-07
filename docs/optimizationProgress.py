@@ -7,7 +7,8 @@ ourPerformance = [
     ("Starting point", 5_980_028),
     ("replace std::vector with MoveList", 12_245_777),
     ("memoize allPieces", 12_618_242),
-    ("c style array in MoveList", 12_981_934)
+    ("c style array in MoveList", 12_981_934),
+    ("Remove bitboards for kings", 13_466_706)
 ]
 labels, values = zip(*ourPerformance)
 

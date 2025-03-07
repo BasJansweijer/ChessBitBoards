@@ -46,7 +46,8 @@ From the profiling we observed that or'ing together the pieces in the black and 
 This increased performance to 12,618,242 nps. (In the profiling the allPieces now only uses ~6% of the execution time)
 
 ### replace std::array with c style array in MoveList
-
 Achieved a slight increase to 12,981,934 nps.
 
-### Use template specialization to prevent checking whose move it is.
+### Store king square instead of bitboard
+Since each side can never have more than one king, we can store kings as a single square instead of as a bitboard. This prevents us from having to find what bit of the bitboard is set to get the kings position. This change lead to an increase in performance to
+13,466,706 nps.

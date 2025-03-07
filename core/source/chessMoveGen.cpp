@@ -120,8 +120,7 @@ namespace chess
 
     void BoardState::genKingMoves(MoveList &outMoves) const
     {
-        bitboard kingBB = m_whitesMove ? m_white.king : m_black.king;
-        square kingPos = bitBoards::firstSetBit(kingBB);
+        square kingPos = m_whitesMove ? m_white.king : m_black.king;
         bitboard moves = constants::kingMoves[kingPos];
         // remove self captures
         moves &= ~allPieces(m_whitesMove);
@@ -196,8 +195,6 @@ namespace chess
             return;
         }
 
-        square kingPos = bitBoards::firstSetBit(movingPieces.king);
-
         // Check wether the squares inbetween (or the king square) is attacked.
         while (nonAttacked)
         {
@@ -208,10 +205,10 @@ namespace chess
                 return;
         }
 
-        square newKingPos = kingPos + (shortCastle ? 2 : -2);
+        square newKingPos = movingPieces.king + (shortCastle ? 2 : -2);
 
         // We are allowed to castle.
-        outMoves.emplace_back(kingPos, newKingPos, PieceType::King, false);
+        outMoves.emplace_back(movingPieces.king, newKingPos, PieceType::King, false);
     }
 
     void BoardState::genCastlingMoves(MoveList &outMoves) const

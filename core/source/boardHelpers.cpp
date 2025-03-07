@@ -23,14 +23,13 @@ namespace chess
         return (file != 0 && attacker.pawns & 1ULL << pawnAttackLeft) ||
                (file != 7 && attacker.pawns & 1ULL << pawnAttackRight) ||
                constants::knightMoves[s] & attacker.knights ||
-               constants::kingMoves[s] & attacker.king ||
+               constants::kingMoves[s] & 1ULL << attacker.king ||
                constants::getBishopMoves(s, allBlockers) & (attacker.bishops | attacker.queens) ||
                constants::getRookMoves(s, allBlockers) & (attacker.rooks | attacker.queens);
     }
 
     bool BoardState::kingAttacked(bool white) const
     {
-        square kingPos = bitBoards::firstSetBit(white ? m_white.king : m_black.king);
-        return squareAttacked(kingPos, !white);
+        return squareAttacked(white ? m_white.king : m_black.king, !white);
     }
 }
