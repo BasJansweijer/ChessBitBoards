@@ -28,8 +28,8 @@ namespace chess
 
     void BoardState::makeNormalMove(const Move &move, bitboard &effectedBitboard)
     {
-        effectedBitboard &= ~(1ULL << move.from);
-        effectedBitboard ^= 1ULL << move.to;
+        // remove old position and place on new position
+        effectedBitboard ^= 1ULL << move.to | 1ULL << move.from;
 
         if (move.takesPiece)
         {
@@ -62,21 +62,19 @@ namespace chess
         bitboard &pawns = m_whitesMove ? m_white.pawns : m_black.pawns;
         makeNormalMove(move, pawns);
 
-        int moveDir = m_whitesMove ? 1 : -1;
+        uint8_t moveDir = m_whitesMove ? 1 : -1;
 
         if (prevEnpassentLocation == move.to)
         {
+            // Take the pawn if we took via enpassent
             square takenPawn = move.to + 8 * -moveDir;
             bitboard &oppPawns = m_whitesMove ? m_black.pawns : m_white.pawns;
             oppPawns ^= 1ULL << takenPawn;
         }
 
-        // handle the update of the enpassent bitboard
-        int movedRanks = abs(move.to - move.from) / 8;
-        if (movedRanks == 2)
-        {
+        // handle the update of the enpassent bitboard (have we moved two ranks)
+        if (abs(move.to - move.from) == 2 * 8)
             m_enpassentSquare = move.from + moveDir * 8;
-        }
     }
 
     void BoardState::makeCastlingMove(const Move &move)
