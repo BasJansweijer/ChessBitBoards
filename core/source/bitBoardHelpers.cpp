@@ -13,7 +13,7 @@
  * @return index (0..63) of least significant one bit
  */
 
-constexpr static int debruijnBitScanTable[64] = {
+constexpr static square debruijnBitScanTable[64] = {
     0, 1, 48, 2, 57, 49, 28, 3,
     61, 58, 50, 42, 38, 29, 17, 4,
     62, 55, 59, 36, 53, 51, 43, 22,
@@ -26,7 +26,7 @@ constexpr static int debruijnBitScanTable[64] = {
 namespace chess::bitBoards
 {
     // Note that the output for 1 and 0 is the same!
-    int firstSetBit(bitboard bb)
+    square firstSetBit(bitboard bb)
     {
         const uint64_t debruijn64 = 0x03f79d71b4cb0a89;
         return debruijnBitScanTable[((bb & -bb) * debruijn64) >> 58];

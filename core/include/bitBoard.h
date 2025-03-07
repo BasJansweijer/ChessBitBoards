@@ -49,6 +49,6 @@ namespace chess::bitBoards
     // 1's all on the edges of the board
     constexpr bitboard edgeMask = 0xFF818181818181FF;
 
-    int firstSetBit(bitboard bb);
+    square firstSetBit(bitboard bb);
 
 }
