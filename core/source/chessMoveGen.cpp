@@ -17,21 +17,10 @@ namespace chess
         outMoves.back().promotion = true;
     }
 
-    // Loops through all the set squares of the bitboard and calls the callback with each set square
-    inline void forEachSquare(bitboard bb, auto callback)
-    {
-        while (bb)
-        {
-            square pos = chess::bitBoards::firstSetBit(bb);
-            bb &= bb - 1;
-            callback(pos);
-        }
-    }
-
     inline void BoardState::addMoves(bitboard moves, square curPos, PieceType piece, MoveList &outMoves) const
     {
-        forEachSquare(moves, [&](square moveTo)
-                      {
+        bitBoards::forEachBit(moves, [&](square moveTo)
+                              {
             bool tookPiece = (allPieces(!m_whitesMove) & 1ULL << moveTo);
             outMoves.emplace_back(curPos, moveTo, piece, tookPiece); });
     }
@@ -39,8 +28,8 @@ namespace chess
     void BoardState::genKnightMoves(MoveList &outMoves) const
     {
         bitboard knights = m_whitesMove ? m_white.knights : m_black.knights;
-        forEachSquare(knights, [&](square knightPos)
-                      {
+        bitBoards::forEachBit(knights, [&](square knightPos)
+                              {
             bitboard moves = chess::constants::knightMoves[knightPos];
             moves &= ~allPieces(m_whitesMove);
 
@@ -52,8 +41,8 @@ namespace chess
         uint8_t moveDir = m_whitesMove ? 1 : -1;
         bitboard pawns = m_whitesMove ? m_white.pawns : m_black.pawns;
 
-        forEachSquare(pawns, [&](square pawnPos)
-                      {
+        bitBoards::forEachBit(pawns, [&](square pawnPos)
+                              {
             // gives how many ranks the pawn has moved up/down (0 if not moved and 5 if on the rank before promotion)
             int rank = pawnPos / 8;
             const int ranksMoved = m_whitesMove ? rank - 1 : -rank + 6;
@@ -131,8 +120,8 @@ namespace chess
     void BoardState::genBishopMoves(MoveList &outMoves) const
     {
         bitboard bishops = m_whitesMove ? m_white.bishops : m_black.bishops;
-        forEachSquare(bishops, [&](square bishopPos)
-                      {
+        bitBoards::forEachBit(bishops, [&](square bishopPos)
+                              {
             bitboard moves = constants::getBishopMoves(bishopPos, allPieces());
 
             // remove self captures
@@ -144,8 +133,8 @@ namespace chess
     void BoardState::genRookMoves(MoveList &outMoves) const
     {
         bitboard rooks = m_whitesMove ? m_white.rooks : m_black.rooks;
-        forEachSquare(rooks, [&](square rookPos)
-                      {
+        bitBoards::forEachBit(rooks, [&](square rookPos)
+                              {
             bitboard moves = constants::getRookMoves(rookPos, allPieces());
 
             // remove self captures
@@ -157,8 +146,8 @@ namespace chess
     void BoardState::genQueenMoves(MoveList &outMoves) const
     {
         bitboard queens = m_whitesMove ? m_white.queens : m_black.queens;
-        forEachSquare(queens, [&](square queenPos)
-                      {
+        bitBoards::forEachBit(queens, [&](square queenPos)
+                              {
             bitboard blockers = allPieces();
             bitboard moves = constants::getRookMoves(queenPos, blockers);
             moves |= constants::getBishopMoves(queenPos, blockers);

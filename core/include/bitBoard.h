@@ -76,4 +76,26 @@ namespace chess::bitBoards
         const uint64_t debruijn64 = 0x03f79d71b4cb0a89;
         return debruijnBitScanTable[((bb & -bb) * debruijn64) >> 58];
     }
+
+    // Loops through all the set bits of the bitboard and calls the callback with each set square
+    inline void forEachBit(bitboard bb, auto callback)
+    {
+        while (bb)
+        {
+            square pos = chess::bitBoards::firstSetBit(bb);
+            bb &= bb - 1;
+            callback(pos);
+        }
+    }
+
+    inline uint8_t bitCount(bitboard bb)
+    {
+#if defined(_MSC_VER)
+
+        return uint8_t(_mm_popcnt_u64(bb));
+
+#else // Assumed gcc or compatible compiler
+        return __builtin_popcountll(bb);
+#endif
+    }
 }
