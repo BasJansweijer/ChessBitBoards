@@ -7,6 +7,8 @@ add_library(core STATIC
     source/fen.cpp
     source/hashBoard.cpp
     source/search.cpp
+    source/eval.cpp
+    source/runEngineCmd.cpp
 )
 
 target_include_directories(core PUBLIC

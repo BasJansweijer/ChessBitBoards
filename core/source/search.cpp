@@ -5,7 +5,7 @@
 #include "chess.h"
 #include "search.h"
 
-namespace chess::engine
+namespace chess
 {
     template <bool Max, bool Root>
     int minimax(BoardState &curBoard, std::function<int(BoardState)> eval, int depth, Move &outMove, int alpha, int beta)
