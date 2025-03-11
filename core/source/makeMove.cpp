@@ -29,7 +29,9 @@ namespace chess
     void BoardState::makeNormalMove(const Move &move, bitboard &effectedBitboard)
     {
         // remove old position and place on new position
-        effectedBitboard ^= 1ULL << move.to | 1ULL << move.from;
+        // (If the move was a promotion we do not remove the original piece)
+        move.promotion ? effectedBitboard ^= 1ULL << move.to
+                       : effectedBitboard ^= 1ULL << move.to | 1ULL << move.from;
 
         if (move.takesPiece)
         {
@@ -148,12 +150,14 @@ namespace chess
         square prevEnpassentLoc = m_enpassentSquare;
         m_enpassentSquare = -1;
 
+        PieceSet &movingPieces = m_whitesMove ? m_white : m_black;
+
         if (move.promotion)
         {
             // This is a promotion so we also need to remove the original pawn
             // appart from this we handle it as if it is a normal move by the promoted piece.
-            bitboard &pawns = m_whitesMove ? m_white.pawns : m_black.pawns;
-            pawns ^= 1ULL << move.from;
+
+            movingPieces.pawns ^= 1ULL << move.from;
         }
 
         switch (move.piece)
@@ -163,20 +167,16 @@ namespace chess
             break;
         case PieceType::Knight:
         {
-            bitboard &knights = m_whitesMove ? m_white.knights : m_black.knights;
-            makeNormalMove(move, knights);
+            makeNormalMove(move, movingPieces.knights);
             break;
         }
         case PieceType::Bishop:
         {
-            bitboard &bishops = m_whitesMove ? m_white.bishops : m_black.bishops;
-            makeNormalMove(move, bishops);
+            makeNormalMove(move, movingPieces.bishops);
             break;
         }
         case PieceType::Rook:
         {
-            bitboard &rooks = m_whitesMove ? m_white.rooks : m_black.rooks;
-
             if (move.from == 7)
                 m_whiteCanCastleShort = false;
 
@@ -189,13 +189,12 @@ namespace chess
             if (move.from == 56)
                 m_blackCanCastleLong = false;
 
-            makeNormalMove(move, rooks);
+            makeNormalMove(move, movingPieces.rooks);
             break;
         }
         case PieceType::Queen:
         {
-            bitboard &queens = m_whitesMove ? m_white.queens : m_black.queens;
-            makeNormalMove(move, queens);
+            makeNormalMove(move, movingPieces.queens);
             break;
         }
         case PieceType::King:

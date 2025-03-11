@@ -5,6 +5,8 @@ add_library(core STATIC
     source/boardHelpers.cpp
     source/initBoard.cpp
     source/fen.cpp
+    source/hashBoard.cpp
+    source/search.cpp
 )
 
 target_include_directories(core PUBLIC

@@ -33,7 +33,9 @@ namespace chess
 
         Move(square from, square to, PieceType piece, bool takesPiece)
             : from(from), to(to),
-              piece(piece), takesPiece(takesPiece), promotion(false) {}
+              piece(piece), takesPiece(takesPiece), promotion(false)
+        {
+        }
 
         std::string toUCI() const
         {
@@ -137,6 +139,24 @@ namespace chess
 
         void makeMove(const Move &move);
 
+        // We need 12 bit boards (6 for each color)
+        struct PieceSet
+        {
+            bitboard pawns, knights, bishops, rooks, queens;
+
+            square king;
+
+            // This bitboard is not up to date unless updateAllPieces is called
+            bitboard allPieces;
+
+            inline void updateAllPieces()
+            {
+                allPieces = pawns | knights | bishops | rooks | queens | 1ULL << king;
+            }
+        };
+
+        const PieceSet &getPieceSet(bool white) const { return white ? m_white : m_black; }
+
         // Getters for the bitboards
         bitboard getWhitePawns() const { return m_white.pawns; }
         bitboard getWhiteKnights() const { return m_white.knights; }
@@ -164,21 +184,7 @@ namespace chess
 
         inline bool whitesMove() const { return m_whitesMove; }
 
-        // We need 12 bit boards (6 for each color)
-        struct PieceSet
-        {
-            bitboard pawns, knights, bishops, rooks, queens;
-
-            square king;
-
-            // This bitboard is not up to date unless updateAllPieces is called
-            bitboard allPieces;
-
-            inline void updateAllPieces()
-            {
-                allPieces = pawns | knights | bishops | rooks | queens | 1ULL << king;
-            }
-        };
+        uint64_t hash() const;
 
     private:
         PieceSet m_white;
