@@ -50,17 +50,11 @@ namespace chess
             return false;
         }
 
-        // Returns the best found move and an int (the evaluation)
-        std::pair<Move, int> findBestMove(int depth)
+        // Returns the best found move, evaluation (int), max completed depth (int)
+        std::tuple<Move, int, int> findBestMove(double thinkSeconds)
         {
-            Move best;
-            int eval;
-            if (currentBoard.whitesMove())
-                eval = minimax<true, true>(currentBoard, evaluate, depth, best);
-            else
-                eval = minimax<false, true>(currentBoard, evaluate, depth, best);
-
-            return {best, eval};
+            Search s(currentBoard, evaluate);
+            return s.iterativeDeepening(thinkSeconds);
         }
 
         BoardState board() const { return currentBoard; }

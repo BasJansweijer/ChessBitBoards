@@ -36,8 +36,8 @@ namespace chess
         else if (std::regex_match(cmd, match, bestMoveRegex))
         {
             double seconds = std::stod(match[1]);
-            auto [move, eval] = findBestMove(4);
-            std::cout << move.toUCI() << " (eval: " << eval << ")" << std::endl;
+            auto [move, eval, depth] = findBestMove(seconds);
+            std::cout << move.toUCI() << " (eval: " << eval << ", depth: " << depth << ")" << std::endl;
         }
         else if (cmd == "quit" || cmd == "exit")
         {

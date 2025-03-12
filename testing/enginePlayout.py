@@ -4,6 +4,7 @@ import chess.svg
 import cairosvg
 import io
 from tkinter import Tk, Canvas, PhotoImage
+import re
 
 class ChessBoardGUI:
     def __init__(self, root):
@@ -55,10 +56,17 @@ class ChessEngine:
 
     def bestMove(self, thinkTime):
         response = self.runCmd(f"bestMove {thinkTime}")
-        move, _, evalStr = response.split()
-        eval = int(evalStr[:-1])
+        pattern = r'(\S+) \(eval: ([\d\.-]+), depth: (\d+)\)'
+        match = re.search(pattern, response)
         
-        return move, eval
+        if match:
+            move = match.group(1)
+            eval_score = float(match.group(2))
+            depth = int(match.group(3))
+            return move, eval_score, depth
+        
+        print(response)
+        raise Exception("bestMove Not parsed correctly")
 
     def makeMove(self, uci_move):
         self.runCmd(f"makeMove {uci_move}")
@@ -83,9 +91,9 @@ def playGame(engine1Path, engine2Path, fen, thinkTime, verbose=False):
 
     while not board.is_game_over():
         # Engine 1's move
-        move1, eval = engine1.bestMove(thinkTime)
+        move1, eval, maxDepth = engine1.bestMove(thinkTime)
         if verbose:
-            print(f"Engine 1 plays: {move1} (est. eval: {eval})")
+            print(f"Engine 1 plays: {move1} (est. eval: {eval}, maxDepth: {maxDepth})")
 
         board.push(chess.Move.from_uci(move1))
         engine1.makeMove(move1)
@@ -99,9 +107,9 @@ def playGame(engine1Path, engine2Path, fen, thinkTime, verbose=False):
             break
 
         # Engine 2's move
-        move2, eval = engine2.bestMove(thinkTime)
+        move2, eval, maxDepth = engine2.bestMove(thinkTime)
         if verbose:
-            print(f"Engine 2 plays: {move2} (est. eval: {eval})")
+            print(f"Engine 2 plays: {move2} (est. eval: {eval}, maxDepth: {maxDepth})")
 
         board.push(chess.Move.from_uci(move2))
         engine2.makeMove(move2)
@@ -120,4 +128,4 @@ def playGame(engine1Path, engine2Path, fen, thinkTime, verbose=False):
 
 startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"
 if __name__ == "__main__":
-    playGame("../build/app/app", "../build/app/app", startFen, 0, verbose=True)
+    playGame("../build/app/app", "../build/app/app", startFen, 0.25, verbose=True)

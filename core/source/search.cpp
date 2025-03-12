@@ -4,15 +4,63 @@
 
 #include "chess.h"
 #include "search.h"
+#include <chrono>
+#include <thread>
 
 namespace chess
 {
-    template <bool Max, bool Root>
-    int minimax(BoardState &curBoard, std::function<int(BoardState)> eval, int depth, Move &outMove, int alpha, int beta)
+    void Search::startTimeThread(double thinkSeconds)
     {
+        m_stopped = false; // Reset before starting
+
+        // Launch a detached thread to stop search after thinkSeconds
+        std::thread([this, thinkSeconds]()
+                    {
+            std::this_thread::sleep_for(std::chrono::duration<double>(thinkSeconds));
+            m_stopped = true; })
+            .detach();
+    }
+
+    std::tuple<Move, int, int> Search::iterativeDeepening(double thinkSeconds)
+    {
+        startTimeThread(thinkSeconds);
+
+        Move bestMove;
+        int eval;
+
+        Move currentSearchBest;
+        int prevSearchEval;
+
+        // Initially only use depth of 2 (after the first increment)
+        int depth = 1;
+
+        while (!m_stopped)
+        {
+            // only update with each completed search
+            eval = prevSearchEval;
+            depth += 1;
+
+            if (m_rootBoard.whitesMove())
+                prevSearchEval = minimax<true, true>(m_rootBoard, depth, currentSearchBest);
+            else
+                prevSearchEval = minimax<false, true>(m_rootBoard, depth, currentSearchBest);
+
+            bestMove = currentSearchBest;
+        }
+
+        return {bestMove, eval, depth};
+    }
+
+    template <bool Max, bool Root>
+    int Search::minimax(BoardState &curBoard, int depth, Move &outMove, int alpha, int beta)
+    {
+        // cancel the search
+        if (m_stopped.load(std::memory_order_relaxed))
+            return 0;
+
         // Base case
         if (depth == 0)
-            return eval(curBoard);
+            return m_evalFunc(curBoard);
 
         // Start with the worst possible eval
         int bestEval = Max ? INT_MIN : INT_MAX;
@@ -27,7 +75,7 @@ namespace chess
                 continue; // skip since move was illegal
 
             // search with opposite of min/max and not root and 1 less depth
-            int moveEval = minimax<!Max, false>(newBoard, eval, depth - 1, outMove, alpha, beta);
+            int moveEval = minimax<!Max, false>(newBoard, depth - 1, outMove, alpha, beta);
             bestEval = Max ? std::max(bestEval, moveEval) : std::min(bestEval, moveEval);
 
             if (Max ? bestEval > beta : bestEval < alpha)
@@ -44,8 +92,8 @@ namespace chess
         return bestEval;
     }
 
-    template int minimax<true, true>(BoardState &curBoard, std::function<int(BoardState)> eval, int depth, Move &outMove, int alpha, int beta);
-    template int minimax<false, true>(BoardState &curBoard, std::function<int(BoardState)> eval, int depth, Move &outMove, int alpha, int beta);
-    template int minimax<true, false>(BoardState &curBoard, std::function<int(BoardState)> eval, int depth, Move &outMove, int alpha, int beta);
-    template int minimax<false, false>(BoardState &curBoard, std::function<int(BoardState)> eval, int depth, Move &outMove, int alpha, int beta);
+    template int Search::minimax<true, true>(BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
+    template int Search::minimax<false, true>(BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
+    template int Search::minimax<true, false>(BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
+    template int Search::minimax<false, false>(BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
 }
