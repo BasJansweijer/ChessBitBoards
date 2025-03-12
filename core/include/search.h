@@ -19,15 +19,15 @@ namespace chess
 
         // This method is more so used internally, but can also directly be called to search a certain depth.
         template <bool Max, bool Root>
-        int minimax(BoardState &curBoard, int depth, Move &outMove, int alpa = INT_MIN, int beta = INT_MAX);
+        int minimax(const BoardState &curBoard, int depth, Move &outMove, int alpa = INT_MIN, int beta = INT_MAX);
 
     private:
         // Starts a thread which will set m_stopped to true once the specified time has run out
         void startTimeThread(double thinkSeconds);
 
     private:
-        std::function<int(BoardState)> m_evalFunc;
-        BoardState m_rootBoard;
+        const std::function<int(BoardState)> m_evalFunc;
+        const BoardState m_rootBoard;
         std::atomic<bool> m_stopped = false;
     };
 }

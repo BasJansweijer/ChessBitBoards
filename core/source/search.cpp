@@ -1,11 +1,11 @@
 #include <limits.h>
 #include <algorithm>
 #include <functional>
+#include <chrono>
+#include <thread>
 
 #include "chess.h"
 #include "search.h"
-#include <chrono>
-#include <thread>
 
 namespace chess
 {
@@ -38,21 +38,20 @@ namespace chess
         {
             // only update with each completed search
             eval = prevSearchEval;
+            bestMove = currentSearchBest;
             depth += 1;
 
             if (m_rootBoard.whitesMove())
                 prevSearchEval = minimax<true, true>(m_rootBoard, depth, currentSearchBest);
             else
                 prevSearchEval = minimax<false, true>(m_rootBoard, depth, currentSearchBest);
-
-            bestMove = currentSearchBest;
         }
 
         return {bestMove, eval, depth};
     }
 
     template <bool Max, bool Root>
-    int Search::minimax(BoardState &curBoard, int depth, Move &outMove, int alpha, int beta)
+    int Search::minimax(const BoardState &curBoard, int depth, Move &outMove, int alpha, int beta)
     {
         // cancel the search
         if (m_stopped.load(std::memory_order_relaxed))
@@ -84,7 +83,7 @@ namespace chess
             // max alpha / min beta depending on what player we are
             Max ? alpha = std::max(alpha, bestEval) : beta = std::min(beta, bestEval);
 
-            // Incase this is the root search node then update if we find a better move.
+            // Incase this is the root search node then update if the eval was updated
             if (Root && moveEval == bestEval)
                 outMove = m;
         }
@@ -92,8 +91,8 @@ namespace chess
         return bestEval;
     }
 
-    template int Search::minimax<true, true>(BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
-    template int Search::minimax<false, true>(BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
-    template int Search::minimax<true, false>(BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
-    template int Search::minimax<false, false>(BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
+    template int Search::minimax<true, true>(const BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
+    template int Search::minimax<false, true>(const BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
+    template int Search::minimax<true, false>(const BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
+    template int Search::minimax<false, false>(const BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
 }
