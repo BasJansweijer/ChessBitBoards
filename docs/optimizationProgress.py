@@ -11,7 +11,8 @@ ourPerformance = [
     ("Remove bitboards for kings", 13_466_706),
     ("Remove dynamic promotion check", 13_558_534),
     ("Use templating on squareAttacked", 13_688_515),
-    ("Combine removal and placement of piece on bitboard with XOR", 13_822_188)
+    ("Combine removal and placement of piece on bitboard with XOR", 13_822_188),
+    ("Pieceset rework", 14_004_044)
 ]
 labels, values = zip(*ourPerformance)
 

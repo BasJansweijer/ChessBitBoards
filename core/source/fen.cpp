@@ -4,11 +4,16 @@
 namespace chess
 {
     BoardState::BoardState(std::string_view fen)
-        : m_white({0, 0, 0, 0, 0, 0}), m_black({0, 0, 0, 0, 0, 0}),
-          m_enpassentSquare(-1), m_whitesMove(true),
+        : m_enpassentSquare(-1), m_whitesMove(true),
           m_whiteCanCastleLong(false), m_whiteCanCastleShort(false),
           m_blackCanCastleLong(false), m_blackCanCastleShort(false)
     {
+        for (int i = 0; i < 5; i++)
+        {
+            m_blackPieces[i] = 0;
+            m_whitePieces[i] = 0;
+        }
+
         int rank = 7;
         int file = 0;
         for (char c : fen)
@@ -27,40 +32,40 @@ namespace chess
             switch (c)
             {
             case 'p':
-                chess::bitBoards::setBit(m_black.pawns, rank, file);
+                chess::bitBoards::setBit(m_blackPieces[PieceType::Pawn], rank, file);
                 break;
             case 'n':
-                chess::bitBoards::setBit(m_black.knights, rank, file);
+                chess::bitBoards::setBit(m_blackPieces[PieceType::Knight], rank, file);
                 break;
             case 'b':
-                chess::bitBoards::setBit(m_black.bishops, rank, file);
+                chess::bitBoards::setBit(m_blackPieces[PieceType::Bishop], rank, file);
                 break;
             case 'r':
-                chess::bitBoards::setBit(m_black.rooks, rank, file);
+                chess::bitBoards::setBit(m_blackPieces[PieceType::Rook], rank, file);
                 break;
             case 'q':
-                chess::bitBoards::setBit(m_black.queens, rank, file);
+                chess::bitBoards::setBit(m_blackPieces[PieceType::Queen], rank, file);
                 break;
             case 'k':
-                m_black.king = rank * 8 + file;
+                m_blackKing = rank * 8 + file;
                 break;
             case 'P':
-                chess::bitBoards::setBit(m_white.pawns, rank, file);
+                chess::bitBoards::setBit(m_whitePieces[PieceType::Pawn], rank, file);
                 break;
             case 'N':
-                chess::bitBoards::setBit(m_white.knights, rank, file);
+                chess::bitBoards::setBit(m_whitePieces[PieceType::Knight], rank, file);
                 break;
             case 'B':
-                chess::bitBoards::setBit(m_white.bishops, rank, file);
+                chess::bitBoards::setBit(m_whitePieces[PieceType::Bishop], rank, file);
                 break;
             case 'R':
-                chess::bitBoards::setBit(m_white.rooks, rank, file);
+                chess::bitBoards::setBit(m_whitePieces[PieceType::Rook], rank, file);
                 break;
             case 'Q':
-                chess::bitBoards::setBit(m_white.queens, rank, file);
+                chess::bitBoards::setBit(m_whitePieces[PieceType::Queen], rank, file);
                 break;
             case 'K':
-                m_white.king = rank * 8 + file;
+                m_whiteKing = rank * 8 + file;
                 break;
             default:
                 break;
@@ -114,37 +119,36 @@ namespace chess
             m_enpassentSquare = rank * 8 + file;
         }
 
-        m_black.updateAllPieces();
-        m_white.updateAllPieces();
+        updateAllPiecesBB();
     }
 
     char BoardState::pieceOnSquare(square s) const
     {
         bitboard location = 1ULL << s;
 
-        if (m_white.pawns & location)
+        if (m_whitePieces[PieceType::Pawn] & location)
             return 'P';
-        else if (m_black.pawns & location)
+        else if (m_blackPieces[PieceType::Pawn] & location)
             return 'p';
-        else if (m_white.knights & location)
+        else if (m_whitePieces[PieceType::Knight] & location)
             return 'N';
-        else if (m_black.knights & location)
+        else if (m_blackPieces[PieceType::Knight] & location)
             return 'n';
-        else if (m_white.bishops & location)
+        else if (m_whitePieces[PieceType::Bishop] & location)
             return 'B';
-        else if (m_black.bishops & location)
+        else if (m_blackPieces[PieceType::Bishop] & location)
             return 'b';
-        else if (m_white.rooks & location)
+        else if (m_whitePieces[PieceType::Rook] & location)
             return 'R';
-        else if (m_black.rooks & location)
+        else if (m_blackPieces[PieceType::Rook] & location)
             return 'r';
-        else if (m_white.queens & location)
+        else if (m_whitePieces[PieceType::Queen] & location)
             return 'Q';
-        else if (m_black.queens & location)
+        else if (m_blackPieces[PieceType::Queen] & location)
             return 'q';
-        else if (m_white.king == s)
+        else if (getWhiteKing() & location)
             return 'K';
-        else if (m_black.king == s)
+        else if (getBlackKing() & location)
             return 'k';
 
         return 0;

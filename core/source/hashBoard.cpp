@@ -5,24 +5,21 @@ namespace chess
 {
     constexpr uint32_t prime = 0x100000001b3;
 
-    inline void addPieceSet(const BoardState::PieceSet &set, uint64_t &hash)
+    inline void addPieceSet(const bitboard *set, uint64_t &hash)
     {
-        hash ^= set.pawns;
+        hash ^= set[PieceType::Pawn];
         hash *= prime;
 
-        hash ^= set.knights;
+        hash ^= set[PieceType::Knight];
         hash *= prime;
 
-        hash ^= set.bishops;
+        hash ^= set[PieceType::Bishop];
         hash *= prime;
 
-        hash ^= set.rooks;
+        hash ^= set[PieceType::Rook];
         hash *= prime;
 
-        hash ^= set.queens;
-        hash *= prime;
-
-        hash ^= set.king;
+        hash ^= set[PieceType::Queen];
         hash *= prime;
     }
 
@@ -31,8 +28,13 @@ namespace chess
 
         uint64_t hash = 0xcbf29ce484222325;
 
-        addPieceSet(m_white, hash);
-        addPieceSet(m_black, hash);
+        addPieceSet(m_whitePieces, hash);
+        hash ^= m_whiteKing;
+        hash *= prime;
+
+        addPieceSet(m_blackPieces, hash);
+        hash ^= m_blackKing;
+        hash *= prime;
 
         uint8_t flags = 0;
         flags |= m_whiteCanCastleShort;

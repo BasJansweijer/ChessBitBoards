@@ -46,21 +46,32 @@ From the profiling we observed that or'ing together the pieces in the black and 
 This increased performance to 12,618,242 nps. (In the profiling the allPieces now only uses ~6% of the execution time)
 
 ### replace std::array with c style array in MoveList
+
 Achieved a slight increase to 12,981,934 nps.
 
 ### Store king square instead of bitboard
+
 Since each side can never have more than one king, we can store kings as a single square instead of as a bitboard. This prevents us from having to find what bit of the bitboard is set to get the kings position. This change lead to an increase in performance to
 13,466,706 nps.
 
 ### Use promotion flag instead of dynamically checking for promotion
+
 In the makeMove function we were checking wether a promotion occured. This was unnecesary since the move already contains a flag for promotion and took up roughly 1% of execution time.
 New performance is 13,558,534.
 
 ### Template on attacking color for squareAttacked
+
 By templating we remove some runtime computation since the template is evaluated at compile time.
 New performance is 13,688,515.
 
 ### Single XOR piece movement on bitboard
+
 Removing the bit from the previous position in `makeNormalMove` was previously done using an and with the negation of the location of the piece. Now we use the fact that the bit should be on to do the placement and removal of the piece in one XOR.
 These seperate opperations were previously 3.44% of execution and are now 2.64%.
 New performance is 13,822,188 nps.
+
+### Rework: store piece sets in bitboard array
+
+This rework removed the Piece sets. Additionally the rework of the king being stored as a square was undone. New nps 13,672,286.
+Slight decrease in performance.
+Adding back the king as a square increased performance back to nps 14_003_044.

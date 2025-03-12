@@ -27,7 +27,7 @@ namespace chess
 
     void BoardState::genKnightMoves(MoveList &outMoves) const
     {
-        bitboard knights = m_whitesMove ? m_white.knights : m_black.knights;
+        bitboard knights = m_whitesMove ? m_whitePieces[PieceType::Knight] : m_blackPieces[PieceType::Knight];
         bitBoards::forEachBit(knights, [&](square knightPos)
                               {
             bitboard moves = chess::constants::knightMoves[knightPos];
@@ -39,7 +39,7 @@ namespace chess
     void BoardState::genPawnMoves(MoveList &outMoves) const
     {
         uint8_t moveDir = m_whitesMove ? 1 : -1;
-        bitboard pawns = m_whitesMove ? m_white.pawns : m_black.pawns;
+        bitboard pawns = m_whitesMove ? m_whitePieces[PieceType::Pawn] : m_blackPieces[PieceType::Pawn];
 
         bitBoards::forEachBit(pawns, [&](square pawnPos)
                               {
@@ -109,7 +109,7 @@ namespace chess
 
     void BoardState::genKingMoves(MoveList &outMoves) const
     {
-        square kingPos = m_whitesMove ? m_white.king : m_black.king;
+        square kingPos = m_whitesMove ? m_whiteKing : m_blackKing;
         bitboard moves = constants::kingMoves[kingPos];
         // remove self captures
         moves &= ~allPieces(m_whitesMove);
@@ -119,7 +119,7 @@ namespace chess
 
     void BoardState::genBishopMoves(MoveList &outMoves) const
     {
-        bitboard bishops = m_whitesMove ? m_white.bishops : m_black.bishops;
+        bitboard bishops = m_whitesMove ? m_whitePieces[PieceType::Bishop] : m_blackPieces[PieceType::Bishop];
         bitBoards::forEachBit(bishops, [&](square bishopPos)
                               {
             bitboard moves = constants::getBishopMoves(bishopPos, allPieces());
@@ -132,7 +132,7 @@ namespace chess
 
     void BoardState::genRookMoves(MoveList &outMoves) const
     {
-        bitboard rooks = m_whitesMove ? m_white.rooks : m_black.rooks;
+        bitboard rooks = m_whitesMove ? m_whitePieces[PieceType::Rook] : m_blackPieces[PieceType::Rook];
         bitBoards::forEachBit(rooks, [&](square rookPos)
                               {
             bitboard moves = constants::getRookMoves(rookPos, allPieces());
@@ -145,7 +145,7 @@ namespace chess
 
     void BoardState::genQueenMoves(MoveList &outMoves) const
     {
-        bitboard queens = m_whitesMove ? m_white.queens : m_black.queens;
+        bitboard queens = m_whitesMove ? m_whitePieces[PieceType::Queen] : m_blackPieces[PieceType::Queen];
         bitBoards::forEachBit(queens, [&](square queenPos)
                               {
             bitboard blockers = allPieces();
@@ -163,7 +163,8 @@ namespace chess
         // Check wether the spots between the rook and the king are empty
         bitboard emptySpotMask = shortCastle ? 0b01100000 : 0b00001110;
         bitboard nonAttacked = shortCastle ? 0b01110000 : 0b0011100;
-        const PieceSet &movingPieces = m_whitesMove ? m_white : m_black;
+        const bitboard *movingPieces = m_whitesMove ? m_whitePieces : m_blackPieces;
+
         if (!m_whitesMove)
         {
             emptySpotMask <<= 8 * 7;
@@ -187,10 +188,11 @@ namespace chess
                 return;
         }
 
-        square newKingPos = movingPieces.king + (shortCastle ? 2 : -2);
+        square kingPos = m_whitesMove ? m_whiteKing : m_blackKing;
+        square newKingPos = kingPos + (shortCastle ? 2 : -2);
 
         // We are allowed to castle.
-        outMoves.emplace_back(movingPieces.king, newKingPos, PieceType::King, false);
+        outMoves.emplace_back(kingPos, newKingPos, PieceType::King, false);
     }
 
     void BoardState::genCastlingMoves(MoveList &outMoves) const

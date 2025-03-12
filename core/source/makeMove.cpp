@@ -10,19 +10,19 @@ namespace chess
         bitboard mask = ~(1ULL << s);
         if (m_whitesMove)
         {
-            m_black.pawns &= mask;
-            m_black.knights &= mask;
-            m_black.bishops &= mask;
-            m_black.rooks &= mask;
-            m_black.queens &= mask;
+            m_blackPieces[PieceType::Pawn] &= mask;
+            m_blackPieces[PieceType::Knight] &= mask;
+            m_blackPieces[PieceType::Bishop] &= mask;
+            m_blackPieces[PieceType::Rook] &= mask;
+            m_blackPieces[PieceType::Queen] &= mask;
         }
         else
         {
-            m_white.pawns &= mask;
-            m_white.knights &= mask;
-            m_white.bishops &= mask;
-            m_white.rooks &= mask;
-            m_white.queens &= mask;
+            m_whitePieces[PieceType::Pawn] &= mask;
+            m_whitePieces[PieceType::Knight] &= mask;
+            m_whitePieces[PieceType::Bishop] &= mask;
+            m_whitePieces[PieceType::Rook] &= mask;
+            m_whitePieces[PieceType::Queen] &= mask;
         }
     }
 
@@ -36,7 +36,7 @@ namespace chess
         if (move.takesPiece)
         {
             // Check wether we take a rook and should thus revoke castling rights
-            if ((m_whitesMove ? m_black.rooks : m_white.rooks) & 1ULL << move.to)
+            if ((m_whitesMove ? m_blackPieces[PieceType::Rook] : m_whitePieces[PieceType::Rook]) & 1ULL << move.to)
             {
                 switch (move.to)
                 {
@@ -61,7 +61,7 @@ namespace chess
 
     void BoardState::makePawnMove(const Move &move, square prevEnpassentLocation)
     {
-        bitboard &pawns = m_whitesMove ? m_white.pawns : m_black.pawns;
+        bitboard &pawns = m_whitesMove ? m_whitePieces[PieceType::Pawn] : m_blackPieces[PieceType::Pawn];
         makeNormalMove(move, pawns);
 
         uint8_t moveDir = m_whitesMove ? 1 : -1;
@@ -70,7 +70,7 @@ namespace chess
         {
             // Take the pawn if we took via enpassent
             square takenPawn = move.to + 8 * -moveDir;
-            bitboard &oppPawns = m_whitesMove ? m_black.pawns : m_white.pawns;
+            bitboard &oppPawns = m_whitesMove ? m_blackPieces[PieceType::Pawn] : m_whitePieces[PieceType::Pawn];
             oppPawns ^= 1ULL << takenPawn;
         }
 
@@ -82,40 +82,40 @@ namespace chess
     void BoardState::makeCastlingMove(const Move &move)
     {
         bool shortCastle = (move.to - move.from) == 2;
-        PieceSet &pieces = m_whitesMove ? m_white : m_black;
+        bitboard *pieces = m_whitesMove ? m_whitePieces : m_blackPieces;
+        square &kingPos = m_whitesMove ? m_whiteKing : m_blackKing;
+
+        square newKingPos;
+        square oldRookPos;
+        square newRookPos;
 
         if (shortCastle)
         {
-            pieces.king = 6;
-
-            square oldRookPos = 7;
-            square newRookPos = 5;
+            kingPos = 6;
+            oldRookPos = 7;
+            newRookPos = 5;
             if (!m_whitesMove)
             {
-                pieces.king += 7 * 8;
+                kingPos += 7 * 8;
                 oldRookPos += 7 * 8;
                 newRookPos += 7 * 8;
             }
-
-            pieces.rooks ^= 1ULL << oldRookPos;
-            pieces.rooks ^= 1ULL << newRookPos;
         }
         else
         {
-            pieces.king = 2;
-
-            square oldRookPos = 0;
-            square newRookPos = 3;
+            kingPos = 2;
+            oldRookPos = 0;
+            newRookPos = 3;
             if (!m_whitesMove)
             {
-                pieces.king += 7 * 8;
+                kingPos += 7 * 8;
                 oldRookPos += 7 * 8;
                 newRookPos += 7 * 8;
             }
-
-            pieces.rooks ^= 1ULL << oldRookPos;
-            pieces.rooks ^= 1ULL << newRookPos;
         }
+
+        pieces[PieceType::Rook] ^= 1ULL << oldRookPos;
+        pieces[PieceType::Rook] ^= 1ULL << newRookPos;
     }
 
     void BoardState::makeKingMove(const Move &move)
@@ -125,11 +125,13 @@ namespace chess
         {
             m_whiteCanCastleLong = false;
             m_whiteCanCastleShort = false;
+            m_whiteKing = move.to;
         }
         else
         {
             m_blackCanCastleLong = false;
             m_blackCanCastleShort = false;
+            m_blackKing = move.to;
         }
 
         if (abs(move.to - move.from) == 2)
@@ -138,10 +140,8 @@ namespace chess
             return;
         }
 
-        square &king = m_whitesMove ? m_white.king : m_black.king;
-        bitboard newLoc = 1ULL << king;
-        makeNormalMove(move, newLoc);
-        king = chess::bitBoards::firstSetBit(newLoc);
+        bitboard temp;
+        makeNormalMove(move, temp);
     }
 
     void BoardState::makeMove(const Move &move)
@@ -150,14 +150,14 @@ namespace chess
         square prevEnpassentLoc = m_enpassentSquare;
         m_enpassentSquare = -1;
 
-        PieceSet &movingPieces = m_whitesMove ? m_white : m_black;
+        bitboard *movingPieces = m_whitesMove ? m_whitePieces : m_blackPieces;
 
         if (move.promotion)
         {
             // This is a promotion so we also need to remove the original pawn
             // appart from this we handle it as if it is a normal move by the promoted piece.
 
-            movingPieces.pawns ^= 1ULL << move.from;
+            movingPieces[PieceType::Pawn] ^= 1ULL << move.from;
         }
 
         switch (move.piece)
@@ -165,16 +165,6 @@ namespace chess
         case PieceType::Pawn:
             makePawnMove(move, prevEnpassentLoc);
             break;
-        case PieceType::Knight:
-        {
-            makeNormalMove(move, movingPieces.knights);
-            break;
-        }
-        case PieceType::Bishop:
-        {
-            makeNormalMove(move, movingPieces.bishops);
-            break;
-        }
         case PieceType::Rook:
         {
             if (move.from == 7)
@@ -189,12 +179,7 @@ namespace chess
             if (move.from == 56)
                 m_blackCanCastleLong = false;
 
-            makeNormalMove(move, movingPieces.rooks);
-            break;
-        }
-        case PieceType::Queen:
-        {
-            makeNormalMove(move, movingPieces.queens);
+            makeNormalMove(move, movingPieces[PieceType::Rook]);
             break;
         }
         case PieceType::King:
@@ -202,16 +187,13 @@ namespace chess
             makeKingMove(move);
             break;
         }
-        default:
-            throw std::runtime_error("Piece not yet movable");
+        default: // Queen, knights or bishops
+            makeNormalMove(move, movingPieces[move.piece]);
             break;
         }
 
-        // Update the all pieces bitboards for black and white
-        m_white.updateAllPieces();
-        m_black.updateAllPieces();
-
         // Give the turn to the other player
         m_whitesMove = !m_whitesMove;
+        updateAllPiecesBB();
     }
 }

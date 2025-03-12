@@ -9,44 +9,44 @@ namespace chess
     int evaluate(BoardState b)
     {
 
-        const BoardState::PieceSet &white = b.getPieceSet(true);
-        const BoardState::PieceSet &black = b.getPieceSet(false);
+        const bitboard *white = b.getPieceSet(true);
+        const bitboard *black = b.getPieceSet(false);
 
-        int eval = bitBoards::bitCount(white.pawns) * pieceVals[0] -
-                   bitBoards::bitCount(black.pawns) * pieceVals[0] +
-                   bitBoards::bitCount(white.knights) * pieceVals[1] -
-                   bitBoards::bitCount(black.knights) * pieceVals[1] +
-                   bitBoards::bitCount(white.bishops) * pieceVals[2] -
-                   bitBoards::bitCount(black.bishops) * pieceVals[2] +
-                   bitBoards::bitCount(white.rooks) * pieceVals[3] -
-                   bitBoards::bitCount(black.rooks) * pieceVals[3] +
-                   bitBoards::bitCount(white.queens) * pieceVals[4] -
-                   bitBoards::bitCount(black.queens) * pieceVals[4];
+        int eval = bitBoards::bitCount(white[PieceType::Pawn]) * pieceVals[PieceType::Pawn] -
+                   bitBoards::bitCount(black[PieceType::Pawn]) * pieceVals[PieceType::Pawn] +
+                   bitBoards::bitCount(white[PieceType::Knight]) * pieceVals[PieceType::Knight] -
+                   bitBoards::bitCount(black[PieceType::Knight]) * pieceVals[PieceType::Knight] +
+                   bitBoards::bitCount(white[PieceType::Bishop]) * pieceVals[PieceType::Bishop] -
+                   bitBoards::bitCount(black[PieceType::Bishop]) * pieceVals[PieceType::Bishop] +
+                   bitBoards::bitCount(white[PieceType::Rook]) * pieceVals[PieceType::Rook] -
+                   bitBoards::bitCount(black[PieceType::Rook]) * pieceVals[PieceType::Rook] +
+                   bitBoards::bitCount(white[PieceType::Queen]) * pieceVals[PieceType::Queen] -
+                   bitBoards::bitCount(black[PieceType::Queen]) * pieceVals[PieceType::Queen];
 
-        bitboard allPieces = white.allPieces | black.allPieces;
+        bitboard allPieces = b.allPieces();
 
-        bitBoards::forEachBit(white.bishops, [&](square s)
+        bitBoards::forEachBit(white[PieceType::Bishop], [&](square s)
                               { eval += 5 * bitBoards::bitCount(constants::getBishopMoves(s, allPieces)); });
 
-        bitBoards::forEachBit(black.bishops, [&](square s)
+        bitBoards::forEachBit(black[PieceType::Bishop], [&](square s)
                               { eval -= 5 * bitBoards::bitCount(constants::getBishopMoves(s, allPieces)); });
 
-        bitBoards::forEachBit(white.knights, [&](square s)
+        bitBoards::forEachBit(white[PieceType::Knight], [&](square s)
                               { eval += 10 * bitBoards::bitCount(constants::knightMoves[s]); });
 
-        bitBoards::forEachBit(black.knights, [&](square s)
+        bitBoards::forEachBit(black[PieceType::Knight], [&](square s)
                               { eval -= 10 * bitBoards::bitCount(constants::knightMoves[s]); });
 
-        bitBoards::forEachBit(white.rooks, [&](square s)
+        bitBoards::forEachBit(white[PieceType::Rook], [&](square s)
                               { eval += 7 * bitBoards::bitCount(constants::getRookMoves(s, allPieces)); });
 
-        bitBoards::forEachBit(black.rooks, [&](square s)
+        bitBoards::forEachBit(black[PieceType::Rook], [&](square s)
                               { eval -= 7 * bitBoards::bitCount(constants::getRookMoves(s, allPieces)); });
 
-        bitBoards::forEachBit(white.queens, [&](square s)
+        bitBoards::forEachBit(white[PieceType::Queen], [&](square s)
                               { eval += 3 * bitBoards::bitCount(constants::getRookMoves(s, allPieces) | constants::getBishopMoves(s, allPieces)); });
 
-        bitBoards::forEachBit(black.queens, [&](square s)
+        bitBoards::forEachBit(black[PieceType::Queen], [&](square s)
                               { eval -= 3 * bitBoards::bitCount(constants::getRookMoves(s, allPieces) | constants::getBishopMoves(s, allPieces)); });
 
         return eval;
