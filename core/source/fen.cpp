@@ -118,8 +118,6 @@ namespace chess
             int rank = fen.at(curIdx + 1) - '1';
             m_enpassentSquare = rank * 8 + file;
         }
-
-        updateAllPiecesBB();
     }
 
     char BoardState::pieceOnSquare(square s) const

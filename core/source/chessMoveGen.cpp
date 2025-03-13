@@ -3,6 +3,12 @@
 #include "moveConstants.h"
 #include <vector>
 
+static bitboard s_whitePieces;
+static bitboard s_blackPieces;
+static bitboard s_allPieces;
+
+inline bitboard pieces(bool white) { return white ? s_whitePieces : s_blackPieces; }
+
 namespace chess
 {
     inline void addPromotionMove(square from, square to, bool wasCapture, MoveList &outMoves)
@@ -21,7 +27,7 @@ namespace chess
     {
         bitBoards::forEachBit(moves, [&](square moveTo)
                               {
-            bool tookPiece = (allPieces(!m_whitesMove) & 1ULL << moveTo);
+            bool tookPiece = (pieces(!m_whitesMove) & 1ULL << moveTo);
             outMoves.emplace_back(curPos, moveTo, piece, tookPiece); });
     }
 
@@ -31,7 +37,7 @@ namespace chess
         bitBoards::forEachBit(knights, [&](square knightPos)
                               {
             bitboard moves = chess::constants::knightMoves[knightPos];
-            moves &= ~allPieces(m_whitesMove);
+            moves &= ~pieces(m_whitesMove);
 
             addMoves(moves, knightPos, PieceType::Knight, outMoves); });
     }
@@ -49,7 +55,7 @@ namespace chess
 
             // generate normal step moves
             square inFront = pawnPos + moveDir * 8;
-            bitboard blockers = allPieces();
+            const bitboard blockers = s_allPieces;
             bool blocked = blockers & 1ULL << inFront;
             if (!blocked)
             {
@@ -76,7 +82,7 @@ namespace chess
             // Pawn capture moves
             int file = pawnPos % 8;
             // m_enpassent square larger than 64 has undefined behaviour.
-            bitboard oppPieces = allPieces(!m_whitesMove) | ((m_enpassentSquare < 64) * 1ULL << m_enpassentSquare);
+            bitboard oppPieces = pieces(!m_whitesMove) | ((m_enpassentSquare < 64) * 1ULL << m_enpassentSquare);
 
             if (file != 0)
             {
@@ -112,7 +118,7 @@ namespace chess
         square kingPos = m_whitesMove ? m_whiteKing : m_blackKing;
         bitboard moves = constants::kingMoves[kingPos];
         // remove self captures
-        moves &= ~allPieces(m_whitesMove);
+        moves &= ~pieces(m_whitesMove);
 
         addMoves(moves, kingPos, PieceType::King, outMoves);
     }
@@ -122,10 +128,10 @@ namespace chess
         bitboard bishops = m_whitesMove ? m_whitePieces[PieceType::Bishop] : m_blackPieces[PieceType::Bishop];
         bitBoards::forEachBit(bishops, [&](square bishopPos)
                               {
-            bitboard moves = constants::getBishopMoves(bishopPos, allPieces());
+            bitboard moves = constants::getBishopMoves(bishopPos, s_allPieces);
 
             // remove self captures
-            moves &= ~allPieces(m_whitesMove);
+            moves &= ~pieces(m_whitesMove);
 
             addMoves(moves, bishopPos, PieceType::Bishop, outMoves); });
     }
@@ -135,10 +141,10 @@ namespace chess
         bitboard rooks = m_whitesMove ? m_whitePieces[PieceType::Rook] : m_blackPieces[PieceType::Rook];
         bitBoards::forEachBit(rooks, [&](square rookPos)
                               {
-            bitboard moves = constants::getRookMoves(rookPos, allPieces());
+            bitboard moves = constants::getRookMoves(rookPos, s_allPieces);
 
             // remove self captures
-            moves &= ~allPieces(m_whitesMove);
+            moves &= ~pieces(m_whitesMove);
 
             addMoves(moves, rookPos, PieceType::Rook, outMoves); });
     }
@@ -148,12 +154,12 @@ namespace chess
         bitboard queens = m_whitesMove ? m_whitePieces[PieceType::Queen] : m_blackPieces[PieceType::Queen];
         bitBoards::forEachBit(queens, [&](square queenPos)
                               {
-            bitboard blockers = allPieces();
+            bitboard blockers = s_allPieces;
             bitboard moves = constants::getRookMoves(queenPos, blockers);
             moves |= constants::getBishopMoves(queenPos, blockers);
 
             // remove self captures
-            moves &= ~allPieces(m_whitesMove);
+            moves &= ~pieces(m_whitesMove);
 
             addMoves(moves, queenPos, PieceType::Queen, outMoves); });
     }
@@ -171,7 +177,7 @@ namespace chess
             nonAttacked <<= 8 * 7;
         }
 
-        if (allPieces() & emptySpotMask)
+        if (s_allPieces & emptySpotMask)
         {
             // pieces in the way
             return;
@@ -218,6 +224,10 @@ namespace chess
     MoveList BoardState::pseudoLegalMoves() const
     {
         MoveList moves;
+
+        s_whitePieces = whitePieces();
+        s_blackPieces = blackPieces();
+        s_allPieces = s_whitePieces | s_blackPieces;
 
         genPawnMoves(moves);
         genKnightMoves(moves);

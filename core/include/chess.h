@@ -139,8 +139,8 @@ namespace chess
         void makeMove(const Move &move);
 
         const bitboard *getPieceSet(bool white) const { return white ? m_whitePieces : m_blackPieces; }
-        inline bitboard allPieces(bool white) const { return white ? m_allWhitePieces : m_allBlackPieces; }
-        inline bitboard allPieces() const { return m_allWhitePieces | m_allBlackPieces; }
+        inline bitboard allPieces(bool white) const { return white ? whitePieces() : blackPieces(); }
+        inline bitboard allPieces() const { return whitePieces() | blackPieces(); }
 
         // Getters for the bitboards
         bitboard getWhitePawns() const { return m_whitePieces[PieceType::Pawn]; }
@@ -178,11 +178,6 @@ namespace chess
         square m_whiteKing;
         square m_blackKing;
 
-        // Bitboards storing all the piece locations of player
-        // These are memoized and updated after changes are made
-        bitboard m_allWhitePieces;
-        bitboard m_allBlackPieces;
-
         // Tracking enpassant oppertunities
         //  (1 bit means the square acts as if it can be taken)
         square m_enpassentSquare;
@@ -211,15 +206,18 @@ namespace chess
         // helper which adds all moves positions specified in a bitboard
         inline void addMoves(bitboard moves, square curPos, PieceType piece, MoveList &outMoves) const;
 
-        inline void updateAllPiecesBB()
+        inline bitboard whitePieces() const
         {
-            m_allWhitePieces = m_whitePieces[PieceType::Pawn] | m_whitePieces[PieceType::Knight] |
-                               m_whitePieces[PieceType::Bishop] | m_whitePieces[PieceType::Rook] |
-                               m_whitePieces[PieceType::Queen] | 1ULL << m_whiteKing;
+            return m_whitePieces[PieceType::Pawn] | m_whitePieces[PieceType::Knight] |
+                   m_whitePieces[PieceType::Bishop] | m_whitePieces[PieceType::Rook] |
+                   m_whitePieces[PieceType::Queen] | 1ULL << m_whiteKing;
+        }
 
-            m_allBlackPieces = m_blackPieces[PieceType::Pawn] | m_blackPieces[PieceType::Knight] |
-                               m_blackPieces[PieceType::Bishop] | m_blackPieces[PieceType::Rook] |
-                               m_blackPieces[PieceType::Queen] | 1ULL << m_blackKing;
+        inline bitboard blackPieces() const
+        {
+            return m_blackPieces[PieceType::Pawn] | m_blackPieces[PieceType::Knight] |
+                   m_blackPieces[PieceType::Bishop] | m_blackPieces[PieceType::Rook] |
+                   m_blackPieces[PieceType::Queen] | 1ULL << m_blackKing;
         }
 
         // default move making implementation

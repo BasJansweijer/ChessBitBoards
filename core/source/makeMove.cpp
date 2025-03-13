@@ -194,6 +194,5 @@ namespace chess
 
         // Give the turn to the other player
         m_whitesMove = !m_whitesMove;
-        updateAllPiecesBB();
     }
 }

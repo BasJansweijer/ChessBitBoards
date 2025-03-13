@@ -33,7 +33,5 @@ namespace chess
         m_blackCanCastleLong = true;
         m_blackCanCastleShort = true;
         m_whitesMove = true;
-
-        updateAllPiecesBB();
     }
 }
