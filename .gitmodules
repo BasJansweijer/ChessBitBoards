@@ -4,7 +4,7 @@
 [submodule "external/stb"]
 	path = external/stb
 	url = https://github.com/nothings/stb.git
-[submodule "build/external/stb"]
+[submodule "external/stb"]
 	path = external/stb
 	url = https://github.com/nothings/stb.git
 [submodule "external/stockfish"]
