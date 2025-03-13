@@ -138,22 +138,6 @@ namespace chess
 
         void makeMove(const Move &move);
 
-        // We need 12 bit boards (6 for each color)
-        struct PieceSet
-        {
-            bitboard pawns, knights, bishops, rooks, queens;
-
-            square king;
-
-            // This bitboard is not up to date unless updateAllPieces is called
-            bitboard allPieces;
-
-            inline void updateAllPieces()
-            {
-                allPieces = pawns | knights | bishops | rooks | queens | 1ULL << king;
-            }
-        };
-
         const bitboard *getPieceSet(bool white) const { return white ? m_whitePieces : m_blackPieces; }
         inline bitboard allPieces(bool white) const { return white ? m_allWhitePieces : m_allBlackPieces; }
         inline bitboard allPieces() const { return m_allWhitePieces | m_allBlackPieces; }
