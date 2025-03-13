@@ -29,12 +29,6 @@ add_library(imgui STATIC ${IMGUI_SRC})
 target_include_directories(imgui PUBLIC external/imgui external/imgui/backends)
 
 
-# add stb
-file(GLOB STB_SRC
-    external/stb/*.cpp
-)
-
-
 # Define paths
 set(STOCKFISH_SRC_DIR ${CMAKE_SOURCE_DIR}/external/stockfish/src)
 set(STOCKFISH_BINARY ${CMAKE_BINARY_DIR}/stockfish)
