@@ -1,6 +1,6 @@
 # ChessBitBoards
 
-An implementation of the game of chess using `bitboards`. The goal of this project is to efficiently beable to generate the possible moves.
+An implementation of the game of chess using `bitboards` + an engine (both written in c++).
 
 ## Building
 
@@ -15,3 +15,7 @@ Go into the build directory:
 Then run:
 
 `cmake .. && make`
+
+## Playing against the engine
+
+To play the engine you have a few options. After the build process you should have in the app folder an executable named `engine`. Running starts a command line interface (see commands [here](/docs/engineCommands.md)). Another option is to run `play.py` which is at the root of this github repository. This is a wrapper around the `engine` executable which adds a GUI to render the board, but still requires uci moves to be entered in the console. Optionally you can also provide the path to another executable which supports the same commands to play.py.
