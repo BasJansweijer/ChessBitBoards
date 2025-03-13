@@ -4,9 +4,6 @@
 [submodule "external/stb"]
 	path = external/stb
 	url = https://github.com/nothings/stb.git
-[submodule "external/stb"]
-	path = external/stb
-	url = https://github.com/nothings/stb.git
 [submodule "external/stockfish"]
 	path = external/stockfish
 	url = https://github.com/official-stockfish/Stockfish.git
