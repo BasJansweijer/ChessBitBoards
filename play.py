@@ -130,4 +130,4 @@ def playAgainstEngine(engineThinkSeconds, playWhite: bool):
 
 
 if __name__ == "__main__":
-    playAgainstEngine(1, False)
+    playAgainstEngine(10, False)
