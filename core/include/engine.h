@@ -21,7 +21,7 @@ namespace chess
 
         bool hasQuit() { return quit; }
 
-        bool isCheckmate()
+        bool gameFinished()
         {
             return currentBoard.legalMoves().size() == 0;
         }

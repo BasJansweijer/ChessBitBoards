@@ -88,6 +88,19 @@ namespace chess
                 outMove = m;
         }
 
+        // Stalemate detection
+        if (pseudoLegalMoves.numMoves == 0 && !curBoard.kingAttacked(curBoard.whitesMove()))
+        {
+            // Stalemate is a draw.
+            return 0;
+        }
+
+        // If the eval is a mate in n then decrease/Increase the eval by one
+        // to make the engine prefer quick mates
+        bestEval += bestEval > MATE_EVAL     ? 1
+                    : (bestEval < MATE_EVAL) ? -1
+                                             : 0;
+
         return bestEval;
     }
 

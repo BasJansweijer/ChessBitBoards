@@ -7,9 +7,18 @@
 
 namespace chess
 {
+    constexpr int MAX_DEPTH = 250;
+    constexpr int MATE_EVAL = INT_MAX - MAX_DEPTH;
+    
     class Search
     {
     public:
+        /*
+        Initializes the search on a certain board state.
+
+        IMPORTANT: the eval function should return ints between [-MATE_EVAL, MATE_EVAL].
+        The evaluations that are bellow and above this are used for mate in 0 through mate in MAX_DEPTH.
+        */
         Search(BoardState board, std::function<int(BoardState)> eval) : m_rootBoard(board), m_evalFunc(eval) {};
 
         void stop() { m_stopped = true; }
