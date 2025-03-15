@@ -67,7 +67,7 @@ class ChessEngine:
         
         if match:
             move = match.group(1)
-            eval_score = float(match.group(2))
+            eval_score = match.group(2)
             depth = int(match.group(3))
             return move, eval_score, depth
         
@@ -93,11 +93,13 @@ def getUserMove(board: chess.Board) -> str:
         print(f"'{move}' is not a legal (uci) move")
 
 
-def playAgainstEngine(engine, engineThinkSeconds, playWhite: bool):
+STARTfen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+def playAgainstEngine(engine: ChessEngine, engineThinkSeconds, playWhite: bool, fen=STARTfen):
     chessGui = ChessBoardGUI()
 
     # Initialize the board using python-chess
-    board = chess.Board()
+    board = chess.Board(fen)
+    engine.setPosition(fen)
 
     chessGui.update_board(board)
 
@@ -122,15 +124,9 @@ def playAgainstEngine(engine, engineThinkSeconds, playWhite: bool):
         engine.makeMove(move)
         board.push(chess.Move.from_uci(move))
 
-
-
-
-
+    print("Game result:", board.result())
 
 
 if __name__ == "__main__":
     engine = ChessEngine("./build/app/engine")
-    try:
-        playAgainstEngine(engine, 10, True)
-    except:
-        engine.quit()
+    playAgainstEngine(engine, 5, True, fen=STARTfen)
