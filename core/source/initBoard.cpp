@@ -5,7 +5,6 @@ from a given fen position.
 
 #include "bitBoard.h"
 #include "chess.h"
-#include "boardVisualizer.h"
 
 namespace chess
 {

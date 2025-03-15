@@ -45,7 +45,10 @@ namespace chess
             std::cout << move.toUCI() << " (eval: " << eval << ", depth: " << depth << ")" << std::endl;
         }
         else if (cmd == "showBoard")
+        {
+            std::cout << currentBoard.fen() << std::endl;
             showBoardGUI(currentBoard);
+        }
         else if (cmd == "quit" || cmd == "exit")
         {
             quit = true;

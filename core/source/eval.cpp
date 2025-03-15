@@ -1,53 +1,89 @@
 #include "eval.h"
 #include "bitBoard.h"
 #include "moveConstants.h"
+#include <cinttypes>
+#include "evalTables.h"
 
-constexpr int pieceVals[5] = {100, 300, 325, 500, 900};
+constexpr int pieceVals[5] = {100, 300, 320, 500, 900};
+
+static uint8_t whitePieceCounts[5];
+static uint8_t blackPieceCounts[5];
+
+namespace tables = chess::evalTables;
 
 namespace chess
 {
-    int evaluate(BoardState b)
+    // Calculates a float [0-1] which determines how much the endgame evaluation should weigh
+    // compared to the normal evaluation tables
+    float endGameFactor()
+    {
+        return 0.0;
+    }
+
+    // mopup score strongly influences the normal evaluation at the very end of the game to promote cornering the losing king
+    bool useMopUpScore(int materialBalance)
+    {
+        return materialBalance > 0 ? blackPieceCounts[PieceType::Pawn] == 0 : whitePieceCounts[PieceType::Pawn] == 0;
+    }
+
+    int mopUpScore(int materialBalance, square whiteKing, square blackKing)
+    {
+        int8_t wKingRank = whiteKing / 8;
+        int8_t wKingFile = whiteKing % 8;
+        int8_t bKingRank = blackKing / 8;
+        int8_t bKingFile = blackKing % 8;
+
+        bool whiteToWin = materialBalance > 0;
+
+        constexpr int centerDistMult = 400;
+        constexpr int kingDistMult = 100;
+
+        int centerDistTerm = tables::centerManhattanDistance[whiteToWin ? blackKing : whiteKing] * centerDistMult;
+        uint8_t kingDist = abs(wKingRank - bKingRank) + abs(wKingFile - bKingFile);
+
+        // We don't want to negatively influence the eval so we add the constant to the distance
+        constexpr uint8_t MAX_KING_DIST = 14;
+        int kingDistTerm = kingDistMult * (MAX_KING_DIST - kingDist);
+
+        return kingDistTerm + centerDistTerm;
+    }
+
+    int evaluate(BoardState position)
     {
 
-        const bitboard *white = b.getPieceSet(true);
-        const bitboard *black = b.getPieceSet(false);
+        const bitboard *white = position.getPieceSet(true);
+        const bitboard *black = position.getPieceSet(false);
 
-        int eval = bitBoards::bitCount(white[PieceType::Pawn]) * pieceVals[PieceType::Pawn] -
-                   bitBoards::bitCount(black[PieceType::Pawn]) * pieceVals[PieceType::Pawn] +
-                   bitBoards::bitCount(white[PieceType::Knight]) * pieceVals[PieceType::Knight] -
-                   bitBoards::bitCount(black[PieceType::Knight]) * pieceVals[PieceType::Knight] +
-                   bitBoards::bitCount(white[PieceType::Bishop]) * pieceVals[PieceType::Bishop] -
-                   bitBoards::bitCount(black[PieceType::Bishop]) * pieceVals[PieceType::Bishop] +
-                   bitBoards::bitCount(white[PieceType::Rook]) * pieceVals[PieceType::Rook] -
-                   bitBoards::bitCount(black[PieceType::Rook]) * pieceVals[PieceType::Rook] +
-                   bitBoards::bitCount(white[PieceType::Queen]) * pieceVals[PieceType::Queen] -
-                   bitBoards::bitCount(black[PieceType::Queen]) * pieceVals[PieceType::Queen];
+        // count the material for both sides
+        int whiteMaterial = 0;
+        int blackMaterial = 0;
+        for (int pieceType = 0; pieceType < 5; pieceType++)
+        {
+            whitePieceCounts[pieceType] = bitBoards::bitCount(white[pieceType]);
+            whiteMaterial += whitePieceCounts[pieceType] * pieceVals[pieceType];
 
-        bitboard allPieces = b.allPieces();
+            blackPieceCounts[pieceType] = bitBoards::bitCount(black[pieceType]);
+            blackMaterial += blackPieceCounts[pieceType] * pieceVals[pieceType];
+        }
 
-        bitBoards::forEachBit(white[PieceType::Bishop], [&](square s)
-                              { eval += 5 * bitBoards::bitCount(constants::getBishopMoves(s, allPieces)); });
+        int middelGameScore = 0;
+        int endGameScore = 0;
+        for (int pieceType = 0; pieceType < 6; pieceType++)
+        {
+            bitBoards::forEachBit(white[pieceType], [&](square s)
+                                  { middelGameScore += tables::middelGameWhite[pieceType][s]; });
 
-        bitBoards::forEachBit(black[PieceType::Bishop], [&](square s)
-                              { eval -= 5 * bitBoards::bitCount(constants::getBishopMoves(s, allPieces)); });
+            bitBoards::forEachBit(black[pieceType], [&](square s)
+                                  { middelGameScore -= tables::middelGameBlack[pieceType][s]; });
+        }
 
-        bitBoards::forEachBit(white[PieceType::Knight], [&](square s)
-                              { eval += 10 * bitBoards::bitCount(constants::knightMoves[s]); });
+        int materialBalance = whiteMaterial - blackMaterial;
 
-        bitBoards::forEachBit(black[PieceType::Knight], [&](square s)
-                              { eval -= 10 * bitBoards::bitCount(constants::knightMoves[s]); });
+        int eval = materialBalance + middelGameScore;
 
-        bitBoards::forEachBit(white[PieceType::Rook], [&](square s)
-                              { eval += 7 * bitBoards::bitCount(constants::getRookMoves(s, allPieces)); });
-
-        bitBoards::forEachBit(black[PieceType::Rook], [&](square s)
-                              { eval -= 7 * bitBoards::bitCount(constants::getRookMoves(s, allPieces)); });
-
-        bitBoards::forEachBit(white[PieceType::Queen], [&](square s)
-                              { eval += 3 * bitBoards::bitCount(constants::getRookMoves(s, allPieces) | constants::getBishopMoves(s, allPieces)); });
-
-        bitBoards::forEachBit(black[PieceType::Queen], [&](square s)
-                              { eval -= 3 * bitBoards::bitCount(constants::getRookMoves(s, allPieces) | constants::getBishopMoves(s, allPieces)); });
+        // If there are no more pawns we force losing king to the corner using the mopUpScore
+        bool useMopUp = useMopUpScore(materialBalance);
+        eval += useMopUp ? mopUpScore(materialBalance, position.getWhiteKingSquare(), position.getBlackKingSquare()) : 0;
 
         return eval;
     }

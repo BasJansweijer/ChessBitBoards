@@ -160,12 +160,14 @@ namespace chess
         bitboard getWhiteRooks() const { return m_whitePieces[PieceType::Rook]; }
         bitboard getWhiteQueens() const { return m_whitePieces[PieceType::Queen]; }
         bitboard getWhiteKing() const { return 1ULL << m_whiteKing; }
+        square getWhiteKingSquare() const { return m_whiteKing; }
         bitboard getBlackPawns() const { return m_blackPieces[PieceType::Pawn]; }
         bitboard getBlackKnights() const { return m_blackPieces[PieceType::Knight]; }
         bitboard getBlackBishops() const { return m_blackPieces[PieceType::Bishop]; }
         bitboard getBlackRooks() const { return m_blackPieces[PieceType::Rook]; }
         bitboard getBlackQueens() const { return m_blackPieces[PieceType::Queen]; }
         bitboard getBlackKing() const { return 1ULL << m_blackKing; }
+        square getBlackKingSquare() const { return m_blackKing; }
         bitboard getEnpassentLocations() const { return 1ULL << m_enpassentSquare; }
 
         bool canWhiteCastleShort() const { return m_whiteCanCastleShort; }
