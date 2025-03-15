@@ -2,6 +2,8 @@
 #include <iostream>
 #include <regex>
 
+#include "boardVisualizer.h"
+
 void cmdInvallid(std::string cmd)
 {
     std::cout << "'" << cmd << "' is not a valid command" << std::endl;
@@ -30,8 +32,11 @@ namespace chess
         }
         else if (std::regex_match(cmd, match, makeMoveRegex))
         {
-            makeMove(match[1]);
-            std::cout << "done" << std::endl;
+            bool succes = makeMove(match[1]);
+            if (succes)
+                std::cout << "done" << std::endl;
+            else
+                std::cout << "'" << match[1] << "' is not a legal move!" << std::endl;
         }
         else if (std::regex_match(cmd, match, bestMoveRegex))
         {
@@ -39,6 +44,8 @@ namespace chess
             auto [move, eval, depth] = findBestMove(seconds);
             std::cout << move.toUCI() << " (eval: " << eval << ", depth: " << depth << ")" << std::endl;
         }
+        else if (cmd == "showBoard")
+            showBoardGUI(currentBoard);
         else if (cmd == "quit" || cmd == "exit")
         {
             quit = true;

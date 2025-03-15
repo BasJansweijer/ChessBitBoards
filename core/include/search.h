@@ -4,12 +4,10 @@
 #include "chess.h"
 #include "limits.h"
 #include <atomic>
+#include "eval.h"
 
 namespace chess
 {
-    constexpr int MAX_DEPTH = 250;
-    constexpr int MATE_EVAL = INT_MAX - MAX_DEPTH;
-    
     class Search
     {
     public:
@@ -24,7 +22,7 @@ namespace chess
         void stop() { m_stopped = true; }
 
         // Returns the Move and eval and highest completed depth
-        std::tuple<Move, int, int> iterativeDeepening(double thinkSeconds);
+        std::tuple<Move, Eval, int> iterativeDeepening(double thinkSeconds);
 
         // This method is more so used internally, but can also directly be called to search a certain depth.
         template <bool Max, bool Root>

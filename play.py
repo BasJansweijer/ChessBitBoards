@@ -62,7 +62,7 @@ class ChessEngine:
 
     def bestMove(self, thinkTime):
         response = self.runCmd(f"bestMove {thinkTime}")
-        pattern = r'(\S+) \(eval: ([\d\.-]+), depth: (\d+)\)'
+        pattern = r'(\S+) \(eval: (\S+), depth: (\d+)\)'
         match = re.search(pattern, response)
         
         if match:
@@ -93,8 +93,7 @@ def getUserMove(board: chess.Board) -> str:
         print(f"'{move}' is not a legal (uci) move")
 
 
-def playAgainstEngine(engineThinkSeconds, playWhite: bool):
-    engine = ChessEngine("./build/app/engine")
+def playAgainstEngine(engine, engineThinkSeconds, playWhite: bool):
     chessGui = ChessBoardGUI()
 
     # Initialize the board using python-chess
@@ -130,4 +129,8 @@ def playAgainstEngine(engineThinkSeconds, playWhite: bool):
 
 
 if __name__ == "__main__":
-    playAgainstEngine(10, False)
+    engine = ChessEngine("./build/app/engine")
+    try:
+        playAgainstEngine(engine, 10, True)
+    except:
+        engine.quit()

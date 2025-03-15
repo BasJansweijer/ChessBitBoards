@@ -21,30 +21,40 @@ namespace chess
             .detach();
     }
 
-    std::tuple<Move, int, int> Search::iterativeDeepening(double thinkSeconds)
+    std::tuple<Move, Eval, int> Search::iterativeDeepening(double thinkSeconds)
     {
         startTimeThread(thinkSeconds);
 
-        Move bestMove;
-        int eval;
+        Move bestMove = Move::Null();
+        int evalScore;
+        Eval eval = Eval::evalFromScore(0);
 
         Move currentSearchBest;
-        int prevSearchEval;
+        int newScore;
 
         // Initially only use depth of 2 (after the first increment)
         int depth = 1;
 
-        while (!m_stopped)
+        while (eval.type != Eval::Type::MATE)
         {
-            // only update with each completed search
-            eval = prevSearchEval;
-            bestMove = currentSearchBest;
             depth += 1;
-
             if (m_rootBoard.whitesMove())
-                prevSearchEval = minimax<true, true>(m_rootBoard, depth, currentSearchBest);
+                newScore = minimax<true, true>(m_rootBoard, depth, currentSearchBest);
             else
-                prevSearchEval = minimax<false, true>(m_rootBoard, depth, currentSearchBest);
+                newScore = minimax<false, true>(m_rootBoard, depth, currentSearchBest);
+
+            // if search is stopped early return using the previous depth results
+            if (m_stopped)
+            {
+                // highest completed depth is one less
+                depth -= 1;
+                break;
+            }
+
+            // only update with each completed search
+            evalScore = newScore;
+            eval = Eval::evalFromScore(evalScore);
+            bestMove = currentSearchBest;
         }
 
         return {bestMove, eval, depth};
@@ -89,7 +99,8 @@ namespace chess
         }
 
         // Stalemate detection
-        if (pseudoLegalMoves.numMoves == 0 && !curBoard.kingAttacked(curBoard.whitesMove()))
+        bool noLegalMoves = bestEval == INT_MIN || bestEval == INT_MAX;
+        if (noLegalMoves && !curBoard.kingAttacked(curBoard.whitesMove()))
         {
             // Stalemate is a draw.
             return 0;
@@ -97,8 +108,8 @@ namespace chess
 
         // If the eval is a mate in n then decrease/Increase the eval by one
         // to make the engine prefer quick mates
-        bestEval += bestEval > MATE_EVAL     ? 1
-                    : (bestEval < MATE_EVAL) ? -1
+        bestEval += bestEval > MATE_EVAL     ? -1
+                    : (bestEval < MATE_EVAL) ? 1
                                              : 0;
 
         return bestEval;

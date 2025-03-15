@@ -30,6 +30,17 @@ namespace chess
 
         Move() = default;
 
+        // Defines the Null move
+        static Move Null()
+        {
+            return Move(0, 0, PieceType::Pawn, false);
+        }
+
+        bool isNull() const
+        {
+            return from == 0 && to == 0;
+        }
+
         Move(square from, square to, PieceType piece, bool takesPiece)
             : from(from), to(to),
               piece(piece), takesPiece(takesPiece), promotion(false)
