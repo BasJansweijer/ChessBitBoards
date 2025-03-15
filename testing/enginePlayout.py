@@ -1,13 +1,12 @@
-import subprocess
 import chess
 import chess.svg
-import cairosvg
-import io
-from tkinter import Tk, Canvas, PhotoImage
-import re
+import os
+import sys
+
+# Ensures python can find play.py
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from play import ChessBoardGUI, ChessEngine
 
- 
 def playGame(engine1Path, engine2Path, fen, thinkTime, verbose=False):
     if verbose:
         chessGui = ChessBoardGUI()
@@ -60,4 +59,4 @@ def playGame(engine1Path, engine2Path, fen, thinkTime, verbose=False):
 
 startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"
 if __name__ == "__main__":
-    playGame("../build/app/app", "../build/app/app", startFen, 0.25, verbose=True)
+    playGame("../build/app/engine", "../build/app/engine", startFen, 3, verbose=True)
