@@ -4,6 +4,8 @@
 #include <cinttypes>
 #include "evalTables.h"
 
+#include "boardVisualizer.h"
+
 constexpr int pieceVals[5] = {100, 300, 320, 500, 900};
 
 static uint8_t whitePieceCounts[5];
@@ -57,18 +59,19 @@ namespace chess
         // count the material for both sides
         int whiteMaterial = 0;
         int blackMaterial = 0;
+        // Go through every piece (except king)
         for (int pieceType = 0; pieceType < 5; pieceType++)
         {
             whitePieceCounts[pieceType] = bitBoards::bitCount(white[pieceType]);
             whiteMaterial += whitePieceCounts[pieceType] * pieceVals[pieceType];
-
             blackPieceCounts[pieceType] = bitBoards::bitCount(black[pieceType]);
             blackMaterial += blackPieceCounts[pieceType] * pieceVals[pieceType];
         }
 
         int middelGameScore = 0;
         int endGameScore = 0;
-        for (int pieceType = 0; pieceType < 6; pieceType++)
+        // Go through every piece (except king)
+        for (int pieceType = 0; pieceType < 5; pieceType++)
         {
             bitBoards::forEachBit(white[pieceType], [&](square s)
                                   { middelGameScore += tables::middelGameWhite[pieceType][s]; });
@@ -77,13 +80,19 @@ namespace chess
                                   { middelGameScore -= tables::middelGameBlack[pieceType][s]; });
         }
 
+        // Add the king position score
+        square whiteKing = position.getWhiteKingSquare();
+        square blackKing = position.getBlackKingSquare();
+        middelGameScore += tables::middelGameWhite[PieceType::King][whiteKing];
+        middelGameScore -= tables::middelGameBlack[PieceType::King][blackKing];
+
         int materialBalance = whiteMaterial - blackMaterial;
 
         int eval = materialBalance + middelGameScore;
 
         // If there are no more pawns we force losing king to the corner using the mopUpScore
         bool useMopUp = useMopUpScore(materialBalance);
-        eval += useMopUp ? mopUpScore(materialBalance, position.getWhiteKingSquare(), position.getBlackKingSquare()) : 0;
+        eval += useMopUp ? mopUpScore(materialBalance, whiteKing, blackKing) : 0;
 
         return eval;
     }
