@@ -4,8 +4,6 @@
 #include <cinttypes>
 #include "evalTables.h"
 
-#include "boardVisualizer.h"
-
 constexpr int pieceVals[5] = {100, 300, 320, 500, 900};
 
 static uint8_t whitePieceCounts[5];
