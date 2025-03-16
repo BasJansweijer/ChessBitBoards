@@ -35,13 +35,15 @@ namespace chess
         // Initially only use depth of 2 (after the first increment)
         int depth = 1;
 
+        const bool root = true;
+
         while (eval.type != Eval::Type::MATE)
         {
             depth += 1;
             if (m_rootBoard.whitesMove())
-                newScore = minimax<true, true>(m_rootBoard, depth, currentSearchBest);
+                newScore = minimax<true, root>(m_rootBoard, depth, currentSearchBest);
             else
-                newScore = minimax<false, true>(m_rootBoard, depth, currentSearchBest);
+                newScore = minimax<false, root>(m_rootBoard, depth, currentSearchBest);
 
             // if search is stopped early return using the previous depth results
             if (m_stopped)
@@ -108,9 +110,9 @@ namespace chess
 
         // If the eval is a mate in n then decrease/Increase the eval by one
         // to make the engine prefer quick mates
-        bestEval += bestEval > MATE_EVAL     ? -1
-                    : (bestEval < MATE_EVAL) ? 1
-                                             : 0;
+        bestEval += bestEval > MATE_EVAL      ? -1
+                    : (bestEval < -MATE_EVAL) ? 1
+                                              : 0;
 
         return bestEval;
     }
