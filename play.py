@@ -119,6 +119,9 @@ def playAgainstEngine(engine: ChessEngine, engineThinkSeconds, playWhite: bool, 
 
         chessGui.update_board(board)
 
+        if board.is_game_over():
+            break
+
         # Let the user make a move
         move = getUserMove(board)
         engine.makeMove(move)
@@ -129,4 +132,4 @@ def playAgainstEngine(engine: ChessEngine, engineThinkSeconds, playWhite: bool, 
 
 if __name__ == "__main__":
     engine = ChessEngine("./build/app/engine")
-    playAgainstEngine(engine, 5, True, fen=STARTfen)
+    playAgainstEngine(engine, 10, True, fen=STARTfen)
