@@ -13,6 +13,26 @@ namespace tables = chess::evalTables;
 
 namespace chess
 {
+
+    int kingSafety(const BoardState &board)
+    {
+        square blackKing = board.getBlackKingSquare();
+        square whiteKing = board.getWhiteKingSquare();
+
+        bitboard whitePieces = board.whitePieces();
+        bitboard blackPieces = board.blackPieces();
+
+        bitboard blackMoves = constants::getBishopMoves(blackKing, blackPieces) | constants::getRookMoves(blackKing, blackPieces);
+        blackMoves &= ~blackPieces;
+        int blackSafetyScore = bitBoards::bitCount(blackMoves) * 3;
+
+        bitboard whiteMoves = constants::getBishopMoves(whiteKing, whitePieces) | constants::getRookMoves(whiteKing, whitePieces);
+        whiteMoves &= ~whitePieces;
+        int whiteSafetyScore = bitBoards::bitCount(whiteMoves) * -3;
+
+        return blackSafetyScore + whiteSafetyScore;
+    }
+
     // Calculates a float [0-1] which determines how much the endgame evaluation should weigh
     // compared to the normal evaluation tables
     float endGameFactor()
@@ -87,6 +107,8 @@ namespace chess
         int materialBalance = whiteMaterial - blackMaterial;
 
         int eval = materialBalance + middelGameScore;
+
+        eval += kingSafety(position);
 
         // If there are no more pawns we force losing king to the corner using the mopUpScore
         bool useMopUp = useMopUpScore(materialBalance);

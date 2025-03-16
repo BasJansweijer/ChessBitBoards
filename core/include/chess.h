@@ -182,6 +182,20 @@ namespace chess
 
         inline bool whitesMove() const { return m_whitesMove; }
 
+        inline bitboard whitePieces() const
+        {
+            return m_whitePieces[PieceType::Pawn] | m_whitePieces[PieceType::Knight] |
+                   m_whitePieces[PieceType::Bishop] | m_whitePieces[PieceType::Rook] |
+                   m_whitePieces[PieceType::Queen] | 1ULL << m_whiteKing;
+        }
+
+        inline bitboard blackPieces() const
+        {
+            return m_blackPieces[PieceType::Pawn] | m_blackPieces[PieceType::Knight] |
+                   m_blackPieces[PieceType::Bishop] | m_blackPieces[PieceType::Rook] |
+                   m_blackPieces[PieceType::Queen] | 1ULL << m_blackKing;
+        }
+
         uint64_t hash() const;
 
     private:
@@ -218,20 +232,6 @@ namespace chess
 
         // helper which adds all moves positions specified in a bitboard
         inline void addMoves(bitboard moves, square curPos, PieceType piece, MoveList &outMoves) const;
-
-        inline bitboard whitePieces() const
-        {
-            return m_whitePieces[PieceType::Pawn] | m_whitePieces[PieceType::Knight] |
-                   m_whitePieces[PieceType::Bishop] | m_whitePieces[PieceType::Rook] |
-                   m_whitePieces[PieceType::Queen] | 1ULL << m_whiteKing;
-        }
-
-        inline bitboard blackPieces() const
-        {
-            return m_blackPieces[PieceType::Pawn] | m_blackPieces[PieceType::Knight] |
-                   m_blackPieces[PieceType::Bishop] | m_blackPieces[PieceType::Rook] |
-                   m_blackPieces[PieceType::Queen] | 1ULL << m_blackKing;
-        }
 
         // default move making implementation
         void makeNormalMove(const Move &move, bitboard &effectedBitboard);
