@@ -16,19 +16,20 @@ namespace chess
 
     int kingSafety(const BoardState &board)
     {
+        constexpr int KING_SAFETY_MULT = 7;
         square blackKing = board.getBlackKingSquare();
         square whiteKing = board.getWhiteKingSquare();
 
-        bitboard whitePieces = board.whitePieces();
-        bitboard blackPieces = board.blackPieces();
+        bitboard whitePawns = board.getWhitePawns();
+        bitboard blackPawns = board.getBlackPawns();
 
-        bitboard blackMoves = constants::getBishopMoves(blackKing, blackPieces) | constants::getRookMoves(blackKing, blackPieces);
-        blackMoves &= ~blackPieces;
-        int blackSafetyScore = bitBoards::bitCount(blackMoves) * 3;
+        bitboard whiteMoves = constants::getBishopMoves(whiteKing, whitePawns) | constants::getRookMoves(whiteKing, whitePawns);
+        whiteMoves &= ~(whitePawns && bitBoards::rankMask(0));
+        int whiteSafetyScore = bitBoards::bitCount(whiteMoves) * -KING_SAFETY_MULT;
 
-        bitboard whiteMoves = constants::getBishopMoves(whiteKing, whitePieces) | constants::getRookMoves(whiteKing, whitePieces);
-        whiteMoves &= ~whitePieces;
-        int whiteSafetyScore = bitBoards::bitCount(whiteMoves) * -3;
+        bitboard blackMoves = constants::getBishopMoves(blackKing, blackPawns) | constants::getRookMoves(blackKing, blackPawns);
+        blackMoves &= ~(whitePawns && bitBoards::rankMask(7));
+        int blackSafetyScore = bitBoards::bitCount(blackMoves) * KING_SAFETY_MULT;
 
         return blackSafetyScore + whiteSafetyScore;
     }
@@ -92,17 +93,17 @@ namespace chess
         for (int pieceType = 0; pieceType < 5; pieceType++)
         {
             bitBoards::forEachBit(white[pieceType], [&](square s)
-                                  { middelGameScore += tables::middelGameWhite[pieceType][s]; });
+                                  { middelGameScore += tables::middleGameWhite[pieceType][s]; });
 
             bitBoards::forEachBit(black[pieceType], [&](square s)
-                                  { middelGameScore -= tables::middelGameBlack[pieceType][s]; });
+                                  { middelGameScore -= tables::middleGameBlack[pieceType][s]; });
         }
 
         // Add the king position score
         square whiteKing = position.getWhiteKingSquare();
         square blackKing = position.getBlackKingSquare();
-        middelGameScore += tables::middelGameWhite[PieceType::King][whiteKing];
-        middelGameScore -= tables::middelGameBlack[PieceType::King][blackKing];
+        middelGameScore += tables::middleGameWhite[PieceType::King][whiteKing];
+        middelGameScore -= tables::middleGameBlack[PieceType::King][blackKing];
 
         int materialBalance = whiteMaterial - blackMaterial;
 
