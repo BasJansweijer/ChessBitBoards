@@ -128,6 +128,7 @@ def playAgainstEngine(engine: ChessEngine, engineThinkSeconds, playWhite: bool, 
         board.push(chess.Move.from_uci(move))
 
     print("Game result:", board.result())
+    input("enter to quit")
 
 
 if __name__ == "__main__":
