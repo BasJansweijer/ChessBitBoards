@@ -12,13 +12,32 @@ namespace chess
     void Search::startTimeThread(double thinkSeconds)
     {
         m_stopped = false; // Reset before starting
+        m_cancelled = false;
 
         // Launch a detached thread to stop search after thinkSeconds
-        std::thread([this, thinkSeconds]()
-                    {
-            std::this_thread::sleep_for(std::chrono::duration<double>(thinkSeconds));
-            m_stopped = true; })
-            .detach();
+        m_timerThread = std::thread([this, thinkSeconds]()
+                                    {
+                                        auto endTime = std::chrono::steady_clock::now() + std::chrono::duration<double>(thinkSeconds);
+
+                                        while (std::chrono::steady_clock::now() < endTime)
+                                        {
+                                            if (m_cancelled)
+                                            {
+                                                // If cancelled, exit early
+                                                m_stopped = true;
+                                                return;
+                                            }
+
+                                            std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Sleep for a short time to check cancellation
+                                        }
+                                        m_stopped = true; // Time expired, mark as stopped
+                                    });
+    }
+
+    void Search::stopTimeThread()
+    {
+        m_cancelled = true;
+        m_timerThread.join();
     }
 
     std::tuple<Move, Eval, int> Search::iterativeDeepening(double thinkSeconds)
@@ -59,6 +78,8 @@ namespace chess
             bestMove = currentSearchBest;
         }
 
+        // The search is done so we stop any still going timer
+        stopTimeThread();
         return {bestMove, eval, depth};
     }
 

@@ -3,6 +3,7 @@
 #include <functional>
 #include "chess.h"
 #include "limits.h"
+#include <thread>
 #include <atomic>
 #include "eval.h"
 
@@ -32,9 +33,14 @@ namespace chess
         // Starts a thread which will set m_stopped to true once the specified time has run out
         void startTimeThread(double thinkSeconds);
 
+        // Used to stop the timer early
+        void stopTimeThread();
+
     private:
         const std::function<int(BoardState)> m_evalFunc;
         const BoardState m_rootBoard;
         std::atomic<bool> m_stopped = false;
+        std::atomic<bool> m_cancelled = false;
+        std::thread m_timerThread;
     };
 }
