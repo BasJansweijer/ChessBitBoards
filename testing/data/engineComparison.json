@@ -1,0 +1,9 @@
+[
+  {
+    "engine1": "../releases/engine-v0.0.1",
+    "engine2": "../releases/engine-v0.0.1",
+    "wins": 239,
+    "draws": 519,
+    "losses": 242
+  }
+]
