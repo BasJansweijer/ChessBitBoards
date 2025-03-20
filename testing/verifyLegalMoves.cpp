@@ -4,6 +4,7 @@
 #include "chess.h"
 #include "stockfish.h"
 #include "boardVisualizer.h"
+#include <fstream>
 #include <thread>
 #include <chrono>
 
