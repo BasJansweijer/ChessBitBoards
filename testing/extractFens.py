@@ -152,5 +152,5 @@ if __name__ == "__main__":
 
     # getNfens(lichessDBpath, "data/fens10000.txt", 10000)
     # getNfens(lichessDBpath, "data/fens10.txt", 10)
-    getNequalOpeningPositions(lichessDBpath, "data/openingFens.txt", 500)
+    # getNequalOpeningPositions(lichessDBpath, "data/openingFens.txt", 500)
 

@@ -129,7 +129,8 @@ namespace chess
             score += correctCornerMult * (7 - correctCornerDist);
         }
 
-        return score;
+        // make negative if black is winning
+        return whiteToWin ? score : -score;
     }
 
     int evaluate(BoardState position)
