@@ -102,7 +102,7 @@ void renderEmptyBoard()
     {
         for (int file = 0; file < 8; file++)
         {
-            ImU32 color = ((rank + file) % 2 == 0) ? lightColor // White
+            ImU32 color = ((rank + file) % 2 == 1) ? lightColor // White
                                                    : darkColor; // Black
 
             topLeft = getSquarePos(rank, file);
