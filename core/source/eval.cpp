@@ -51,9 +51,12 @@ namespace chess
 
         const int materialAdvantage = std::abs(whiteMaterial - blackMaterial);
 
+        // We factor is lower when opponent has more material still on the board
+        const int opponentMaterial = whiteMaterial > blackMaterial ? blackMaterial : whiteMaterial;
+
         return materialAdvantage < minMaterialDiff || endGameNessScore < 0.5
                    ? 0 // don't use mopup score
-                   : materialAdvantage * endGameNessScore / (float)pieceVals[PieceType::Rook];
+                   : materialAdvantage * endGameNessScore / (float)(pieceVals[PieceType::Rook] + opponentMaterial);
     }
 
     /*
