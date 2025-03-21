@@ -40,13 +40,30 @@ namespace chess
         m_timerThread.join();
     }
 
+    Eval evalFromScore(int score, int searchDepth)
+    {
+        // check if it is not a mate
+        if (abs(score) < MATE_EVAL)
+            return Eval(Eval::Type::SCORE, score);
+
+        bool whiteMating = score > 0;
+
+        // Search depth that was remaining when the mate was found
+        int remainingDepth = abs(score) - MATE_EVAL;
+
+        int mateInPlies = searchDepth - remainingDepth;
+
+        int n = (mateInPlies + 1) / 2;
+        return Eval(Eval::Type::MATE, n);
+    }
+
     std::tuple<Move, Eval, int> Search::iterativeDeepening(double thinkSeconds)
     {
         startTimeThread(thinkSeconds);
 
         Move bestMove = Move::Null();
         int evalScore;
-        Eval eval = Eval::evalFromScore(0);
+        Eval eval = evalFromScore(0, 0);
 
         Move currentSearchBest;
         int newScore;
@@ -74,7 +91,7 @@ namespace chess
 
             // only update with each completed search
             evalScore = newScore;
-            eval = Eval::evalFromScore(evalScore);
+            eval = evalFromScore(evalScore, depth);
             bestMove = currentSearchBest;
         }
 
@@ -84,14 +101,14 @@ namespace chess
     }
 
     template <bool Max, bool Root>
-    int Search::minimax(const BoardState &curBoard, int depth, Move &outMove, int alpha, int beta)
+    int Search::minimax(const BoardState &curBoard, int remainingDepth, Move &outMove, int alpha, int beta)
     {
         // cancel the search
         if (m_stopped.load(std::memory_order_relaxed))
             return 0;
 
         // Base case
-        if (depth == 0)
+        if (remainingDepth == 0)
             return m_evalFunc(curBoard);
 
         // Start with the worst possible eval
@@ -107,39 +124,43 @@ namespace chess
                 continue; // skip since move was illegal
 
             // search with opposite of min/max and not root and 1 less depth
-            int moveEval = minimax<!Max, false>(newBoard, depth - 1, outMove, alpha, beta);
-            bestEval = Max ? std::max(bestEval, moveEval) : std::min(bestEval, moveEval);
+            int moveEval = minimax<!Max, false>(newBoard, remainingDepth - 1, outMove, alpha, beta);
+
+            // Update the bestEval and move only when a strictly better option is found
+            // (this prevents using pruned options)
+            if (Max ? bestEval < moveEval : bestEval > moveEval)
+            {
+                bestEval = moveEval;
+
+                if (Root)
+                    outMove = m;
+            }
 
             if (Max ? bestEval > beta : bestEval < alpha)
                 break; // The opponent could have chosen a better move in a previous step.
 
             // max alpha / min beta depending on what player we are
             Max ? alpha = std::max(alpha, bestEval) : beta = std::min(beta, bestEval);
-
-            // Incase this is the root search node then update if the eval was updated
-            if (Root && moveEval == bestEval)
-                outMove = m;
         }
 
-        // Stalemate detection
+        // Stalemate/mate detection
         bool noLegalMoves = bestEval == INT_MIN || bestEval == INT_MAX;
-        if (noLegalMoves && !curBoard.kingAttacked(curBoard.whitesMove()))
+        if (noLegalMoves)
         {
-            // Stalemate is a draw.
-            return 0;
-        }
+            // Stalemate is a draw. (if the king is not in check)
+            if (!curBoard.kingAttacked(curBoard.whitesMove()))
+                return 0;
 
-        // If the eval is a mate in n then decrease/Increase the eval by one
-        // to make the engine prefer quick mates
-        bestEval += bestEval > MATE_EVAL      ? -1
-                    : (bestEval < -MATE_EVAL) ? 1
-                                              : 0;
+            // calculate mate evaluation
+            // The higher the remaining depth the closer we are to the root (so more negative/positive score).
+            bestEval = Max ? -MATE_EVAL - remainingDepth : MATE_EVAL + remainingDepth;
+        }
 
         return bestEval;
     }
 
-    template int Search::minimax<true, true>(const BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
-    template int Search::minimax<false, true>(const BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
-    template int Search::minimax<true, false>(const BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
-    template int Search::minimax<false, false>(const BoardState &curBoard, int depth, Move &outMove, int alpha, int beta);
+    template int Search::minimax<true, true>(const BoardState &curBoard, int remainingDepth, Move &outMove, int alpha, int beta);
+    template int Search::minimax<false, true>(const BoardState &curBoard, int remainingDepth, Move &outMove, int alpha, int beta);
+    template int Search::minimax<true, false>(const BoardState &curBoard, int remainingDepth, Move &outMove, int alpha, int beta);
+    template int Search::minimax<false, false>(const BoardState &curBoard, int remainingDepth, Move &outMove, int alpha, int beta);
 }
