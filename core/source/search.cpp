@@ -3,6 +3,7 @@
 #include <functional>
 #include <chrono>
 #include <thread>
+#include <cmath>
 
 #include "chess.h"
 #include "search.h"
@@ -63,7 +64,22 @@ namespace chess
         return Eval(Eval::Type::MATE, n);
     }
 
-    std::tuple<Move, Eval, Search::SearchInfo> Search::iterativeDeepening(double thinkSeconds)
+    Search::SearchSettings initialSettings(double thinkSeconds)
+    {
+        constexpr int MAX_INITIAL_DEPTH = 4;
+        float sqrtTime = std::sqrt(thinkSeconds);
+        int minDepth = std::min((int)(0.5 * sqrtTime), MAX_INITIAL_DEPTH);
+
+        constexpr int MAX_QUIESCENT_MAX = 8;
+        constexpr int MIN_QUIESCENT_MAX = 3;
+        int maxQuiescentDepth = sqrtTime / 0.5;
+        maxQuiescentDepth = std::min(MAX_QUIESCENT_MAX, std::max(MIN_QUIESCENT_MAX, maxQuiescentDepth));
+        minDepth = std::max(1, minDepth);
+        return Search::SearchSettings(minDepth, maxQuiescentDepth);
+    }
+
+    std::tuple<Move, Eval, Search::SearchStats>
+    Search::iterativeDeepening(double thinkSeconds)
     {
         startTimeThread(thinkSeconds);
 
@@ -74,23 +90,26 @@ namespace chess
         Move currentSearchBest;
         int newScore;
 
-        // Initially only use depth of 2 (after the first increment)
-        m_info.minDepth = 1;
+        Search::SearchSettings prevSetting;
+        Search::SearchStats prevStats;
 
-        Search::SearchInfo prevSearchInfo;
+        m_settings = initialSettings(thinkSeconds);
 
         const bool root = true;
 
         while (eval.type != Eval::Type::MATE)
         {
-            // Update the info to the previous collected info
-            prevSearchInfo = m_info;
+            // Update the info to the collected info from previous completed search
+            prevSetting = m_settings;
+            prevStats = m_statistics;
 
-            m_info.minDepth += 1;
+            m_settings.minDepth += 1;
+            m_settings.maxQuiescentDepth += 1;
+
             if (m_rootBoard.whitesMove())
-                newScore = minimax<true, root>(m_rootBoard, m_info.minDepth, currentSearchBest);
+                newScore = minimax<true, root>(m_rootBoard, m_settings.minDepth, currentSearchBest);
             else
-                newScore = minimax<false, root>(m_rootBoard, m_info.minDepth, currentSearchBest);
+                newScore = minimax<false, root>(m_rootBoard, m_settings.minDepth, currentSearchBest);
 
             // if search is stopped early return using the previous depth results
             if (m_stopped)
@@ -101,16 +120,17 @@ namespace chess
 
             // only update with each completed search
             evalScore = newScore;
-            eval = evalFromScore(evalScore, m_info.minDepth);
+            eval = evalFromScore(evalScore, m_settings.minDepth);
             bestMove = currentSearchBest;
         }
 
         // The search is done so we stop any still going timer
         stopTimeThread();
 
-        m_info = prevSearchInfo;
+        // Set the actually used minDepth
+        m_statistics.minDepth = prevSetting.minDepth;
 
-        return {bestMove, eval, m_info};
+        return {bestMove, eval, m_statistics};
     }
 
     template <bool Max, bool Root>
@@ -181,10 +201,13 @@ namespace chess
             return 0;
 
         // Update max depth statistic
-        m_info.maxDepth = std::max(m_info.minDepth + extraDepth, m_info.maxDepth);
+        m_statistics.reachedDepth = std::max(m_settings.minDepth + extraDepth, m_statistics.reachedDepth);
 
         // Captures aren't forced so we assume the current positions evaluation as a minimum
         int bestEval = m_evalFunc(curBoard);
+
+        if (m_settings.maxQuiescentDepth <= extraDepth)
+            return bestEval;
 
         MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Quiescent>();
 

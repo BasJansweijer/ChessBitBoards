@@ -25,7 +25,7 @@ namespace chess
 
     int kingSafety(const BoardState &board)
     {
-        constexpr int KING_SAFETY_MULT = 7;
+        constexpr int KING_SAFETY_MULT = 10;
         square blackKing = board.getBlackKingSquare();
         square whiteKing = board.getWhiteKingSquare();
 
