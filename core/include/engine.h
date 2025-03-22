@@ -51,7 +51,7 @@ namespace chess
         }
 
         // Returns the best found move, evaluation (int), max completed depth (int)
-        std::tuple<Move, Eval, int> findBestMove(double thinkSeconds)
+        std::tuple<Move, Eval, Search::SearchStats> findBestMove(double thinkSeconds)
         {
             Search s(currentBoard, evaluate);
             return s.iterativeDeepening(thinkSeconds);
