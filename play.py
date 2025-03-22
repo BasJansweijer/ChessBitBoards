@@ -62,14 +62,13 @@ class ChessEngine:
 
     def bestMove(self, thinkTime):
         response = self.runCmd(f"bestMove {thinkTime}")
-        pattern = r'(\S+) \(eval: (\S+), depth: (\d+)\)'
+        pattern = r'(\S+) \(([^)]+)\)'
         match = re.search(pattern, response)
         
         if match:
             move = match.group(1)
-            eval_score = match.group(2)
-            depth = int(match.group(3))
-            return move, eval_score, depth
+            info = match.group(2)
+            return move, info
         
         print(response)
         raise Exception("bestMove Not parsed correctly")
@@ -111,8 +110,8 @@ def playAgainstEngine(engine: ChessEngine, engineThinkSeconds, playWhite: bool, 
     while not board.is_game_over():
         chessGui.update_board(board)
 
-        move, eval, maxDepth = engine.bestMove(engineThinkSeconds)
-        print(f"Engine plays {move}, (est. eval: {eval}, searched depth: {maxDepth})")
+        move, info = engine.bestMove(engineThinkSeconds)
+        print(f"Engine plays {move}, ({info})")
 
         engine.makeMove(move)
         board.push(chess.Move.from_uci(move))
