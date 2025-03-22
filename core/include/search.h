@@ -22,14 +22,33 @@ namespace chess
 
         void stop() { m_stopped = true; }
 
+        struct SearchInfo
+        {
+            // Depth untill which everything is explored
+            int minDepth = 0;
+            // Maximum depth including quiescent search
+            int maxDepth = 0;
+
+            // Overload operator<< for printing
+            friend std::ostream &operator<<(std::ostream &os, const SearchInfo &info)
+            {
+                os << "{ minDepth=" << info.minDepth << ", maxDepth=" << info.maxDepth << "}";
+                return os;
+            }
+        };
+
         // Returns the Move and eval and highest completed depth
-        std::tuple<Move, Eval, int> iterativeDeepening(double thinkSeconds);
+        std::tuple<Move, Eval, SearchInfo> iterativeDeepening(double thinkSeconds);
 
         // This method is more so used internally, but can also directly be called to search a certain depth.
         template <bool Max, bool Root>
         int minimax(const BoardState &curBoard, int remainingDepth, Move &outMove, int alpa = INT_MIN, int beta = INT_MAX);
 
     private:
+        // does a search only using captures (MoveGenType::Quiescent)
+        template <bool Max>
+        int quiescentSearch(const BoardState &curBoard, int extraDepth, int alpha = INT_MIN, int beta = INT_MAX);
+
         // Starts a thread which will set m_stopped to true once the specified time has run out
         void startTimeThread(double thinkSeconds);
 
@@ -39,6 +58,7 @@ namespace chess
     private:
         const std::function<int(BoardState)> m_evalFunc;
         const BoardState m_rootBoard;
+        SearchInfo m_info;
         std::atomic<bool> m_stopped = false;
         std::atomic<bool> m_cancelled = false;
         std::thread m_timerThread;

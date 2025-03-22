@@ -13,7 +13,9 @@ int perft(chess::BoardState &b, int depth)
 
     int nodes = 1;
 
-    for (auto m : b.pseudoLegalMoves())
+    constexpr chess::BoardState::MoveGenType NORMAL = chess::BoardState::MoveGenType::Normal;
+
+    for (auto m : b.pseudoLegalMoves<NORMAL>())
     {
         chess::BoardState newB = b;
         newB.makeMove(m);

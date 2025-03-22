@@ -9,6 +9,8 @@
 
 namespace chess
 {
+    using MoveGenType = BoardState::MoveGenType;
+
     void Search::startTimeThread(double thinkSeconds)
     {
         m_stopped = false; // Reset before starting
@@ -42,8 +44,11 @@ namespace chess
 
     Eval evalFromScore(int score, int searchDepth)
     {
+        // In the quiescent search we might find even deeper mates
+        constexpr int MAX_QUIESCENT_DEPTH = 100;
+
         // check if it is not a mate
-        if (abs(score) < MATE_EVAL)
+        if (abs(score) < MATE_EVAL - MAX_QUIESCENT_DEPTH)
             return Eval(Eval::Type::SCORE, score);
 
         bool whiteMating = score > 0;
@@ -51,13 +56,14 @@ namespace chess
         // Search depth that was remaining when the mate was found
         int remainingDepth = abs(score) - MATE_EVAL;
 
+        // remaining depth might be negative if mate is found in quiescent search.
         int mateInPlies = searchDepth - remainingDepth;
 
         int n = (mateInPlies + 1) / 2;
         return Eval(Eval::Type::MATE, n);
     }
 
-    std::tuple<Move, Eval, int> Search::iterativeDeepening(double thinkSeconds)
+    std::tuple<Move, Eval, Search::SearchInfo> Search::iterativeDeepening(double thinkSeconds)
     {
         startTimeThread(thinkSeconds);
 
@@ -69,35 +75,42 @@ namespace chess
         int newScore;
 
         // Initially only use depth of 2 (after the first increment)
-        int depth = 1;
+        m_info.minDepth = 1;
+
+        Search::SearchInfo prevSearchInfo;
 
         const bool root = true;
 
         while (eval.type != Eval::Type::MATE)
         {
-            depth += 1;
+            // Update the info to the previous collected info
+            prevSearchInfo = m_info;
+
+            m_info.minDepth += 1;
             if (m_rootBoard.whitesMove())
-                newScore = minimax<true, root>(m_rootBoard, depth, currentSearchBest);
+                newScore = minimax<true, root>(m_rootBoard, m_info.minDepth, currentSearchBest);
             else
-                newScore = minimax<false, root>(m_rootBoard, depth, currentSearchBest);
+                newScore = minimax<false, root>(m_rootBoard, m_info.minDepth, currentSearchBest);
 
             // if search is stopped early return using the previous depth results
             if (m_stopped)
             {
                 // highest completed depth is one less
-                depth -= 1;
                 break;
             }
 
             // only update with each completed search
             evalScore = newScore;
-            eval = evalFromScore(evalScore, depth);
+            eval = evalFromScore(evalScore, m_info.minDepth);
             bestMove = currentSearchBest;
         }
 
         // The search is done so we stop any still going timer
         stopTimeThread();
-        return {bestMove, eval, depth};
+
+        m_info = prevSearchInfo;
+
+        return {bestMove, eval, m_info};
     }
 
     template <bool Max, bool Root>
@@ -107,14 +120,15 @@ namespace chess
         if (m_stopped.load(std::memory_order_relaxed))
             return 0;
 
-        // Base case
+        // Base case (do a quiescent search)
         if (remainingDepth == 0)
-            return m_evalFunc(curBoard);
+            // return m_evalFunc(curBoard);
+            return quiescentSearch<Max>(curBoard, 0, alpha, beta);
 
         // Start with the worst possible eval
         int bestEval = Max ? INT_MIN : INT_MAX;
 
-        MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves();
+        MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Normal>();
 
         for (const Move &m : pseudoLegalMoves)
         {
@@ -137,7 +151,7 @@ namespace chess
             }
 
             if (Max ? bestEval > beta : bestEval < alpha)
-                break; // The opponent could have chosen a better move in a previous step.
+                return bestEval; // The opponent could have chosen a better move in a previous step.
 
             // max alpha / min beta depending on what player we are
             Max ? alpha = std::max(alpha, bestEval) : beta = std::min(beta, bestEval);
@@ -154,6 +168,46 @@ namespace chess
             // calculate mate evaluation
             // The higher the remaining depth the closer we are to the root (so more negative/positive score).
             bestEval = Max ? -MATE_EVAL - remainingDepth : MATE_EVAL + remainingDepth;
+        }
+
+        return bestEval;
+    }
+
+    template <bool Max>
+    int Search::quiescentSearch(const BoardState &curBoard, int extraDepth, int alpha, int beta)
+    {
+        // cancel the search
+        if (m_stopped.load(std::memory_order_relaxed))
+            return 0;
+
+        // Update max depth statistic
+        m_info.maxDepth = std::max(m_info.minDepth + extraDepth, m_info.maxDepth);
+
+        // Captures aren't forced so we assume the current positions evaluation as a minimum
+        int bestEval = m_evalFunc(curBoard);
+
+        MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Quiescent>();
+
+        for (const Move &m : pseudoLegalMoves)
+        {
+            // max alpha / min beta depending on what player we are
+            Max ? alpha = std::max(alpha, bestEval) : beta = std::min(beta, bestEval);
+
+            BoardState newBoard = curBoard;
+            newBoard.makeMove(m);
+            if (newBoard.kingAttacked(Max))
+                continue; // skip since move was illegal
+
+            // search with opposite of min/max and not root and 1 less depth
+            int moveEval = quiescentSearch<!Max>(newBoard, extraDepth + 1, alpha, beta);
+
+            // Update the bestEval and move only when a strictly better option is found
+            // (this prevents using pruned options)
+            if (Max ? bestEval < moveEval : bestEval > moveEval)
+                bestEval = moveEval;
+
+            if (Max ? bestEval > beta : bestEval < alpha)
+                return bestEval; // The opponent could have chosen a better move in a previous step.
         }
 
         return bestEval;

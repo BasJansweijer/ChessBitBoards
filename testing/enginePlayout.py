@@ -24,9 +24,9 @@ def playGame(engine1: ChessEngine, engine2: ChessEngine, fen, thinkTime, verbose
 
     while not board.is_game_over():
         # Engine 1's move
-        move1, eval, maxDepth = engine1.bestMove(thinkTime)
+        move1, info = engine1.bestMove(thinkTime)
         if verbose:
-            print(f"Engine 1 plays: {move1} (est. eval: {eval}, maxDepth: {maxDepth})")
+            print(f"Engine 1 plays: {move1} ({info})")
 
         board.push(chess.Move.from_uci(move1))
         engine1.makeMove(move1)
@@ -40,9 +40,9 @@ def playGame(engine1: ChessEngine, engine2: ChessEngine, fen, thinkTime, verbose
             break
 
         # Engine 2's move
-        move2, eval, maxDepth = engine2.bestMove(thinkTime)
+        move2, info = engine2.bestMove(thinkTime)
         if verbose:
-            print(f"Engine 2 plays: {move2} (est. eval: {eval}, maxDepth: {maxDepth})")
+            print(f"Engine 2 plays: {move2} ({info})")
 
         board.push(chess.Move.from_uci(move2))
         engine2.makeMove(move2)
@@ -65,9 +65,11 @@ def compareEngines(engine1: ChessEngine, engine2: ChessEngine, thinkTime=0.5, fe
     n = 0
     for fen in open(fensFile):
         n += 1
+        print(f"Current results: engine1 wins: {engine1Wins}, engine2 wins: {engine2Wins}, draws: {draws}")
         print(f"Starting on fen {n}")
 
         fen = fen.rstrip('\n')
+        print(f"white: {engine1.engine_path}, black: {engine2.engine_path}")
         res1 = playGame(engine1, engine2, fen, thinkTime, verbose=verbose)
         if res1 == "1-0":
             engine1Wins += 1
@@ -76,6 +78,8 @@ def compareEngines(engine1: ChessEngine, engine2: ChessEngine, thinkTime=0.5, fe
         elif res1 == "1/2-1/2":
             draws += 1
 
+
+        print(f"white: {engine2.engine_path}, black: {engine1.engine_path}")
         res2 = playGame(engine2, engine1, fen, thinkTime, verbose=verbose)
         if res2 == "1-0":
             engine2Wins += 1
@@ -119,8 +123,13 @@ def storeComparison(engine1: ChessEngine, engine2: ChessEngine, result:tuple[int
 
 startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"
 if __name__ == "__main__":
-    e1 = ChessEngine("../build/app/engine")
-    e2 = ChessEngine("../build/app/engine")
+    e1 = ChessEngine("../releases/engine-v0.0.1")
+    # e2 = ChessEngine("../build/app/engine")
+    e2 = ChessEngine("../releases/engine-v0.0.2")
+
+    # playGame(e1, e2, startFen, 10, True)
+
+    
     result = compareEngines(e1, e2)
     storeComparison(e1, e2, result)
 

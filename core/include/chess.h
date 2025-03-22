@@ -129,6 +129,12 @@ namespace chess
         // Retrieves the fen of the current position
         std::string fen() const;
 
+        enum MoveGenType
+        {
+            Normal,
+            Quiescent
+        };
+
         /**
          * @brief returns pseudo legal moves from the current position
          *
@@ -136,6 +142,7 @@ namespace chess
          *
          * @return the moves
          */
+        template <MoveGenType GenType>
         MoveList pseudoLegalMoves() const;
 
         /**
@@ -219,11 +226,17 @@ namespace chess
 
     private:
         // Piece specific move generation helpers
+        template <MoveGenType GenT>
         void genPawnMoves(MoveList &outMoves) const;
+        template <MoveGenType GenT>
         void genKnightMoves(MoveList &outMoves) const;
+        template <MoveGenType GenT>
         void genBishopMoves(MoveList &outMoves) const;
+        template <MoveGenType GenT>
         void genRookMoves(MoveList &outMoves) const;
+        template <MoveGenType GenT>
         void genQueenMoves(MoveList &outMoves) const;
+        template <MoveGenType GenT>
         void genKingMoves(MoveList &outMoves) const;
 
         // helpers to generate the castling moves
@@ -231,6 +244,7 @@ namespace chess
         void tryCastle(MoveList &outMoves, bool shortCastle) const;
 
         // helper which adds all moves positions specified in a bitboard
+        template <MoveGenType GenT>
         inline void addMoves(bitboard moves, square curPos, PieceType piece, MoveList &outMoves) const;
 
         // default move making implementation
