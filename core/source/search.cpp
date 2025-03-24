@@ -70,7 +70,7 @@ namespace chess
         float sqrtTime = std::sqrt(thinkSeconds);
         int minDepth = std::min((int)(0.5 * sqrtTime), MAX_INITIAL_DEPTH);
 
-        constexpr int MAX_QUIESCENT_MAX = 8;
+        constexpr int MAX_QUIESCENT_MAX = 12;
         constexpr int MIN_QUIESCENT_MAX = 3;
         int maxQuiescentDepth = sqrtTime / 0.5;
         maxQuiescentDepth = std::min(MAX_QUIESCENT_MAX, std::max(MIN_QUIESCENT_MAX, maxQuiescentDepth));
@@ -213,6 +213,9 @@ namespace chess
 
         for (const Move &m : pseudoLegalMoves)
         {
+            if (Max ? bestEval > beta : bestEval < alpha)
+                return bestEval; // The opponent could have chosen a better move in a previous step.
+
             // max alpha / min beta depending on what player we are
             Max ? alpha = std::max(alpha, bestEval) : beta = std::min(beta, bestEval);
 
@@ -228,9 +231,6 @@ namespace chess
             // (this prevents using pruned options)
             if (Max ? bestEval < moveEval : bestEval > moveEval)
                 bestEval = moveEval;
-
-            if (Max ? bestEval > beta : bestEval < alpha)
-                return bestEval; // The opponent could have chosen a better move in a previous step.
         }
 
         return bestEval;
