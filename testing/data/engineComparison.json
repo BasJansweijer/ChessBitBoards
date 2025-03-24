@@ -12,5 +12,12 @@
         "wins": 234,
         "draws": 488,
         "losses": 278
+    },
+    {
+        "engine1": "../releases/engine-v0.0.2",
+        "engine2": "../build/app/engine",
+        "wins": 116,
+        "draws": 435,
+        "losses": 449
     }
 ]
