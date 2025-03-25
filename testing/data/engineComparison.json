@@ -1,23 +1,23 @@
 [
-    {
-        "engine1": "../releases/engine-v0.0.1",
-        "engine2": "../releases/engine-v0.0.1",
-        "wins": 239,
-        "draws": 519,
-        "losses": 242
-    },
-    {
-        "engine1": "../releases/engine-v0.0.1",
-        "engine2": "../releases/engine-v0.0.2",
-        "wins": 234,
-        "draws": 488,
-        "losses": 278
-    },
-    {
-        "engine1": "../releases/engine-v0.0.2",
-        "engine2": "../build/app/engine-v0.0.3",
-        "wins": 116,
-        "draws": 435,
-        "losses": 449
-    }
+  {
+    "engine1": "../releases/engine-v0.0.1",
+    "engine2": "../releases/engine-v0.0.1",
+    "wins": 239,
+    "draws": 519,
+    "losses": 242
+  },
+  {
+    "engine1": "../releases/engine-v0.0.1",
+    "engine2": "../releases/engine-v0.0.2",
+    "wins": 234,
+    "draws": 488,
+    "losses": 278
+  },
+  {
+    "engine1": "../releases/engine-v0.0.2",
+    "engine2": "../releases/engine-v0.0.3",
+    "wins": 116,
+    "draws": 435,
+    "losses": 449
+  }
 ]
