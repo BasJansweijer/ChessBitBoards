@@ -16,3 +16,4 @@ The final results of this against the previous version were: 278 wins, 488 draws
 ## Quiescent search (v0.0.3)
 
 The evaluation function that is used does not take into account that, on the next move, there might be pieces that can be captured. To prevent 'halucinations' in the minimax outcome we implement quiescent search to always explore al the capture possibilities at the end of the search.
+Doing so improved the performance by roughly 250 elo. The results against the previous version were 449 wins, 435 draws and 116 losses.
