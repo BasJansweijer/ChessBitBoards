@@ -1,89 +1,33 @@
 #include "bitBoard.h"
 #include "chess.h"
 #include <iostream>
+#include "zobristHash.h"
 
 namespace chess
 {
-    void BoardState::takeOpponentPiece(square s)
-    {
-        // all non taken positions
-        bitboard mask = ~(1ULL << s);
-        if (m_whitesMove)
-        {
-            m_blackPieces[PieceType::Pawn] &= mask;
-            m_blackPieces[PieceType::Knight] &= mask;
-            m_blackPieces[PieceType::Bishop] &= mask;
-            m_blackPieces[PieceType::Rook] &= mask;
-            m_blackPieces[PieceType::Queen] &= mask;
-        }
-        else
-        {
-            m_whitePieces[PieceType::Pawn] &= mask;
-            m_whitePieces[PieceType::Knight] &= mask;
-            m_whitePieces[PieceType::Bishop] &= mask;
-            m_whitePieces[PieceType::Rook] &= mask;
-            m_whitePieces[PieceType::Queen] &= mask;
-        }
-    }
 
-    void BoardState::makeNormalMove(const Move &move, bitboard &effectedBitboard)
-    {
-        // remove old position and place on new position
-        // (If the move was a promotion we do not remove the original piece)
-        move.promotion ? effectedBitboard ^= 1ULL << move.to
-                       : effectedBitboard ^= 1ULL << move.to | 1ULL << move.from;
-
-        if (move.takesPiece)
-        {
-            // Check wether we take a rook and should thus revoke castling rights
-            if ((m_whitesMove ? m_blackPieces[PieceType::Rook] : m_whitePieces[PieceType::Rook]) & 1ULL << move.to)
-            {
-                switch (move.to)
-                {
-                case 63:
-                    m_blackCanCastleShort = false;
-                    break;
-                case 56:
-                    m_blackCanCastleLong = false;
-                    break;
-                case 0:
-                    m_whiteCanCastleLong = false;
-                    break;
-                case 7:
-                    m_whiteCanCastleShort = false;
-                    break;
-                }
-            }
-
-            takeOpponentPiece(move.to);
-        }
-    }
-
+    template <bool whitesMove>
     void BoardState::makePawnMove(const Move &move, square prevEnpassentLocation)
     {
-        bitboard &pawns = m_whitesMove ? m_whitePieces[PieceType::Pawn] : m_blackPieces[PieceType::Pawn];
-        makeNormalMove(move, pawns);
+        movePiece<Pawn, whitesMove>(move.from, move.to);
 
-        uint8_t moveDir = m_whitesMove ? 1 : -1;
+        constexpr uint8_t moveDir = whitesMove ? 1 : -1;
 
         if (prevEnpassentLocation == move.to)
-        {
-            // Take the pawn if we took via enpassent
-            square takenPawn = move.to + 8 * -moveDir;
-            bitboard &oppPawns = m_whitesMove ? m_blackPieces[PieceType::Pawn] : m_whitePieces[PieceType::Pawn];
-            oppPawns ^= 1ULL << takenPawn;
-        }
+            // Take the pawn of the opponent if we took via enpassent
+            togglePiece<Pawn, !whitesMove>(move.to + 8 * -moveDir);
 
         // handle the update of the enpassent bitboard (have we moved two ranks)
         if (abs(move.to - move.from) == 2 * 8)
             m_enpassentSquare = move.from + moveDir * 8;
     }
 
+    template <bool whitesMove>
     void BoardState::makeCastlingMove(const Move &move)
     {
         bool shortCastle = (move.to - move.from) == 2;
-        bitboard *pieces = m_whitesMove ? m_whitePieces : m_blackPieces;
-        square &kingPos = m_whitesMove ? m_whiteKing : m_blackKing;
+        bitboard *pieces = whitesMove ? m_whitePieces : m_blackPieces;
+        square kingPos = whitesMove ? m_whiteKing : m_blackKing;
 
         square newKingPos;
         square oldRookPos;
@@ -91,108 +35,206 @@ namespace chess
 
         if (shortCastle)
         {
-            kingPos = 6;
-            oldRookPos = 7;
-            newRookPos = 5;
-            if (!m_whitesMove)
+            if constexpr (whitesMove)
             {
-                kingPos += 7 * 8;
-                oldRookPos += 7 * 8;
-                newRookPos += 7 * 8;
+                newKingPos = 6;
+                oldRookPos = 7;
+                newRookPos = 5;
+            }
+            else
+            {
+                newKingPos = 6 + 7 * 8;
+                oldRookPos = 7 + 7 * 8;
+                newRookPos = 5 + 7 * 8;
             }
         }
         else
         {
-            kingPos = 2;
-            oldRookPos = 0;
-            newRookPos = 3;
-            if (!m_whitesMove)
+            if constexpr (whitesMove)
             {
-                kingPos += 7 * 8;
-                oldRookPos += 7 * 8;
-                newRookPos += 7 * 8;
+                newKingPos = 2;
+                oldRookPos = 0;
+                newRookPos = 3;
+            }
+            else
+            {
+                newKingPos = 2 + 7 * 8;
+                oldRookPos = 0 + 7 * 8;
+                newRookPos = 3 + 7 * 8;
             }
         }
 
-        pieces[PieceType::Rook] ^= 1ULL << oldRookPos;
-        pieces[PieceType::Rook] ^= 1ULL << newRookPos;
+        movePiece<Rook, whitesMove>(oldRookPos, newRookPos);
+        movePiece<King, whitesMove>(kingPos, newKingPos);
     }
 
+    template <bool whitesMove>
     void BoardState::makeKingMove(const Move &move)
     {
-        // Moving king so we revoke castling rights from here on out.
-        if (m_whitesMove)
-        {
-            m_whiteCanCastleLong = false;
-            m_whiteCanCastleShort = false;
-            m_whiteKing = move.to;
-        }
-        else
-        {
-            m_blackCanCastleLong = false;
-            m_blackCanCastleShort = false;
-            m_blackKing = move.to;
-        }
-
+        // Check wether the move was castling
         if (abs(move.to - move.from) == 2)
         {
-            makeCastlingMove(move);
+            makeCastlingMove<whitesMove>(move);
             return;
         }
 
-        bitboard temp;
-        makeNormalMove(move, temp);
+        movePiece<King, whitesMove>(move.from, move.to);
     }
 
+    void BoardState::updateCastelingRights(const Move &move)
+    {
+        if (move.piece == Rook)
+        { // if we move a rook from its starting position we revoke the corresponding rights.
+            switch (move.from)
+            {
+            case 63:
+                m_blackCanCastleShort = false;
+                break;
+            case 56:
+                m_blackCanCastleLong = false;
+                break;
+            case 0:
+                m_whiteCanCastleLong = false;
+                break;
+            case 7:
+                m_whiteCanCastleShort = false;
+                break;
+            }
+        }
+        else if (move.piece == King)
+        { // if we move the king we revoke castling rights
+            if (m_whitesMove)
+            {
+                m_whiteCanCastleLong = false;
+                m_whiteCanCastleShort = false;
+            }
+            else
+            {
+                m_blackCanCastleLong = false;
+                m_blackCanCastleShort = false;
+            }
+        }
+
+        if (move.takesPiece)
+        { // if there was a rook on that square we would have captured it so we revoke the rights
+            switch (move.to)
+            {
+            case 63:
+                m_blackCanCastleShort = false;
+                break;
+            case 56:
+                m_blackCanCastleLong = false;
+                break;
+            case 0:
+                m_whiteCanCastleLong = false;
+                break;
+            case 7:
+                m_whiteCanCastleShort = false;
+                break;
+            }
+        }
+    }
+
+    template <bool whitesMove>
+    void BoardState::makePromotionMove(const Move &move)
+    {
+        // This is a promotion so we also need to remove the original pawn
+        // appart from this we handle it as if it is a normal move by the promoted piece.
+        togglePiece<Pawn, whitesMove>(move.from);
+
+        // Togle the promoted piece.
+        switch (move.piece)
+        {
+        case Knight:
+            togglePiece<Knight, whitesMove>(move.to);
+            break;
+        case Bishop:
+            togglePiece<Bishop, whitesMove>(move.to);
+            break;
+        case Rook:
+            togglePiece<Rook, whitesMove>(move.to);
+            break;
+        case Queen:
+            togglePiece<Queen, whitesMove>(move.to);
+            break;
+        default:
+            throw std::runtime_error("Unsupported promotion piece type");
+        }
+    }
+
+    template <bool whitesMove>
     void BoardState::makeMove(const Move &move)
     {
         // Remove the old enpassent location info
         square prevEnpassentLoc = m_enpassentSquare;
         m_enpassentSquare = -1;
 
-        bitboard *movingPieces = m_whitesMove ? m_whitePieces : m_blackPieces;
+        if (move.takesPiece)
+        {
+            // remove the piece on the square we moved to
+            PieceType takenPiece = pieceOnSquare<!whitesMove>(move.to);
+            togglePiece<!whitesMove>(takenPiece, move.to);
+        }
 
         if (move.promotion)
+            makePromotionMove<whitesMove>(move);
+        else
         {
-            // This is a promotion so we also need to remove the original pawn
-            // appart from this we handle it as if it is a normal move by the promoted piece.
-
-            movingPieces[PieceType::Pawn] ^= 1ULL << move.from;
+            // non promotion moves
+            switch (move.piece)
+            {
+            case Pawn:
+                makePawnMove<whitesMove>(move, prevEnpassentLoc);
+                break;
+            case Knight:
+                movePiece<Knight, whitesMove>(move.from, move.to);
+                break;
+            case Bishop:
+                movePiece<Bishop, whitesMove>(move.from, move.to);
+                break;
+            case Rook:
+                movePiece<Rook, whitesMove>(move.from, move.to);
+                break;
+            case Queen:
+                movePiece<Queen, whitesMove>(move.from, move.to);
+                break;
+            case King:
+                makeKingMove<whitesMove>(move);
+                break;
+            default:
+                throw std::runtime_error("Unknown piece type in makeMove!");
+            }
         }
 
-        switch (move.piece)
-        {
-        case PieceType::Pawn:
-            makePawnMove(move, prevEnpassentLoc);
-            break;
-        case PieceType::Rook:
-        {
-            if (move.from == 7)
-                m_whiteCanCastleShort = false;
+        updateCastelingRights(move);
+    }
 
-            if (move.from == 0)
-                m_whiteCanCastleLong = false;
+    template void BoardState::makeMove<true>(const Move &move);
+    template void BoardState::makeMove<false>(const Move &move);
 
-            if (move.from == 63)
-                m_blackCanCastleShort = false;
+    void BoardState::makeMove(const Move &move)
+    {
 
-            if (move.from == 56)
-                m_blackCanCastleLong = false;
+        // toggle old enpassent in hash
+        // m_hash ^= zobrist::getEnpassentKey(m_enpassentSquare);
 
-            makeNormalMove(move, movingPieces[PieceType::Rook]);
-            break;
-        }
-        case PieceType::King:
-        {
-            makeKingMove(move);
-            break;
-        }
-        default: // Queen, knights or bishops
-            makeNormalMove(move, movingPieces[move.piece]);
-            break;
-        }
+        // toggle old castling key
+        // m_hash ^= zobrist::getCastlingKey(m_whiteCanCastleShort, m_whiteCanCastleLong,
+        //                                   m_blackCanCastleShort, m_blackCanCastleLong);
+
+        m_whitesMove ? makeMove<true>(move) : makeMove<false>(move);
 
         // Give the turn to the other player
         m_whitesMove = !m_whitesMove;
+
+        // toggle turn key in hash
+        // m_hash ^= zobrist::turnKey;
+
+        // // toggle enpassent square in hash
+        // m_hash ^= zobrist::getEnpassentKey(m_enpassentSquare);
+
+        // // toggle on the updated castling rights:
+        // m_hash ^= zobrist::getCastlingKey(m_whiteCanCastleShort, m_whiteCanCastleLong,
+        //                                   m_blackCanCastleShort, m_blackCanCastleLong);
     }
 }

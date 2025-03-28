@@ -194,7 +194,6 @@ namespace chess
                    m_blackPieces[PieceType::Bishop] | m_blackPieces[PieceType::Rook] |
                    m_blackPieces[PieceType::Queen] | 1ULL << m_blackKing;
         }
-
         inline key getHash() const { return m_hash; }
 
     private:
@@ -242,25 +241,35 @@ namespace chess
         template <MoveGenType GenT>
         inline void addMoves(bitboard moves, square curPos, PieceType piece, MoveList &outMoves) const;
 
-        // default move making implementation
-        void makeNormalMove(const Move &move, bitboard &effectedBitboard);
+        // makeMove templated
+        template <bool whitesMove>
+        void makeMove(const Move &move);
 
         // Piece specific move making helpers
+        template <bool whitesMove>
         void makePawnMove(const Move &move, square prevEnpassentLocation);
+        template <bool whitesMove>
         void makeKingMove(const Move &move); // Needed to also handle castling
+        template <bool whitesMove>
         void makeCastlingMove(const Move &move);
+
+        void updateCastelingRights(const Move &move);
+        template <bool whitesMove>
+        void makePromotionMove(const Move &move);
 
         // Helpers to move/remove pieces. (these methods also update the hash)
         template <PieceType piece, bool white>
         void movePiece(square from, square to);
         template <PieceType piece, bool white>
         void togglePiece(square s);
-
-        // Makes the implicit assumption that the 'opponent' is the player whose turn it is NOT.
-        void takeOpponentPiece(square s);
+        template <bool white> // for cases where the piece is known not at compile time
+        void togglePiece(PieceType piece, square s);
 
         // Helper which returns a char representing the piece (according to fen) int 0 if no piece is there
-        char pieceOnSquare(square s) const;
+        char charOnSquare(square s) const;
+
+        template <bool white>
+        PieceType pieceOnSquare(square s) const;
 
         // Usually the hash is kept up to date, but in some cases (initialization mainly) we need to compute
         // the up to date hash

@@ -6,12 +6,13 @@ namespace chess
 {
     enum PieceType
     {
-        Pawn = 0,
+        Pawn,
         Knight,
         Bishop,
         Rook,
         Queen,
         King,
+        None = -1
     };
 
     /*

@@ -125,7 +125,7 @@ namespace chess
         recomputeHash();
     }
 
-    char BoardState::pieceOnSquare(square s) const
+    char BoardState::charOnSquare(square s) const
     {
         bitboard location = 1ULL << s;
 
@@ -171,7 +171,7 @@ namespace chess
 
             for (int file = 0; file < 8; file++)
             {
-                char p = pieceOnSquare(rank * 8 + file);
+                char p = charOnSquare(rank * 8 + file);
                 if (p == 0)
                 {
                     noPieceCount++;
