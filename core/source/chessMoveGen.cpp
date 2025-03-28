@@ -1,14 +1,16 @@
+#include "types.h"
 #include "bitBoard.h"
 #include "chess.h"
 #include "moveConstants.h"
 #include <vector>
 
-static bitboard s_movingPieces;
-static bitboard s_opponentPieces;
-static bitboard s_allPieces;
-
 namespace chess
 {
+
+    static bitboard s_movingPieces;
+    static bitboard s_opponentPieces;
+    static bitboard s_allPieces;
+
     using MoveGenType = BoardState::MoveGenType;
 
     inline void addPromotionMove(square from, square to, bool wasCapture, MoveList &outMoves)

@@ -1,3 +1,5 @@
+
+#include "bitBoard.h"
 #include "chess.h"
 #include <iostream>
 
@@ -118,6 +120,9 @@ namespace chess
             int rank = fen.at(curIdx + 1) - '1';
             m_enpassentSquare = rank * 8 + file;
         }
+
+        // Ensure an up to date hash
+        recomputeHash();
     }
 
     char BoardState::pieceOnSquare(square s) const

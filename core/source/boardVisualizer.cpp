@@ -1,4 +1,5 @@
 #include "boardVisualizer.h"
+#include "types.h"
 #include "bitBoard.h"
 
 #include <iostream>
@@ -19,6 +20,9 @@ static GLuint rooksTexture = 0;
 static GLuint bishopsTexture = 0;
 static GLuint queensTexture = 0;
 static bool loadedTextures = false;
+
+using bitboard = chess::bitboard;
+using square = chess::square;
 
 // Function to load a PNG image and create a texture (GLuint)
 GLuint loadPNGTexture(const char *filename)

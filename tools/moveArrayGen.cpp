@@ -3,6 +3,10 @@
 #include "toolUtils.h"
 #include <vector>
 #include <functional>
+#include "types.h"
+#include "bitBoard.h"
+
+using bitboard = chess::bitboard;
 
 std::vector<bitboard> genMovesArray(std::function<bitboard(int, int)> genMovesForPos)
 {

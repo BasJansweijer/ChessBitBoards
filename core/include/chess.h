@@ -1,19 +1,11 @@
 #pragma once
 
-#include "bitBoard.h"
+#include "types.h"
 #include <string>
+#include <zobristHash.h>
 
 namespace chess
 {
-    enum PieceType
-    {
-        Pawn = 0,
-        Knight,
-        Bishop,
-        Rook,
-        Queen,
-        King,
-    };
 
     struct Move
     {
@@ -203,7 +195,7 @@ namespace chess
                    m_blackPieces[PieceType::Queen] | 1ULL << m_blackKing;
         }
 
-        uint64_t hash() const;
+        inline key getHash() const { return m_hash; }
 
     private:
         bitboard m_whitePieces[5];
@@ -223,6 +215,9 @@ namespace chess
         bool m_blackCanCastleShort;
 
         bool m_whitesMove;
+
+        // Zobrist hash of the current board state
+        key m_hash;
 
     private:
         // Piece specific move generation helpers
@@ -255,10 +250,20 @@ namespace chess
         void makeKingMove(const Move &move); // Needed to also handle castling
         void makeCastlingMove(const Move &move);
 
+        // Helpers to move/remove pieces. (these methods also update the hash)
+        template <PieceType piece, bool white>
+        void movePiece(square from, square to);
+        template <PieceType piece, bool white>
+        void togglePiece(square s);
+
         // Makes the implicit assumption that the 'opponent' is the player whose turn it is NOT.
         void takeOpponentPiece(square s);
 
         // Helper which returns a char representing the piece (according to fen) int 0 if no piece is there
         char pieceOnSquare(square s) const;
+
+        // Usually the hash is kept up to date, but in some cases (initialization mainly) we need to compute
+        // the up to date hash
+        void recomputeHash();
     };
 }

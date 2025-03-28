@@ -3,6 +3,9 @@
 #include <vector>
 #include <fstream>
 #include <filesystem>
+#include "types.h"
+
+using bitboard = chess::bitboard;
 
 void clearFile(const std::string &outFile)
 {
