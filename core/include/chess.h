@@ -169,10 +169,10 @@ namespace chess
         square getBlackKingSquare() const { return m_blackKing; }
         bitboard getEnpassentLocations() const { return 1ULL << m_enpassentSquare; }
 
-        bool canWhiteCastleShort() const { return m_whiteCanCastleShort; }
-        bool CanWhiteCastleLong() const { return m_whiteCanCastleLong; }
-        bool canBlackCastleShort() const { return m_blackCanCastleShort; }
-        bool CanBlackCastleLong() const { return m_blackCanCastleLong; }
+        inline bool whiteCanCastleShort() const { return m_castleRights & 0b1; }
+        inline bool whiteCanCastleLong() const { return m_castleRights & 0b10; }
+        inline bool blackCanCastleShort() const { return m_castleRights & 0b100; }
+        inline bool blackCanCastleLong() const { return m_castleRights & 0b1000; }
 
         // Returns wether white/black has a piece attacking square s.
         template <bool ByWhite>
@@ -196,6 +196,11 @@ namespace chess
         }
         inline key getHash() const { return m_hash; }
 
+        // Usually the hash is kept up to date, but in some cases (initialization mainly) we need to compute
+        // the up to date hash
+        // NOTE: this should not be used outside of testing purposes
+        void recomputeHash();
+
     private:
         bitboard m_whitePieces[5];
         bitboard m_blackPieces[5];
@@ -208,10 +213,11 @@ namespace chess
         square m_enpassentSquare;
 
         // Tracking for castling
-        bool m_whiteCanCastleLong;
-        bool m_whiteCanCastleShort;
-        bool m_blackCanCastleLong;
-        bool m_blackCanCastleShort;
+        // bit 1: white short
+        // bit 2: white long
+        // bit 3: black short
+        // bit 4: black long
+        uint8_t m_castleRights;
 
         bool m_whitesMove;
 
@@ -270,9 +276,5 @@ namespace chess
 
         template <bool white>
         PieceType pieceOnSquare(square s) const;
-
-        // Usually the hash is kept up to date, but in some cases (initialization mainly) we need to compute
-        // the up to date hash
-        void recomputeHash();
     };
 }

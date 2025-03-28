@@ -7,7 +7,7 @@
 struct Keys
 {
     uint64_t pieceKeys[64][12];
-    uint64_t castlingKeys[4];
+    uint64_t castlingKeys[16];
     uint64_t enpassentKeys[16];
     uint64_t turnKey;
 };
@@ -27,7 +27,7 @@ Keys initKeys(int seed)
         }
     }
 
-    for (int ck = 0; ck < 4; ck++)
+    for (int ck = 0; ck < 16; ck++)
         keys.castlingKeys[ck] = dist(rng);
 
     for (int ep = 0; ep < 16; ep++)
@@ -46,9 +46,9 @@ void saveKeys(Keys k, std::string outFile)
     out << "constexpr key turnKey = " << k.turnKey << "ULL;";
 
     // castling keys
-    out << "constexpr key castlingKeys[4] = {";
+    out << "constexpr key castlingKeys[16] = {";
     bool first = true;
-    for (int cr = 0; cr < 4; cr++)
+    for (int cr = 0; cr < 16; cr++)
     {
         if (!first)
             out << ", ";

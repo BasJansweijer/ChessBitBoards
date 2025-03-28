@@ -5,6 +5,8 @@
 #include "moveConstants.h"
 #include "zobristHash.h"
 
+#include <iostream>
+
 namespace chess
 {
     template <bool ByWhite>
@@ -55,9 +57,9 @@ namespace chess
         }
 
         // update hash
-        // constexpr int pieceIdx = piece + white ? 0 : 6;
-        // m_hash ^= zobrist::squarePieceKeys[from][pieceIdx];
-        // m_hash ^= zobrist::squarePieceKeys[to][pieceIdx];
+        constexpr int pieceIdx = piece + (white ? 0 : 6);
+        m_hash ^= zobrist::squarePieceKeys[from][pieceIdx];
+        m_hash ^= zobrist::squarePieceKeys[to][pieceIdx];
     }
 
     template void BoardState::movePiece<PieceType::Pawn, false>(square from, square to);
@@ -87,8 +89,8 @@ namespace chess
         effectedBitboard ^= 1ULL << s;
 
         // update hash
-        // constexpr int pieceIdx = piece + white ? 0 : 6;
-        // m_hash ^= zobrist::squarePieceKeys[s][pieceIdx];
+        constexpr int pieceIdx = piece + (white ? 0 : 6);
+        m_hash ^= zobrist::squarePieceKeys[s][pieceIdx];
     }
 
     template <bool white>

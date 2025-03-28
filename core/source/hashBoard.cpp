@@ -2,6 +2,8 @@
 #include "bitBoard.h"
 #include "zobristHash.h"
 
+#include <iostream>
+
 namespace chess
 {
     void BoardState::recomputeHash()
@@ -13,17 +15,7 @@ namespace chess
             m_hash ^= zobrist::turnKey;
 
         // Add the castling rights
-        if (m_whiteCanCastleShort)
-            m_hash ^= zobrist::castlingKeys[0];
-
-        if (m_whiteCanCastleLong)
-            m_hash ^= zobrist::castlingKeys[1];
-
-        if (m_blackCanCastleShort)
-            m_hash ^= zobrist::castlingKeys[2];
-
-        if (m_blackCanCastleLong)
-            m_hash ^= zobrist::castlingKeys[3];
+        m_hash ^= zobrist::castlingKeys[m_castleRights];
 
         // add enpassent square
         m_hash ^= zobrist::getEnpassentKey(m_enpassentSquare);
@@ -41,7 +33,7 @@ namespace chess
 
         // Add kings
         m_hash ^= zobrist::squarePieceKeys[m_whiteKing][PieceType::King];
-        m_hash ^= zobrist::squarePieceKeys[m_whiteKing][PieceType::King + blackOffset];
+        m_hash ^= zobrist::squarePieceKeys[m_blackKing][PieceType::King + blackOffset];
     }
 
 }

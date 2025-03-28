@@ -204,18 +204,18 @@ namespace chess
     {
         if (m_whitesMove)
         {
-            if (m_whiteCanCastleShort)
+            if (whiteCanCastleShort())
                 tryCastle(outMoves, true);
 
-            if (m_whiteCanCastleLong)
+            if (whiteCanCastleLong())
                 tryCastle(outMoves, false);
         }
         else
         {
-            if (m_blackCanCastleShort)
+            if (blackCanCastleShort())
                 tryCastle(outMoves, true);
 
-            if (m_blackCanCastleLong)
+            if (blackCanCastleLong())
                 tryCastle(outMoves, false);
         }
     }

@@ -7,8 +7,7 @@ namespace chess
 {
     BoardState::BoardState(std::string_view fen)
         : m_enpassentSquare(-1), m_whitesMove(true),
-          m_whiteCanCastleLong(false), m_whiteCanCastleShort(false),
-          m_blackCanCastleLong(false), m_blackCanCastleShort(false)
+          m_castleRights(0)
     {
         for (int i = 0; i < 5; i++)
         {
@@ -97,16 +96,16 @@ namespace chess
             switch (fen.at(curIdx))
             {
             case 'K':
-                m_whiteCanCastleShort = true;
+                m_castleRights |= 0b1;
                 break;
             case 'Q':
-                m_whiteCanCastleLong = true;
+                m_castleRights |= 0b10;
                 break;
             case 'k':
-                m_blackCanCastleShort = true;
+                m_castleRights |= 0b100;
                 break;
             case 'q':
-                m_blackCanCastleLong = true;
+                m_castleRights |= 0b1000;
                 break;
             }
             curIdx++;
@@ -197,13 +196,13 @@ namespace chess
         fen += m_whitesMove ? " w " : " b ";
 
         std::string castleRights = "";
-        if (m_whiteCanCastleShort)
+        if (whiteCanCastleShort())
             castleRights += "K";
-        if (m_whiteCanCastleLong)
+        if (whiteCanCastleLong())
             castleRights += "Q";
-        if (m_blackCanCastleShort)
+        if (blackCanCastleShort())
             castleRights += "k";
-        if (m_blackCanCastleLong)
+        if (blackCanCastleLong())
             castleRights += "q";
 
         if (castleRights == "")

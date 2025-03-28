@@ -88,31 +88,25 @@ namespace chess
             switch (move.from)
             {
             case 63:
-                m_blackCanCastleShort = false;
+                m_castleRights &= ~0b100;
                 break;
             case 56:
-                m_blackCanCastleLong = false;
+                m_castleRights &= ~0b1000;
                 break;
             case 0:
-                m_whiteCanCastleLong = false;
+                m_castleRights &= ~0b10;
                 break;
             case 7:
-                m_whiteCanCastleShort = false;
+                m_castleRights &= ~0b1;
                 break;
             }
         }
         else if (move.piece == King)
         { // if we move the king we revoke castling rights
             if (m_whitesMove)
-            {
-                m_whiteCanCastleLong = false;
-                m_whiteCanCastleShort = false;
-            }
+                m_castleRights &= ~0b11;
             else
-            {
-                m_blackCanCastleLong = false;
-                m_blackCanCastleShort = false;
-            }
+                m_castleRights &= ~0b1100;
         }
 
         if (move.takesPiece)
@@ -120,16 +114,16 @@ namespace chess
             switch (move.to)
             {
             case 63:
-                m_blackCanCastleShort = false;
+                m_castleRights &= ~0b100;
                 break;
             case 56:
-                m_blackCanCastleLong = false;
+                m_castleRights &= ~0b1000;
                 break;
             case 0:
-                m_whiteCanCastleLong = false;
+                m_castleRights &= ~0b10;
                 break;
             case 7:
-                m_whiteCanCastleShort = false;
+                m_castleRights &= ~0b1;
                 break;
             }
         }
@@ -214,13 +208,9 @@ namespace chess
 
     void BoardState::makeMove(const Move &move)
     {
-
-        // toggle old enpassent in hash
-        // m_hash ^= zobrist::getEnpassentKey(m_enpassentSquare);
-
-        // toggle old castling key
-        // m_hash ^= zobrist::getCastlingKey(m_whiteCanCastleShort, m_whiteCanCastleLong,
-        //                                   m_blackCanCastleShort, m_blackCanCastleLong);
+        // toggle old enpassent/castling in hash
+        m_hash ^= zobrist::getEnpassentKey(m_enpassentSquare);
+        m_hash ^= zobrist::castlingKeys[m_castleRights];
 
         m_whitesMove ? makeMove<true>(move) : makeMove<false>(move);
 
@@ -228,13 +218,10 @@ namespace chess
         m_whitesMove = !m_whitesMove;
 
         // toggle turn key in hash
-        // m_hash ^= zobrist::turnKey;
+        m_hash ^= zobrist::turnKey;
 
-        // // toggle enpassent square in hash
-        // m_hash ^= zobrist::getEnpassentKey(m_enpassentSquare);
-
-        // // toggle on the updated castling rights:
-        // m_hash ^= zobrist::getCastlingKey(m_whiteCanCastleShort, m_whiteCanCastleLong,
-        //                                   m_blackCanCastleShort, m_blackCanCastleLong);
+        // toggle new enpassent/castling in hash
+        m_hash ^= zobrist::getEnpassentKey(m_enpassentSquare);
+        m_hash ^= zobrist::castlingKeys[m_castleRights];
     }
 }
