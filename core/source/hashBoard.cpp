@@ -1,51 +1,47 @@
 #include "chess.h"
-#include "transposition.h"
+#include "bitBoard.h"
+#include "zobristHash.h"
 
 namespace chess
 {
-    constexpr uint32_t prime = 0x100000001b3;
-
-    inline void addPieceSet(const bitboard *set, uint64_t &hash)
+    void BoardState::recomputeHash()
     {
-        hash ^= set[PieceType::Pawn];
-        hash *= prime;
+        m_hash = 0;
 
-        hash ^= set[PieceType::Knight];
-        hash *= prime;
+        // Add the turn
+        if (m_whitesMove)
+            m_hash ^= zobrist::turnKey;
 
-        hash ^= set[PieceType::Bishop];
-        hash *= prime;
+        // Add the castling rights
+        if (m_whiteCanCastleShort)
+            m_hash ^= zobrist::castlingKeys[0];
 
-        hash ^= set[PieceType::Rook];
-        hash *= prime;
+        if (m_whiteCanCastleLong)
+            m_hash ^= zobrist::castlingKeys[1];
 
-        hash ^= set[PieceType::Queen];
-        hash *= prime;
-    }
+        if (m_blackCanCastleShort)
+            m_hash ^= zobrist::castlingKeys[2];
 
-    uint64_t BoardState::hash() const
-    {
+        if (m_blackCanCastleLong)
+            m_hash ^= zobrist::castlingKeys[3];
 
-        uint64_t hash = 0xcbf29ce484222325;
+        // add enpassent square
+        m_hash ^= zobrist::getEnpassentKey(m_enpassentSquare);
 
-        addPieceSet(m_whitePieces, hash);
-        hash ^= m_whiteKing;
-        hash *= prime;
+        // Add the pieces of both colors
+        constexpr int blackOffset = 6;
+        for (int pt = 0; pt < 5; pt++)
+        {
+            bitBoards::forEachBit(m_whitePieces[pt], [&](square s)
+                                  { m_hash ^= zobrist::getPieceKey(s, (PieceType)pt, true); });
 
-        addPieceSet(m_blackPieces, hash);
-        hash ^= m_blackKing;
-        hash *= prime;
+            bitBoards::forEachBit(m_blackPieces[pt], [&](square s)
+                                  { m_hash ^= zobrist::getPieceKey(s, (PieceType)pt, false); });
+        }
 
-        uint8_t flags = 0;
-        flags |= m_whiteCanCastleShort;
-        flags |= m_whiteCanCastleLong << 1;
-        flags |= m_blackCanCastleShort << 2;
-        flags |= m_blackCanCastleLong << 3;
-        flags |= m_whitesMove << 4;
-        hash ^= flags;
-        hash *= prime;
-
-        return hash;
+        // Add kings
+        m_hash ^= zobrist::squarePieceKeys[m_whiteKing][PieceType::King];
+        m_hash ^= zobrist::squarePieceKeys[m_whiteKing][PieceType::King + blackOffset];
     }
 
 }

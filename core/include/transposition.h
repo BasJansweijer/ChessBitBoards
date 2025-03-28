@@ -34,15 +34,15 @@ namespace chess::engine
 
         std::optional<EntryData &> get(BoardState b)
         {
-            uint64_t boardHash = b.hash();
+            uint64_t boardHash = b.getHash();
             TTEntry &entry = getEntry(boardHash);
             // only return if it is occupied with the correct hash
             return entry.hash == boardHash ? entry.value : std::nullopt;
         }
 
-        void set(BoardState b, const EntryData &value)
+        void set(const BoardState &b, const EntryData &value)
         {
-            uint64_t hash = b.hash();
+            uint64_t hash = b.getHash();
             TTEntry &entry = getEntry(hash);
             entry.hash = hash;
             entry.value = value;
