@@ -64,7 +64,7 @@ namespace chess
         return Eval(Eval::Type::MATE, n);
     }
 
-    Search::SearchSettings initialSettings(double thinkSeconds)
+    Search::DepthSettings Search::initialDepths(double thinkSeconds)
     {
         constexpr int MAX_INITIAL_DEPTH = 4;
         float sqrtTime = std::sqrt(thinkSeconds);
@@ -75,7 +75,7 @@ namespace chess
         int maxQuiescentDepth = sqrtTime / 0.5;
         maxQuiescentDepth = std::min(MAX_QUIESCENT_MAX, std::max(MIN_QUIESCENT_MAX, maxQuiescentDepth));
         minDepth = std::max(1, minDepth);
-        return Search::SearchSettings(minDepth, maxQuiescentDepth);
+        return DepthSettings(minDepth, maxQuiescentDepth);
     }
 
     std::tuple<Move, Eval, Search::SearchStats>
@@ -90,26 +90,26 @@ namespace chess
         Move currentSearchBest;
         int newScore;
 
-        Search::SearchSettings prevSetting;
+        Search::DepthSettings prevDepths;
         Search::SearchStats prevStats;
 
-        m_settings = initialSettings(thinkSeconds);
+        m_depths = initialDepths(thinkSeconds);
 
         const bool root = true;
 
         while (eval.type != Eval::Type::MATE)
         {
             // Update the info to the collected info from previous completed search
-            prevSetting = m_settings;
+            prevDepths = m_depths;
             prevStats = m_statistics;
 
-            m_settings.minDepth += 1;
-            m_settings.maxQuiescentDepth += 1;
+            m_depths.minDepth += 1;
+            m_depths.maxQuiescentDepth += 1;
 
             if (m_rootBoard.whitesMove())
-                newScore = minimax<true, root>(m_rootBoard, m_settings.minDepth, currentSearchBest);
+                newScore = minimax<true, root>(m_rootBoard, m_depths.minDepth, currentSearchBest);
             else
-                newScore = minimax<false, root>(m_rootBoard, m_settings.minDepth, currentSearchBest);
+                newScore = minimax<false, root>(m_rootBoard, m_depths.minDepth, currentSearchBest);
 
             // if search is stopped early return using the previous depth results
             if (m_stopped)
@@ -120,7 +120,7 @@ namespace chess
 
             // only update with each completed search
             evalScore = newScore;
-            eval = evalFromScore(evalScore, m_settings.minDepth);
+            eval = evalFromScore(evalScore, m_depths.minDepth);
             bestMove = currentSearchBest;
         }
 
@@ -128,7 +128,7 @@ namespace chess
         stopTimeThread();
 
         // Set the actually used minDepth
-        m_statistics.minDepth = prevSetting.minDepth;
+        m_statistics.minDepth = prevDepths.minDepth;
 
         return {bestMove, eval, m_statistics};
     }
@@ -139,6 +139,11 @@ namespace chess
         // cancel the search
         if (m_stopped.load(std::memory_order_relaxed))
             return 0;
+
+        // In the root we cannot exit early like this
+        // + the curBoard will be the last item in the repTable
+        if (!Root && m_repTable->contains(curBoard))
+            return 0; // On repetition we should return draw eval
 
         // Base case (do a quiescent search)
         if (remainingDepth == 0)
@@ -200,13 +205,15 @@ namespace chess
         if (m_stopped.load(std::memory_order_relaxed))
             return 0;
 
+        // Note: no need to check repetition table as each move is a capture (no repetition possible)
+
         // Update max depth statistic
-        m_statistics.reachedDepth = std::max(m_settings.minDepth + extraDepth, m_statistics.reachedDepth);
+        m_statistics.reachedDepth = std::max(m_depths.minDepth + extraDepth, m_statistics.reachedDepth);
 
         // Captures aren't forced so we assume the current positions evaluation as a minimum
         int bestEval = m_evalFunc(curBoard);
 
-        if (m_settings.maxQuiescentDepth <= extraDepth)
+        if (m_depths.maxQuiescentDepth <= extraDepth)
             return bestEval;
 
         MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Quiescent>();

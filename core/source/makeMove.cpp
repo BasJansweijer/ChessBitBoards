@@ -18,8 +18,17 @@ namespace chess
             togglePiece<Pawn, !whitesMove>(move.to + 8 * -moveDir);
 
         // handle the update of the enpassent bitboard (have we moved two ranks)
-        if (abs(move.to - move.from) == 2 * 8)
-            m_enpassentSquare = move.from + moveDir * 8;
+        bool movedTwoSpaces = abs(move.to - move.from) == 2 * 8;
+        if (movedTwoSpaces)
+        {
+            // Check wether the opponent could actually enpassent
+            bitboard enpassentPawnLocations = 1ULL << (move.to - 1) | 1ULL << (move.to + 1);
+            bool enpassentPossible = whitesMove ? m_blackPieces[Pawn] & enpassentPawnLocations
+                                                : m_whitePieces[Pawn] & enpassentPawnLocations;
+
+            if (enpassentPossible)
+                m_enpassentSquare = move.from + moveDir * 8;
+        }
     }
 
     template <bool whitesMove>

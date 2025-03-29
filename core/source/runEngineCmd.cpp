@@ -22,13 +22,13 @@ namespace chess
         if (std::regex_match(cmd, match, setPosRegex))
         {
             std::string fen = match[1];
-            currentBoard = BoardState(fen);
+            m_currentBoard = BoardState(fen);
 
             std::cout << "done" << std::endl;
         }
         else if (cmd.starts_with("getPosition"))
         {
-            std::cout << currentBoard.fen() << std::endl;
+            std::cout << m_currentBoard.fen() << std::endl;
         }
         else if (std::regex_match(cmd, match, makeMoveRegex))
         {
@@ -46,12 +46,12 @@ namespace chess
         }
         else if (cmd == "showBoard")
         {
-            std::cout << currentBoard.fen() << std::endl;
-            showBoardGUI(currentBoard);
+            std::cout << m_currentBoard.fen() << std::endl;
+            showBoardGUI(m_currentBoard);
         }
         else if (cmd == "quit" || cmd == "exit")
         {
-            quit = true;
+            m_quit = true;
             std::cout << "done" << std::endl;
         }
         else

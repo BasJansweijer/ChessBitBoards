@@ -2,7 +2,7 @@
 
 #include "types.h"
 #include <string>
-#include <zobristHash.h>
+#include "zobristHash.h"
 
 namespace chess
 {
@@ -72,6 +72,11 @@ namespace chess
             }
 
             return uciMove;
+        }
+
+        bool resets50MoveRule()
+        {
+            return promotion || takesPiece || piece == PieceType::Pawn;
         }
     };
 
@@ -195,6 +200,9 @@ namespace chess
                    m_blackPieces[PieceType::Queen] | 1ULL << m_blackKing;
         }
         inline key getHash() const { return m_hash; }
+
+        // Used only to get the hash of the current (not in search) position to store in the repitition table
+        inline key hashWithoutEnpassent() const { return m_hash ^ zobrist::getEnpassentKey(m_enpassentSquare); }
 
         // Usually the hash is kept up to date, but in some cases (initialization mainly) we need to compute
         // the up to date hash
