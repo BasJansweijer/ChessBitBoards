@@ -11,6 +11,10 @@
 #include <future>
 #include <regex>
 #include "toolUtils.h"
+#include "types.h"
+
+using bitboard = chess::bitboard;
+using square = chess::square;
 
 struct SquareMagic
 {

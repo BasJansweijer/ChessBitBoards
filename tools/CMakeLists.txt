@@ -18,3 +18,10 @@ target_link_libraries(magicBitBoards PRIVATE imgui glfw OpenGL::GL tools_common)
 target_include_directories(magicBitBoards PRIVATE ${CMAKE_SOURCE_DIR}/external/stb)
 
 target_include_directories(magicBitBoards PRIVATE ${CMAKE_SOURCE_DIR}/tools/common)
+
+add_executable(genZobristKeys genZobristKeys.cpp)
+target_link_libraries(genZobristKeys PRIVATE core)
+
+target_link_libraries(genZobristKeys PRIVATE imgui glfw OpenGL::GL tools_common core)
+target_include_directories(genZobristKeys PRIVATE ${CMAKE_SOURCE_DIR}/external/stb)
+target_include_directories(genZobristKeys PRIVATE ${CMAKE_SOURCE_DIR}/tools/common)

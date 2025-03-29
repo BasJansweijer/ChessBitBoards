@@ -97,6 +97,7 @@
     "charconv": "cpp",
     "span": "cpp",
     "format": "cpp",
-    "*.ipp": "cpp"
+    "*.ipp": "cpp",
+    "version": "cpp"
   }
 }

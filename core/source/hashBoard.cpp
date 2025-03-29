@@ -1,51 +1,39 @@
 #include "chess.h"
-#include "transposition.h"
+#include "bitBoard.h"
+#include "zobristHash.h"
+
+#include <iostream>
 
 namespace chess
 {
-    constexpr uint32_t prime = 0x100000001b3;
-
-    inline void addPieceSet(const bitboard *set, uint64_t &hash)
+    void BoardState::recomputeHash()
     {
-        hash ^= set[PieceType::Pawn];
-        hash *= prime;
+        m_hash = 0;
 
-        hash ^= set[PieceType::Knight];
-        hash *= prime;
+        // Add the turn
+        if (m_whitesMove)
+            m_hash ^= zobrist::turnKey;
 
-        hash ^= set[PieceType::Bishop];
-        hash *= prime;
+        // Add the castling rights
+        m_hash ^= zobrist::castlingKeys[m_castleRights];
 
-        hash ^= set[PieceType::Rook];
-        hash *= prime;
+        // add enpassent square
+        m_hash ^= zobrist::getEnpassentKey(m_enpassentSquare);
 
-        hash ^= set[PieceType::Queen];
-        hash *= prime;
-    }
+        // Add the pieces of both colors
+        constexpr int blackOffset = 6;
+        for (int pt = 0; pt < 5; pt++)
+        {
+            bitBoards::forEachBit(m_whitePieces[pt], [&](square s)
+                                  { m_hash ^= zobrist::getPieceKey(s, (PieceType)pt, true); });
 
-    uint64_t BoardState::hash() const
-    {
+            bitBoards::forEachBit(m_blackPieces[pt], [&](square s)
+                                  { m_hash ^= zobrist::getPieceKey(s, (PieceType)pt, false); });
+        }
 
-        uint64_t hash = 0xcbf29ce484222325;
-
-        addPieceSet(m_whitePieces, hash);
-        hash ^= m_whiteKing;
-        hash *= prime;
-
-        addPieceSet(m_blackPieces, hash);
-        hash ^= m_blackKing;
-        hash *= prime;
-
-        uint8_t flags = 0;
-        flags |= m_whiteCanCastleShort;
-        flags |= m_whiteCanCastleLong << 1;
-        flags |= m_blackCanCastleShort << 2;
-        flags |= m_blackCanCastleLong << 3;
-        flags |= m_whitesMove << 4;
-        hash ^= flags;
-        hash *= prime;
-
-        return hash;
+        // Add kings
+        m_hash ^= zobrist::squarePieceKeys[m_whiteKing][PieceType::King];
+        m_hash ^= zobrist::squarePieceKeys[m_blackKing][PieceType::King + blackOffset];
     }
 
 }

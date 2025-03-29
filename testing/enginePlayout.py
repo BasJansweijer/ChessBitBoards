@@ -26,7 +26,7 @@ def playGame(engine1: ChessEngine, engine2: ChessEngine, fen, thinkTime, verbose
         # Engine 1's move
         move1, info = engine1.bestMove(thinkTime)
         if verbose:
-            print(f"Engine 1 plays: {move1} ({info})")
+            print(f"{engine1.engine_path} plays: {move1} ({info})")
 
         board.push(chess.Move.from_uci(move1))
         engine1.makeMove(move1)
@@ -42,7 +42,7 @@ def playGame(engine1: ChessEngine, engine2: ChessEngine, fen, thinkTime, verbose
         # Engine 2's move
         move2, info = engine2.bestMove(thinkTime)
         if verbose:
-            print(f"Engine 2 plays: {move2} ({info})")
+            print(f"{engine2.engine_path} plays: {move2} ({info})")
 
         board.push(chess.Move.from_uci(move2))
         engine2.makeMove(move2)
@@ -123,9 +123,9 @@ def storeComparison(engine1: ChessEngine, engine2: ChessEngine, result:tuple[int
 
 startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"
 if __name__ == "__main__":
-    e1 = ChessEngine("../releases/engine-v0.0.1")
-    # e2 = ChessEngine("../build/app/engine")
-    e2 = ChessEngine("../releases/engine-v0.0.2")
+    e1 = ChessEngine("../releases/engine-v0.0.3")
+    # e2 = ChessEngine("../releases/engine-v0.0.4")
+    e2 = ChessEngine("../build/app/engine")
 
     # playGame(e1, e2, startFen, 10, True)
 

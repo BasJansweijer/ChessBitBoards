@@ -1,14 +1,16 @@
+#include "types.h"
 #include "bitBoard.h"
 #include "chess.h"
 #include "moveConstants.h"
 #include <vector>
 
-static bitboard s_movingPieces;
-static bitboard s_opponentPieces;
-static bitboard s_allPieces;
-
 namespace chess
 {
+
+    static bitboard s_movingPieces;
+    static bitboard s_opponentPieces;
+    static bitboard s_allPieces;
+
     using MoveGenType = BoardState::MoveGenType;
 
     inline void addPromotionMove(square from, square to, bool wasCapture, MoveList &outMoves)
@@ -202,18 +204,18 @@ namespace chess
     {
         if (m_whitesMove)
         {
-            if (m_whiteCanCastleShort)
+            if (whiteCanCastleShort())
                 tryCastle(outMoves, true);
 
-            if (m_whiteCanCastleLong)
+            if (whiteCanCastleLong())
                 tryCastle(outMoves, false);
         }
         else
         {
-            if (m_blackCanCastleShort)
+            if (blackCanCastleShort())
                 tryCastle(outMoves, true);
 
-            if (m_blackCanCastleLong)
+            if (blackCanCastleLong())
                 tryCastle(outMoves, false);
         }
     }

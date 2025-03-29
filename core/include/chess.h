@@ -1,19 +1,11 @@
 #pragma once
 
-#include "bitBoard.h"
+#include "types.h"
 #include <string>
+#include "zobristHash.h"
 
 namespace chess
 {
-    enum PieceType
-    {
-        Pawn = 0,
-        Knight,
-        Bishop,
-        Rook,
-        Queen,
-        King,
-    };
 
     struct Move
     {
@@ -80,6 +72,11 @@ namespace chess
             }
 
             return uciMove;
+        }
+
+        bool resets50MoveRule()
+        {
+            return promotion || takesPiece || piece == PieceType::Pawn;
         }
     };
 
@@ -177,10 +174,10 @@ namespace chess
         square getBlackKingSquare() const { return m_blackKing; }
         bitboard getEnpassentLocations() const { return 1ULL << m_enpassentSquare; }
 
-        bool canWhiteCastleShort() const { return m_whiteCanCastleShort; }
-        bool CanWhiteCastleLong() const { return m_whiteCanCastleLong; }
-        bool canBlackCastleShort() const { return m_blackCanCastleShort; }
-        bool CanBlackCastleLong() const { return m_blackCanCastleLong; }
+        inline bool whiteCanCastleShort() const { return m_castleRights & 0b1; }
+        inline bool whiteCanCastleLong() const { return m_castleRights & 0b10; }
+        inline bool blackCanCastleShort() const { return m_castleRights & 0b100; }
+        inline bool blackCanCastleLong() const { return m_castleRights & 0b1000; }
 
         // Returns wether white/black has a piece attacking square s.
         template <bool ByWhite>
@@ -202,8 +199,15 @@ namespace chess
                    m_blackPieces[PieceType::Bishop] | m_blackPieces[PieceType::Rook] |
                    m_blackPieces[PieceType::Queen] | 1ULL << m_blackKing;
         }
+        inline key getHash() const { return m_hash; }
 
-        uint64_t hash() const;
+        // Used only to get the hash of the current (not in search) position to store in the repitition table
+        inline key hashWithoutEnpassent() const { return m_hash ^ zobrist::getEnpassentKey(m_enpassentSquare); }
+
+        // Usually the hash is kept up to date, but in some cases (initialization mainly) we need to compute
+        // the up to date hash
+        // NOTE: this should not be used outside of testing purposes
+        void recomputeHash();
 
     private:
         bitboard m_whitePieces[5];
@@ -217,12 +221,16 @@ namespace chess
         square m_enpassentSquare;
 
         // Tracking for castling
-        bool m_whiteCanCastleLong;
-        bool m_whiteCanCastleShort;
-        bool m_blackCanCastleLong;
-        bool m_blackCanCastleShort;
+        // bit 1: white short
+        // bit 2: white long
+        // bit 3: black short
+        // bit 4: black long
+        uint8_t m_castleRights;
 
         bool m_whitesMove;
+
+        // Zobrist hash of the current board state
+        key m_hash;
 
     private:
         // Piece specific move generation helpers
@@ -247,18 +255,34 @@ namespace chess
         template <MoveGenType GenT>
         inline void addMoves(bitboard moves, square curPos, PieceType piece, MoveList &outMoves) const;
 
-        // default move making implementation
-        void makeNormalMove(const Move &move, bitboard &effectedBitboard);
+        // makeMove templated
+        template <bool whitesMove>
+        void makeMove(const Move &move);
 
         // Piece specific move making helpers
+        template <bool whitesMove>
         void makePawnMove(const Move &move, square prevEnpassentLocation);
+        template <bool whitesMove>
         void makeKingMove(const Move &move); // Needed to also handle castling
+        template <bool whitesMove>
         void makeCastlingMove(const Move &move);
 
-        // Makes the implicit assumption that the 'opponent' is the player whose turn it is NOT.
-        void takeOpponentPiece(square s);
+        void updateCastelingRights(const Move &move);
+        template <bool whitesMove>
+        void makePromotionMove(const Move &move);
+
+        // Helpers to move/remove pieces. (these methods also update the hash)
+        template <PieceType piece, bool white>
+        void movePiece(square from, square to);
+        template <PieceType piece, bool white>
+        void togglePiece(square s);
+        template <bool white> // for cases where the piece is known not at compile time
+        void togglePiece(PieceType piece, square s);
 
         // Helper which returns a char representing the piece (according to fen) int 0 if no piece is there
-        char pieceOnSquare(square s) const;
+        char charOnSquare(square s) const;
+
+        template <bool white>
+        PieceType pieceOnSquare(square s) const;
     };
 }

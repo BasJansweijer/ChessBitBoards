@@ -13,6 +13,13 @@ target_link_libraries(checkMoveGen PRIVATE core)
 target_link_libraries(checkMoveGen PRIVATE tools_common)
 target_include_directories(checkMoveGen PRIVATE ${CMAKE_SOURCE_DIR}/external/stb)
 
+add_executable(testZobrist testZobrist.cpp)
+target_link_libraries(testZobrist PRIVATE core)
+target_link_libraries(testZobrist PRIVATE imgui glfw OpenGL::GL)
+target_link_libraries(testZobrist PRIVATE core)
+target_link_libraries(testZobrist PRIVATE tools_common)
+target_include_directories(testZobrist PRIVATE ${CMAKE_SOURCE_DIR}/external/stb)
+
 add_executable(benchMoveGen benchmarkMoveGen.cpp)
 target_link_libraries(benchMoveGen PRIVATE core)
 target_link_libraries(benchMoveGen PRIVATE imgui glfw OpenGL::GL)

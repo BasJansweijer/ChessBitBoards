@@ -1,8 +1,10 @@
 #pragma once
-#include "bitBoard.h"
 #include <vector>
 #include <string>
 #include <chrono>
+#include "types.h"
+
+using bitboard = chess::bitboard;
 
 void writeArray(std::vector<bitboard> array, const std::string &outFile, std::string_view arrName);
 

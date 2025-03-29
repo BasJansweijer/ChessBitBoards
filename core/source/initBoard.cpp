@@ -27,10 +27,10 @@ namespace chess
         m_blackKing = m_whiteKing + 8 * 7;
 
         m_enpassentSquare = -1;
-        m_whiteCanCastleLong = true;
-        m_whiteCanCastleShort = true;
-        m_blackCanCastleLong = true;
-        m_blackCanCastleShort = true;
+        m_castleRights = 0b1111;
         m_whitesMove = true;
+
+        // Ensure an up to date hash
+        recomputeHash();
     }
 }
