@@ -75,3 +75,7 @@ New performance is 13,822,188 nps.
 This rework removed the Piece sets. Additionally the rework of the king being stored as a square was undone. New nps 13,672,286.
 Slight decrease in performance.
 Adding back the king as a square increased performance back to nps 14_003_044.
+
+### Add incremental zobrist hashing
+
+To add zobrist hashing the make move function was reworked. The performance after the rework decreased to ~11.9 milion nps.

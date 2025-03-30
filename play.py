@@ -37,6 +37,11 @@ class ChessBoardGUI:
         
         # Create an in-memory image from the PNG data
         img_data = io.BytesIO(png_data)
+
+        # Ensure old image is deleted before assigning a new one
+        if self.img:
+            del self.img  # Free the old image memory
+        
         self.img = PhotoImage(data=img_data.read())
         
         # Update the canvas with the image
@@ -140,19 +145,6 @@ def playAgainstEngine(engine: ChessEngine, engineThinkSeconds, playWhite: bool, 
     print("Game result:", board.result(claim_draw=True))
     input("enter to quit")
 
-
-def test():
-    chessGUI = ChessBoardGUI()
-    board = chess.Board("3rr3/3q1pbk/1pbp2p1/2p1p1np/P1P1P1nP/1PBP2P1/1PN1QP2/1R2R1K1 w - - 0 103")
-    chessGUI.update_board(board)
-    moves = ['h7g8']
-    for move in moves:
-        sleep(1)
-        
-        board.push(chess.Move.from_uci(move))
-        chessGUI.update_board(board)
-
 if __name__ == "__main__":
-    test()
-    # engine = ChessEngine("./build/app/engine")
-    # playAgainstEngine(engine, 10, True, fen=STARTfen)
+    engine = ChessEngine("./releases/engine-v0.0.3")
+    playAgainstEngine(engine, 10, True, fen=STARTfen)

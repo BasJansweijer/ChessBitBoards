@@ -16,14 +16,10 @@ The final results of this against the previous version were: 278 wins, 488 draws
 ## Quiescent search (v0.3.0)
 
 The evaluation function that is used does not take into account that, on the next move, there might be pieces that can be captured. To prevent 'halucinations' in the minimax outcome we implement quiescent search to always explore al the capture possibilities at the end of the search.
-Doing so improved the performance by roughly 250 elo. The results against the previous version were 449 wins, 435 draws and 116 losses.
+Doing so improved the performance by roughly 230 elo. The results against the previous version were 449 wins, 435 draws and 116 losses.
 
 ## Repitition detection (v0.4.0)
 
-We add zobrist hashing and utilize a transposition table to detect when previous positions are repeated.
-
-### 50 move rule (v0.4.1)
-
-Performs almost identically to to v0.4.0 but adds detection of 50 move rule. Initially it also added a component to the eval which scaled down the score as we got closer to the 50 move rule draw, but this was removed as it decouples the evaluation from the pure board state which would make the transposition table evaluations unreliable once this term starts playing a role. (It lost 224 times, won 221 times and drew 107 times against v0.4.0).
-
-## Transposition table (v0.5.0)
+We add zobrist hashing and utilize a transposition table to detect when previous positions are repeated. Even though the nps of the move generation decrease by a bit under 20% and the search code also now needs to check for repetitions the depth we can search seems to have slightly increased due to the branches we can stop searching due to them being repetitions.
+This addition resulted in 389 wins, 192 losses and 419 draws against the previous version (~125 elo increase).
+Interestingly the number of draws did not decrease much, this is probably because in losing positions this version can try to get a draw on purpose while the previous version doesn't prevent the draw.
