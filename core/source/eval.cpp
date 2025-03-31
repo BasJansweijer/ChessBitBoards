@@ -136,6 +136,15 @@ namespace chess
         return whiteToWin ? score : -score;
     }
 
+    // Usually 1 but starts to decrease as we have less then 25 full moves left
+    // NOTE: currently not used because it would mess up the evaluations
+    // in the transposition table.
+    inline float draw50MoveRuleFactor(const BoardState &b)
+    {
+        const uint8_t pliesLeft = b.pliesTill50MoveRule();
+        return pliesLeft < 50 ? 0.02 * pliesLeft : 1;
+    }
+
     int evaluate(BoardState position)
     {
 

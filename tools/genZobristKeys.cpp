@@ -10,6 +10,8 @@ struct Keys
     uint64_t castlingKeys[16];
     uint64_t enpassentKeys[16];
     uint64_t turnKey;
+    // The last 20 plies we should hash differently
+    uint64_t move50RuleKeys[20];
 };
 
 Keys initKeys(int seed)
@@ -34,6 +36,9 @@ Keys initKeys(int seed)
         keys.enpassentKeys[ep] = dist(rng);
 
     keys.turnKey = dist(rng);
+
+    for (int mr = 0; mr < 20; mr++)
+        keys.move50RuleKeys[mr] = dist(rng);
 
     return keys;
 }
@@ -91,6 +96,20 @@ void saveKeys(Keys k, std::string outFile)
             out << k.pieceKeys[s][pt] << "ULL";
         }
         out << "}";
+    }
+    out << "};" << std::endl;
+
+    // piece keys
+    bool firstKey = true;
+    out << "constexpr key move50RuleKeys[20] = {";
+    for (int mk = 0; mk < 20; mk++)
+    {
+        if (!firstKey)
+            out << ", ";
+
+        firstKey = false;
+
+        out << k.pieceKeys[mk] << "ULL";
     }
     out << "};" << std::endl;
 }

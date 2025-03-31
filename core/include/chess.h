@@ -74,7 +74,7 @@ namespace chess
             return uciMove;
         }
 
-        bool resets50MoveRule()
+        bool resets50MoveRule() const
         {
             return promotion || takesPiece || piece == PieceType::Pawn;
         }
@@ -179,6 +179,10 @@ namespace chess
         inline bool blackCanCastleShort() const { return m_castleRights & 0b100; }
         inline bool blackCanCastleLong() const { return m_castleRights & 0b1000; }
 
+        inline bool drawBy50MoveRule() const { return m_pliesSince50MoveRuleReset >= 100; }
+
+        inline uint8_t pliesTill50MoveRule() const { return 100 - m_pliesSince50MoveRuleReset; }
+
         // Returns wether white/black has a piece attacking square s.
         template <bool ByWhite>
         bool squareAttacked(square s) const;
@@ -231,6 +235,8 @@ namespace chess
 
         // Zobrist hash of the current board state
         key m_hash;
+
+        uint8_t m_pliesSince50MoveRuleReset;
 
     private:
         // Piece specific move generation helpers

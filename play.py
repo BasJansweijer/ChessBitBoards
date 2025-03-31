@@ -70,6 +70,9 @@ class ChessEngine:
             info = match.group(2)
             return move, info
         
+        if response.startswith("Draw by 50 move rule"):
+            return "Draw by 50 move rule"
+        
         print(response)
         raise Exception("bestMove Not parsed correctly")
 
@@ -107,10 +110,18 @@ def playAgainstEngine(engine: ChessEngine, engineThinkSeconds, playWhite: bool, 
         engine.makeMove(move)
         board.push(chess.Move.from_uci(move))
 
+    result = None;
+
     while not board.is_game_over():
         chessGui.update_board(board)
 
-        move, info = engine.bestMove(engineThinkSeconds)
+        resp = engine.bestMove(engineThinkSeconds)
+        if resp == "Draw by 50 move rule":
+            if not board.can_claim_fifty_moves():
+                raise Exception(f"Incorrect 50 move rule on fen: {fen}")
+            break
+
+        move, info = resp
         print(f"Engine plays {move}, ({info})")
 
         engine.makeMove(move)
@@ -126,10 +137,22 @@ def playAgainstEngine(engine: ChessEngine, engineThinkSeconds, playWhite: bool, 
         engine.makeMove(move)
         board.push(chess.Move.from_uci(move))
 
-    print("Game result:", board.result())
+    print("Game result:", board.result(claim_draw=True))
     input("enter to quit")
 
 
+def test():
+    chessGUI = ChessBoardGUI()
+    board = chess.Board("3rr3/3q1pbk/1pbp2p1/2p1p1np/P1P1P1nP/1PBP2P1/1PN1QP2/1R2R1K1 w - - 0 103")
+    chessGUI.update_board(board)
+    moves = ['h7g8']
+    for move in moves:
+        sleep(1)
+        
+        board.push(chess.Move.from_uci(move))
+        chessGUI.update_board(board)
+
 if __name__ == "__main__":
-    engine = ChessEngine("./build/app/engine")
-    playAgainstEngine(engine, 10, True, fen=STARTfen)
+    test()
+    # engine = ChessEngine("./build/app/engine")
+    # playAgainstEngine(engine, 10, True, fen=STARTfen)

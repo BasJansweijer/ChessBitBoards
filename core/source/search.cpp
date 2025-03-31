@@ -142,7 +142,7 @@ namespace chess
 
         // In the root we cannot exit early like this
         // + the curBoard will be the last item in the repTable
-        if (!Root && m_repTable->contains(curBoard))
+        if (!Root && (curBoard.drawBy50MoveRule() || m_repTable->contains(curBoard)))
             return 0; // On repetition we should return draw eval
 
         // Base case (do a quiescent search)

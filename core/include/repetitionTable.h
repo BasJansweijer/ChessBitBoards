@@ -15,14 +15,19 @@ namespace chess
         }
 
         // Not performance critical, this is only called when a move is made on the root board
-        // via the engine makeMove method
-        inline void addState(const BoardState &b)
+        // via the engine makeMove method.
+        // returns wether the insert was succesfull (table not full)
+        inline bool addState(const BoardState &b)
         {
             if (!m_length)
                 m_startsOnWhite = b.whitesMove();
 
+            if (m_length > 100)
+                return false;
+
             m_table[m_length] = b.hashWithoutEnpassent();
             m_length++;
+            return true;
         }
 
         inline void clear()
@@ -30,9 +35,9 @@ namespace chess
             m_length = 0;
         }
 
-        inline bool drawDueTo50MoveRule() const
+        inline bool drawBy50MoveRule() const
         {
-            return m_length >= 100;
+            return m_length > 100;
         }
 
         /*
@@ -65,9 +70,13 @@ namespace chess
             return false;
         }
 
+        int length() const { return m_length; }
+
     private:
         uint8_t m_length;
-        key m_table[100];
+        // 101 length because due to 50 move rule we can have an intial board and then 100 boards following it
+        // before we can claim draw.
+        key m_table[101];
 
         // Tracks wether the first element is a board on which it is whites turn
         bool m_startsOnWhite;

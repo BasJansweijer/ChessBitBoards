@@ -217,11 +217,16 @@ namespace chess
 
     void BoardState::makeMove(const Move &move)
     {
-        // toggle old enpassent/castling in hash
+        // toggle old enpassent/castling/50 move rule in hash
         m_hash ^= zobrist::getEnpassentKey(m_enpassentSquare);
         m_hash ^= zobrist::castlingKeys[m_castleRights];
+        m_hash ^= zobrist::get50MoveRuleKey(m_pliesSince50MoveRuleReset);
 
         m_whitesMove ? makeMove<true>(move) : makeMove<false>(move);
+
+        move.resets50MoveRule()
+            ? m_pliesSince50MoveRuleReset = 0
+            : m_pliesSince50MoveRuleReset += 1;
 
         // Give the turn to the other player
         m_whitesMove = !m_whitesMove;
@@ -229,8 +234,9 @@ namespace chess
         // toggle turn key in hash
         m_hash ^= zobrist::turnKey;
 
-        // toggle new enpassent/castling in hash
+        // toggle new enpassent/castling/50 move rule in hash
         m_hash ^= zobrist::getEnpassentKey(m_enpassentSquare);
         m_hash ^= zobrist::castlingKeys[m_castleRights];
+        m_hash ^= zobrist::get50MoveRuleKey(m_pliesSince50MoveRuleReset);
     }
 }
