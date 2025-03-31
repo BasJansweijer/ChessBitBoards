@@ -22,9 +22,20 @@ def playGame(engine1: ChessEngine, engine2: ChessEngine, fen, thinkTime, verbose
     engine1.setPosition(fen)
     engine2.setPosition(fen)
 
+
+    if verbose:
+       chessGui.update_board(board)
+
     while not board.is_game_over():
         # Engine 1's move
-        move1, info = engine1.bestMove(thinkTime)
+        resp = engine1.bestMove(thinkTime)
+        if resp == "Draw by 50 move rule":
+            if not board.can_claim_fifty_moves():
+                raise Exception(f"Incorrect 50 move rule on fen: {fen}")
+            print(resp)
+            break
+
+        move1, info = resp
         if verbose:
             print(f"{engine1.engine_path} plays: {move1} ({info})")
 
@@ -40,7 +51,15 @@ def playGame(engine1: ChessEngine, engine2: ChessEngine, fen, thinkTime, verbose
             break
 
         # Engine 2's move
-        move2, info = engine2.bestMove(thinkTime)
+        resp = engine2.bestMove(thinkTime)
+        if resp == "Draw by 50 move rule":
+            if not board.can_claim_fifty_moves():
+                raise Exception(f"Incorrect 50 move rule on fen: {fen}")
+            print(resp)
+            break
+
+        move2, info = resp
+
         if verbose:
             print(f"{engine2.engine_path} plays: {move2} ({info})")
 
@@ -52,8 +71,8 @@ def playGame(engine1: ChessEngine, engine2: ChessEngine, fen, thinkTime, verbose
             chessGui.update_board(board)
 
     # Game is over, show the result
-    print(f"\nGame Over! Result: {board.result()}")
-    return board.result()
+    print(f"\nGame Over! Result: {board.result(claim_draw=True)}")
+    return board.result(claim_draw=True)
 
     
 
@@ -65,8 +84,9 @@ def compareEngines(engine1: ChessEngine, engine2: ChessEngine, thinkTime=0.5, fe
     n = 0
     for fen in open(fensFile):
         n += 1
+
         print(f"Current results: engine1 wins: {engine1Wins}, engine2 wins: {engine2Wins}, draws: {draws}")
-        print(f"Starting on fen {n}")
+        print(f"Starting on fen {n} ({fen})")
 
         fen = fen.rstrip('\n')
         print(f"white: {engine1.engine_path}, black: {engine2.engine_path}")
@@ -123,13 +143,9 @@ def storeComparison(engine1: ChessEngine, engine2: ChessEngine, result:tuple[int
 
 startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"
 if __name__ == "__main__":
-    e1 = ChessEngine("../releases/engine-v0.0.3")
-    # e2 = ChessEngine("../releases/engine-v0.0.4")
+    e1 = ChessEngine("../releases/engine-v0.4.0")
     e2 = ChessEngine("../build/app/engine")
 
-    # playGame(e1, e2, startFen, 10, True)
-
-    
     result = compareEngines(e1, e2)
     storeComparison(e1, e2, result)
 

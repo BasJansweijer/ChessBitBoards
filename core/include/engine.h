@@ -56,23 +56,14 @@ namespace chess
             if (chosenMove.isNull())
                 return false;
 
-            m_currentBoard.makeMove(chosenMove);
-
-            /*
-             * Handle the repetition table
-             */
-
+            // Handle 50 move rule
             if (chosenMove.resets50MoveRule())
                 m_repTable.clear();
 
-            if (m_repTable.drawDueTo50MoveRule())
-            {
-                // TODO: handle 50 move rule reached
-                return true;
-            }
+            m_currentBoard.makeMove(chosenMove);
 
-            // Add the current board to the reperitio
-            m_repTable.addState(m_currentBoard);
+            // Add the current board to the reperition table
+            bool success = m_repTable.addState(m_currentBoard);
 
             return true;
         }

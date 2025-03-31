@@ -2,6 +2,7 @@
 #include "bitBoard.h"
 #include "chess.h"
 #include <iostream>
+#include <string>
 
 namespace chess
 {
@@ -120,6 +121,13 @@ namespace chess
             m_enpassentSquare = rank * 8 + file;
         }
 
+        // Go to 50 move rule plies
+        while (fen.at(curIdx) != ' ')
+            curIdx++;
+
+        m_pliesSince50MoveRuleReset = std::stoi(std::string(fen.substr(curIdx, 2)));
+        ;
+
         // Ensure an up to date hash
         recomputeHash();
     }
@@ -221,6 +229,8 @@ namespace chess
         }
         else
             fen += " - ";
+
+        fen += (char)m_pliesSince50MoveRuleReset + '0';
 
         return fen;
     }

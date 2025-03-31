@@ -33,4 +33,14 @@ namespace chess::zobrist
     {
         return squarePieceKeys[s][pt + (white ? 0 : 6)];
     }
+
+    // Used to distinguish the last 20 plies before the 50 move rule kicks in.
+    // (we shouldn't use the same transposition entries for these as we are closer to a draw)
+    constexpr key move50RuleKeys[20] = {0x7fff73819d00ULL, 0x7fff73819d60ULL, 0x7fff73819dc0ULL, 0x7fff73819e20ULL, 0x7fff73819e80ULL, 0x7fff73819ee0ULL, 0x7fff73819f40ULL, 0x7fff73819fa0ULL, 0x7fff7381a000ULL, 0x7fff7381a060ULL, 0x7fff7381a0c0ULL, 0x7fff7381a120ULL, 0x7fff7381a180ULL, 0x7fff7381a1e0ULL, 0x7fff7381a240ULL, 0x7fff7381a2a0ULL, 0x7fff7381a300ULL, 0x7fff7381a360ULL, 0x7fff7381a3c0ULL, 0x7fff7381a420ULL};
+
+    constexpr key get50MoveRuleKey(uint8_t pliesSinceReset)
+    {
+        return pliesSinceReset >= 80 ? move50RuleKeys[pliesSinceReset - 80] : 0;
+    }
+
 }

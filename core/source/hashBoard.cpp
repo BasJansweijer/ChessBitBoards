@@ -34,6 +34,8 @@ namespace chess
         // Add kings
         m_hash ^= zobrist::squarePieceKeys[m_whiteKing][PieceType::King];
         m_hash ^= zobrist::squarePieceKeys[m_blackKing][PieceType::King + blackOffset];
+
+        m_hash ^= zobrist::get50MoveRuleKey(m_pliesSince50MoveRuleReset);
     }
 
 }

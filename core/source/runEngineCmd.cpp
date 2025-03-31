@@ -41,6 +41,12 @@ namespace chess
         else if (std::regex_match(cmd, match, bestMoveRegex))
         {
             double seconds = std::stod(match[1]);
+            if (m_currentBoard.drawBy50MoveRule())
+            {
+                std::cout << "Draw by 50 move rule" << std::endl;
+                return;
+            }
+
             auto [move, eval, info] = findBestMove(seconds);
             std::cout << move.toUCI() << " (eval: " << eval << ", searchinfo: " << info << ")" << std::endl;
         }
