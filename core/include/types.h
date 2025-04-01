@@ -4,7 +4,7 @@
 
 namespace chess
 {
-    enum PieceType
+    enum PieceType : int8_t
     {
         Pawn,
         Knight,
@@ -26,5 +26,11 @@ namespace chess
 
     // zobrist hash type
     using key = uint64_t;
+
+    // eval score
+    using score = uint16_t;
+
+    // The minimum int that is still forced mate
+    constexpr score MATE_EVAL = 30000;
 
 }
