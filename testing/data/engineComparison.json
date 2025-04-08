@@ -8,7 +8,7 @@
   },
   {
     "engine1": "../releases/engine-v0.1.0",
-    "engine2": "../releases/engine-v0.1.0",
+    "engine2": "../releases/engine-v0.2.0",
     "wins": 234,
     "draws": 488,
     "losses": 278
