@@ -1,6 +1,5 @@
 /*
-This file contains the implementation of both initializing the start position and initializing
-from a given fen position.
+This file contains the implementation of initializing the start position
 */
 
 #include "bitBoard.h"
@@ -29,6 +28,9 @@ namespace chess
         m_enpassentSquare = -1;
         m_castleRights = 0b1111;
         m_whitesMove = true;
+
+        m_pliesSince50MoveRuleReset = 0;
+        m_ply = 0;
 
         // Ensure an up to date hash
         recomputeHash();

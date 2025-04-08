@@ -3,21 +3,25 @@
 #include <functional>
 #include <thread>
 #include <atomic>
+#include <stdexcept>
+
+#include "types.h"
 #include "chess.h"
 #include "limits.h"
 #include "eval.h"
 #include "repetitionTable.h"
+#include "transposition.h"
 
 namespace chess
 {
-
     class Search
     {
     public:
         struct SearchConfig
         {
-            std::function<int(BoardState)> evalFunction;
+            std::function<score(BoardState)> evalFunction;
             const RepetitionTable *repTable = nullptr;
+            TranspositionTable *transTable = nullptr;
 
             SearchConfig() = default;
 
@@ -34,11 +38,14 @@ namespace chess
         The evaluations that are bellow and above this are used for mate in 0 through mate in MAX_DEPTH.
         */
         Search(BoardState board, SearchConfig config)
-            : m_rootBoard(board), m_evalFunc(config.evalFunction), m_repTable(config.repTable)
+            : m_rootBoard(board), m_evalFunc(config.evalFunction), m_repTable(config.repTable), m_transTable(config.transTable)
         {
             // If no repetition table is given we use an empty "dummy" table as a placeholder
             if (m_repTable == nullptr)
-                m_repTable = new RepetitionTable();
+                throw std::runtime_error("Missing repetition table in search config");
+
+            if (m_transTable == nullptr)
+                throw std::runtime_error("Missing transposition table in search config");
         };
 
         void stop() { m_stopped = true; }
@@ -64,7 +71,7 @@ namespace chess
 
         // This method is more so used internally, but can also directly be called to search a certain depth.
         template <bool Max, bool Root>
-        int minimax(const BoardState &curBoard, int remainingDepth, Move &outMove, int alpa = INT_MIN, int beta = INT_MAX);
+        score minimax(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpa = SCORE_MIN, score beta = SCORE_MAX);
 
     private:
         // Used for hard limits on search depth etc.
@@ -82,7 +89,7 @@ namespace chess
 
         // does a search only using captures (MoveGenType::Quiescent)
         template <bool Max>
-        int quiescentSearch(const BoardState &curBoard, int extraDepth, int alpha = INT_MIN, int beta = INT_MAX);
+        score quiescentSearch(const BoardState &curBoard, int extraDepth, score alpha = SCORE_MIN, score beta = SCORE_MAX);
 
         // Starts a thread which will set m_stopped to true once the specified time has run out
         void startTimeThread(double thinkSeconds);
@@ -91,9 +98,10 @@ namespace chess
         void stopTimeThread();
 
     private:
-        const std::function<int(BoardState)> m_evalFunc;
+        const std::function<score(BoardState)> m_evalFunc;
         // Repetition table passed down by the engine class
         const RepetitionTable *m_repTable;
+        TranspositionTable *m_transTable;
         const BoardState m_rootBoard;
 
         // Handles the limits of the search
@@ -105,4 +113,24 @@ namespace chess
         std::atomic<bool> m_cancelled = false;
         std::thread m_timerThread;
     };
+
+    inline score scoreForCurrentNode(score s, int curDepth)
+    {
+        if (abs(s) < MIN_MATE_SCORE)
+            return s;
+
+        return s > 0
+                   ? s + curDepth  // mate in N for white
+                   : s - curDepth; // mate in N for black
+    }
+
+    inline score scoreForRootNode(score s, int curDepth)
+    {
+        if (abs(s) < MIN_MATE_SCORE)
+            return s;
+
+        return s > 0
+                   ? s - curDepth  // mate in N for white
+                   : s + curDepth; // mate in N for black
+    }
 }

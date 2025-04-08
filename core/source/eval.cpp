@@ -145,15 +145,15 @@ namespace chess
         return pliesLeft < 50 ? 0.02 * pliesLeft : 1;
     }
 
-    int evaluate(BoardState position)
+    score evaluate(BoardState position)
     {
 
         const bitboard *white = position.getPieceSet(true);
         const bitboard *black = position.getPieceSet(false);
 
         // count the material for both sides
-        int whiteMaterial = 0;
-        int blackMaterial = 0;
+        score whiteMaterial = 0;
+        score blackMaterial = 0;
         // Go through every piece (except king)
         for (int pieceType = 0; pieceType < 5; pieceType++)
         {
@@ -164,8 +164,8 @@ namespace chess
         }
         endGameNessScore = isEndGameScore(whiteMaterial, blackMaterial);
 
-        int middleGameScore = 0;
-        int endGameScore = 0;
+        score middleGameScore = 0;
+        score endGameScore = 0;
         // Go through every piece (except king)
         for (int pieceType = 0; pieceType < 5; pieceType++)
         {
@@ -190,12 +190,12 @@ namespace chess
 
         float notEndGameNess = 1 - endGameNessScore;
 
-        int materialBalance = whiteMaterial - blackMaterial;
+        score materialBalance = whiteMaterial - blackMaterial;
 
         // score for placement of the pieces
-        int positioningScore = endGameNessScore * endGameScore + notEndGameNess * middleGameScore;
+        score positioningScore = endGameNessScore * endGameScore + notEndGameNess * middleGameScore;
 
-        int eval = materialBalance + positioningScore;
+        score eval = materialBalance + positioningScore;
 
         // kingsafety should weigh less in the endgame
         eval += kingSafety(position) * notEndGameNess;

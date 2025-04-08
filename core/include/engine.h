@@ -7,14 +7,25 @@
 #include "search.h"
 #include "eval.h"
 #include "repetitionTable.h"
+#include "transposition.h"
 
 namespace chess
 {
     class Engine
     {
     public:
-        Engine() = default;
-        Engine(BoardState startPosition) : m_currentBoard(startPosition), m_quit(false)
+        struct EngineConfig
+        {
+            // Default
+            EngineConfig()
+                : transpositionTableMBs(64) {};
+            // Default 64 mb table
+            int transpositionTableMBs;
+        };
+
+        // Always need a "default config"
+        Engine(EngineConfig config = EngineConfig())
+            : m_quit(false), m_transTable(config.transpositionTableMBs)
         {
             m_repTable.addState(m_currentBoard);
         }
@@ -74,13 +85,22 @@ namespace chess
             Search::SearchConfig config;
             config.evalFunction = evaluate;
             config.repTable = &m_repTable;
+            config.transTable = &m_transTable;
 
             Search s(m_currentBoard, config);
             return s.iterativeDeepening(thinkSeconds);
         }
 
         BoardState board() const { return m_currentBoard; }
-        void setPosition(BoardState b) { m_currentBoard = b; }
+        void setPosition(BoardState b)
+        {
+            m_currentBoard = b;
+
+            m_transTable.clear();
+            m_repTable.clear();
+
+            m_repTable.addState(m_currentBoard);
+        }
 
     private:
         bool m_quit;
@@ -89,6 +109,7 @@ namespace chess
         // If we have 100 previous states then the 50 move rule aplies
         // Note that we store a version of the hash which does not contain any enpassant key.
         RepetitionTable m_repTable;
+        TranspositionTable m_transTable;
     };
 
 }

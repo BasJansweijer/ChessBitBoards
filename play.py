@@ -78,7 +78,7 @@ class ChessEngine:
         if response.startswith("Draw by 50 move rule"):
             return "Draw by 50 move rule"
         
-        print(response)
+        print("failed on response:", response)
         raise Exception("bestMove Not parsed correctly")
 
     def makeMove(self, uci_move):
@@ -146,5 +146,5 @@ def playAgainstEngine(engine: ChessEngine, engineThinkSeconds, playWhite: bool, 
     input("enter to quit")
 
 if __name__ == "__main__":
-    engine = ChessEngine("./releases/engine-v0.0.3")
+    engine = ChessEngine("./releases/engine-v0.4.0")
     playAgainstEngine(engine, 10, True, fen=STARTfen)

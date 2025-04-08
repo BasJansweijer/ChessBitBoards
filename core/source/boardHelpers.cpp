@@ -93,6 +93,20 @@ namespace chess
         m_hash ^= zobrist::squarePieceKeys[s][pieceIdx];
     }
 
+    template void BoardState::togglePiece<Pawn, true>(square);
+    template void BoardState::togglePiece<Knight, true>(square);
+    template void BoardState::togglePiece<Bishop, true>(square);
+    template void BoardState::togglePiece<Rook, true>(square);
+    template void BoardState::togglePiece<Queen, true>(square);
+    template void BoardState::togglePiece<King, true>(square);
+
+    template void BoardState::togglePiece<Pawn, false>(square);
+    template void BoardState::togglePiece<Knight, false>(square);
+    template void BoardState::togglePiece<Bishop, false>(square);
+    template void BoardState::togglePiece<Rook, false>(square);
+    template void BoardState::togglePiece<Queen, false>(square);
+    template void BoardState::togglePiece<King, false>(square);
+
     template <bool white>
     void BoardState::togglePiece(PieceType piece, square s)
     {

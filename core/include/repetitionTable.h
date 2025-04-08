@@ -25,7 +25,7 @@ namespace chess
             if (m_length > 100)
                 return false;
 
-            m_table[m_length] = b.hashWithoutEnpassent();
+            m_table[m_length] = b.repetitionHash();
             m_length++;
             return true;
         }
@@ -60,7 +60,7 @@ namespace chess
             {
                 // If the b.getHash contains enpassent data then we cannot have repetition anyways!
                 // (from the root we cannot do a double pawn move and have repetition at any point)
-                if (m_table[idx] == b.getHash())
+                if (m_table[idx] == b.repetitionHash())
                     return true;
 
                 // Skip hashes where it isn't the same colors turn

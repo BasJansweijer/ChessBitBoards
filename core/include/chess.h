@@ -183,6 +183,8 @@ namespace chess
 
         inline uint8_t pliesTill50MoveRule() const { return 100 - m_pliesSince50MoveRuleReset; }
 
+        inline uint16_t ply() const { return m_ply; }
+
         // Returns wether white/black has a piece attacking square s.
         template <bool ByWhite>
         bool squareAttacked(square s) const;
@@ -205,8 +207,11 @@ namespace chess
         }
         inline key getHash() const { return m_hash; }
 
-        // Used only to get the hash of the current (not in search) position to store in the repitition table
-        inline key hashWithoutEnpassent() const { return m_hash ^ zobrist::getEnpassentKey(m_enpassentSquare); }
+        // Used only to get the hash of the current position to store in the repitition table (not the other meta data)
+        inline key repetitionHash() const
+        {
+            return m_hash ^ zobrist::getEnpassentKey(m_enpassentSquare) ^ zobrist::get50MoveRuleKey(m_pliesSince50MoveRuleReset);
+        }
 
         // Usually the hash is kept up to date, but in some cases (initialization mainly) we need to compute
         // the up to date hash
@@ -233,10 +238,11 @@ namespace chess
 
         bool m_whitesMove;
 
+        uint8_t m_pliesSince50MoveRuleReset;
+        uint16_t m_ply;
+
         // Zobrist hash of the current board state
         key m_hash;
-
-        uint8_t m_pliesSince50MoveRuleReset;
 
     private:
         // Piece specific move generation helpers

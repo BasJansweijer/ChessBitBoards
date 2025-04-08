@@ -8,6 +8,8 @@
 #include "chess.h"
 #include "search.h"
 
+#include "boardVisualizer.h"
+
 namespace chess
 {
     using MoveGenType = BoardState::MoveGenType;
@@ -43,27 +45,6 @@ namespace chess
         m_timerThread.join();
     }
 
-    Eval evalFromScore(int score, int searchDepth)
-    {
-        // In the quiescent search we might find even deeper mates
-        constexpr int MAX_QUIESCENT_DEPTH = 100;
-
-        // check if it is not a mate
-        if (abs(score) < MATE_EVAL - MAX_QUIESCENT_DEPTH)
-            return Eval(Eval::Type::SCORE, score);
-
-        bool whiteMating = score > 0;
-
-        // Search depth that was remaining when the mate was found
-        int remainingDepth = abs(score) - MATE_EVAL;
-
-        // remaining depth might be negative if mate is found in quiescent search.
-        int mateInPlies = searchDepth - remainingDepth;
-
-        int n = (mateInPlies + 1) / 2;
-        return Eval(Eval::Type::MATE, n);
-    }
-
     Search::DepthSettings Search::initialDepths(double thinkSeconds)
     {
         constexpr int MAX_INITIAL_DEPTH = 4;
@@ -82,6 +63,9 @@ namespace chess
     Search::iterativeDeepening(double thinkSeconds)
     {
         startTimeThread(thinkSeconds);
+
+        // Signal to the transposition table that we start a new search (generation)
+        m_transTable->startNewSearch();
 
         Move bestMove = Move::Null();
         int evalScore;
@@ -115,6 +99,8 @@ namespace chess
             if (m_stopped)
             {
                 // highest completed depth is one less
+                m_depths.minDepth -= 1;
+                m_depths.maxQuiescentDepth -= 1;
                 break;
             }
 
@@ -133,8 +119,26 @@ namespace chess
         return {bestMove, eval, m_statistics};
     }
 
+    template <bool Max>
+    bool entryIsUsable(TTEntry *entry, int remainingDepth, score curAlpha, score curBeta)
+    {
+        bool goodDepth = entry->depth >= remainingDepth;
+
+        /*
+         * Bound is usable if:
+         *  - it is exact
+         *  - we are white and it is an upper bound (or black and it is a lower bound)
+         *  - or if it would produce a cutoff in the !Max call above our current one.
+         */
+        bool usableBound = entry->bound() == EvalBound::Exact ||
+                           (Max && (entry->bound() == EvalBound::Upper || entry->eval >= curAlpha)) ||
+                           (!Max && (entry->bound() == EvalBound::Lower || entry->eval <= curBeta));
+
+        return goodDepth && usableBound;
+    }
+
     template <bool Max, bool Root>
-    int Search::minimax(const BoardState &curBoard, int remainingDepth, Move &outMove, int alpha, int beta)
+    score Search::minimax(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpha, score beta)
     {
         // cancel the search
         if (m_stopped.load(std::memory_order_relaxed))
@@ -147,11 +151,38 @@ namespace chess
 
         // Base case (do a quiescent search)
         if (remainingDepth == 0)
-            // return m_evalFunc(curBoard);
             return quiescentSearch<Max>(curBoard, 0, alpha, beta);
 
+        uint8_t curDepth = m_depths.minDepth - remainingDepth;
+
+        // Look in the transposition table for a usable entry for this board
+        key boardHash = curBoard.getHash();
+        TTEntry *transEntry = m_transTable->get(boardHash);
+        // In the root we need to return a move.
+        if (!Root && transEntry->containsHash(boardHash) && entryIsUsable<Max>(transEntry, remainingDepth, alpha, beta))
+        {
+
+            // 8/8/8/P7/8/2K5/8/3k4 w - - 3 65
+            
+            // found a usable entry
+            score TTScore = scoreForRootNode(transEntry->eval, curDepth);
+            switch (transEntry->bound())
+            {
+            case EvalBound::Exact:
+                return TTScore; // always usable
+            case EvalBound::Lower:
+                if (Max && beta < TTScore) // only return if a cutoff can be produced from this
+                    return TTScore;
+                break;
+            case EvalBound::Upper:
+                if (!Max && alpha > TTScore) // only return if a cutoff can be produced from this
+                    return TTScore;
+                break;
+            }
+        }
+
         // Start with the worst possible eval
-        int bestEval = Max ? INT_MIN : INT_MAX;
+        score bestEval = Max ? SCORE_MIN : SCORE_MAX;
 
         MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Normal>();
 
@@ -163,7 +194,7 @@ namespace chess
                 continue; // skip since move was illegal
 
             // search with opposite of min/max and not root and 1 less depth
-            int moveEval = minimax<!Max, false>(newBoard, remainingDepth - 1, outMove, alpha, beta);
+            score moveEval = minimax<!Max, false>(newBoard, remainingDepth - 1, outMove, alpha, beta);
 
             // Update the bestEval and move only when a strictly better option is found
             // (this prevents using pruned options)
@@ -176,14 +207,14 @@ namespace chess
             }
 
             if (Max ? bestEval > beta : bestEval < alpha)
-                return bestEval; // The opponent could have chosen a better move in a previous step.
+                break; // The opponent could have chosen a better move in a previous step.
 
             // max alpha / min beta depending on what player we are
             Max ? alpha = std::max(alpha, bestEval) : beta = std::min(beta, bestEval);
         }
 
         // Stalemate/mate detection
-        bool noLegalMoves = bestEval == INT_MIN || bestEval == INT_MAX;
+        bool noLegalMoves = bestEval == SCORE_MIN || bestEval == SCORE_MAX;
         if (noLegalMoves)
         {
             // Stalemate is a draw. (if the king is not in check)
@@ -191,15 +222,34 @@ namespace chess
                 return 0;
 
             // calculate mate evaluation
-            // The higher the remaining depth the closer we are to the root (so more negative/positive score).
-            bestEval = Max ? -MATE_EVAL - remainingDepth : MATE_EVAL + remainingDepth;
+            // The higher the depth the closer the score it to zero
+            bestEval = Max ? -MAX_MATE_SCORE + curDepth : MAX_MATE_SCORE - curDepth;
         }
+
+        if (m_stopped.load(std::memory_order_relaxed))
+            // if the search was cancelled don't store the results as they are 'faulty'.
+            return bestEval;
+
+        /*
+         * Store the evaluation in the transposition table
+         */
+        EvalBound bound;
+        if (bestEval > beta)
+            bound = EvalBound::Lower; // Beta cutoff (fail-high, could be higher)
+        else if (bestEval < alpha)
+            bound = EvalBound::Upper; // Alpha cutoff (fail-low, could be lower)
+        else
+            bound = EvalBound::Exact; // Full search was done
+
+        score eval = scoreForCurrentNode(bestEval, curDepth);
+
+        m_transTable->set(boardHash, TTEntry(eval, remainingDepth, bound));
 
         return bestEval;
     }
 
     template <bool Max>
-    int Search::quiescentSearch(const BoardState &curBoard, int extraDepth, int alpha, int beta)
+    score Search::quiescentSearch(const BoardState &curBoard, int extraDepth, score alpha, score beta)
     {
         // cancel the search
         if (m_stopped.load(std::memory_order_relaxed))
@@ -207,11 +257,35 @@ namespace chess
 
         // Note: no need to check repetition table as each move is a capture (no repetition possible)
 
+        int curDepth = m_depths.minDepth + extraDepth;
+        // Look in the transposition table for a usable entry for this board
+        key boardHash = curBoard.getHash();
+        TTEntry *transEntry = m_transTable->get(boardHash);
+        // In the root we need to return a move.
+        if (transEntry->containsHash(boardHash) && entryIsUsable<Max>(transEntry, 0, alpha, beta))
+        {
+            // found a usable entry
+            score TTScore = scoreForRootNode(transEntry->eval, curDepth);
+            switch (transEntry->bound())
+            {
+            case EvalBound::Exact:
+                return TTScore; // always usable
+            case EvalBound::Lower:
+                if (Max && beta < TTScore) // only return if a cutoff can be produced from this
+                    return TTScore;
+                break;
+            case EvalBound::Upper:
+                if (!Max && alpha > TTScore) // only return if a cutoff can be produced from this
+                    return TTScore;
+                break;
+            }
+        }
+
         // Update max depth statistic
         m_statistics.reachedDepth = std::max(m_depths.minDepth + extraDepth, m_statistics.reachedDepth);
 
         // Captures aren't forced so we assume the current positions evaluation as a minimum
-        int bestEval = m_evalFunc(curBoard);
+        score bestEval = m_evalFunc(curBoard);
 
         if (m_depths.maxQuiescentDepth <= extraDepth)
             return bestEval;
@@ -243,8 +317,8 @@ namespace chess
         return bestEval;
     }
 
-    template int Search::minimax<true, true>(const BoardState &curBoard, int remainingDepth, Move &outMove, int alpha, int beta);
-    template int Search::minimax<false, true>(const BoardState &curBoard, int remainingDepth, Move &outMove, int alpha, int beta);
-    template int Search::minimax<true, false>(const BoardState &curBoard, int remainingDepth, Move &outMove, int alpha, int beta);
-    template int Search::minimax<false, false>(const BoardState &curBoard, int remainingDepth, Move &outMove, int alpha, int beta);
+    template score Search::minimax<true, true>(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpha, score beta);
+    template score Search::minimax<false, true>(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpha, score beta);
+    template score Search::minimax<true, false>(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpha, score beta);
+    template score Search::minimax<false, false>(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpha, score beta);
 }
