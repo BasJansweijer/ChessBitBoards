@@ -23,3 +23,8 @@ Doing so improved the performance by roughly 230 elo. The results against the pr
 We add zobrist hashing and utilize a transposition table to detect when previous positions are repeated. Even though the nps of the move generation decrease by a bit under 20% and the search code also now needs to check for repetitions the depth we can search seems to have slightly increased due to the branches we can stop searching due to them being repetitions.
 This addition resulted in 389 wins, 192 losses and 419 draws against the previous version (~125 elo increase).
 Interestingly the number of draws did not decrease much, this is probably because in losing positions this version can try to get a draw on purpose while the previous version doesn't prevent the draw.
+
+## Transposition table (v0.5.0)
+
+Using the zobrist keys we add a transposition table. This table is persistant between searches and only purges old entries on collisions. The transposition table is filled with TTEntry struct and can store an exact, upper or lower bound for a position. In some cases this allows us to skip the search of a position if a good enough entry is stored for that position. The table is filled an used in the full search. Additionally the quiescent search uses entries aswell but doesn't store results.
+This addition resulted in 465 wins, 162 draws and 373 wins against the previous version (~40 elo increase). Though we suspect that the strength increase is larger in slower time controls as with only 0.25 seconds for each move the depth of the entries in the tables is never verry high.

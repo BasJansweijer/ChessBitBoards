@@ -83,16 +83,8 @@ def compareEngines(engine1: ChessEngine, engine2: ChessEngine, thinkTime=0.5, fe
     engine2Wins = 0
 
     n = 0
-
-    draws = 82
-    engine1Wins = 193
-    engine2Wins = 229
     for fen in open(fensFile):
         n += 1
-
-        if n < 253:
-            print(f"Skipping fen {n} ({fen})")
-            continue
 
         print(f"Current results: engine1 wins: {engine1Wins}, engine2 wins: {engine2Wins}, draws: {draws}")
         print(f"Starting on fen {n} ({fen})")
@@ -132,9 +124,9 @@ def storeComparison(engine1: ChessEngine, engine2: ChessEngine, result:tuple[int
     res = {
         "engine1": engine1.engine_path, 
         "engine2": engine2.engine_path,
-        "wins": result[0], 
+        "engine1Wins": result[0], 
         "draws": result[1], 
-        "losses": result[2]
+        "engine2Wins": result[2]
     }
     
     # Read the existing data
