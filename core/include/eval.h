@@ -18,19 +18,19 @@ namespace chess
             MATE
         } type;
 
-        Eval(Type t, int n) : type(t)
+        Eval(Type t, score n) : type(t)
         {
             if (t == MATE)
                 mateIn = n;
             else
-                score = n;
+                scoreVal = n;
         }
 
     private:
         union
         {
-            int score;
-            int mateIn;
+            score scoreVal;
+            int16_t mateIn;
         };
 
         // Overload operator<< for printing
@@ -45,7 +45,7 @@ namespace chess
             }
             else
             {
-                os << eval.score;
+                os << eval.scoreVal;
             }
             return os;
         }
@@ -55,4 +55,21 @@ namespace chess
     // in a more friendly format (not used during search)
 
     score evaluate(BoardState b);
+
+    inline Eval evalFromScore(score score, int searchDepth)
+    {
+        // check if it is not a mate
+        if (abs(score) < MIN_MATE_SCORE)
+            return Eval(Eval::Type::SCORE, score);
+
+        bool whiteMating = score > 0;
+
+        // Search depth that was remaining when the mate was found
+        int depth = MAX_MATE_SCORE - abs(score);
+
+        int n = (depth + 1) / 2;
+
+        // For black mates we do minus n
+        return Eval(Eval::Type::MATE, whiteMating ? n : -n);
+    }
 }

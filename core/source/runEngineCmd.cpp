@@ -22,7 +22,7 @@ namespace chess
         if (std::regex_match(cmd, match, setPosRegex))
         {
             std::string fen = match[1];
-            m_currentBoard = BoardState(fen);
+            setPosition(BoardState(fen));
 
             std::cout << "done" << std::endl;
         }
@@ -48,7 +48,9 @@ namespace chess
             }
 
             auto [move, eval, info] = findBestMove(seconds);
-            std::cout << move.toUCI() << " (eval: " << eval << ", searchinfo: " << info << ")" << std::endl;
+            double ttFullness = m_transTable.fullNess();
+            std::cout << move.toUCI() << " (eval: " << eval << ", searchinfo: " << info
+                      << ", ttFullness: " << ttFullness << ")" << std::endl;
         }
         else if (cmd == "showBoard")
         {

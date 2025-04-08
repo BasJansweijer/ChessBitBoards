@@ -228,6 +228,8 @@ namespace chess
             ? m_pliesSince50MoveRuleReset = 0
             : m_pliesSince50MoveRuleReset += 1;
 
+        m_ply += 1;
+
         // Give the turn to the other player
         m_whitesMove = !m_whitesMove;
 

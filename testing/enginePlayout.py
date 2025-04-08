@@ -27,6 +27,7 @@ def playGame(engine1: ChessEngine, engine2: ChessEngine, fen, thinkTime, verbose
        chessGui.update_board(board)
 
     while not board.is_game_over():
+        print(board.fen())
         # Engine 1's move
         resp = engine1.bestMove(thinkTime)
         if resp == "Draw by 50 move rule":
@@ -82,8 +83,16 @@ def compareEngines(engine1: ChessEngine, engine2: ChessEngine, thinkTime=0.5, fe
     engine2Wins = 0
 
     n = 0
+
+    draws = 82
+    engine1Wins = 193
+    engine2Wins = 229
     for fen in open(fensFile):
         n += 1
+
+        if n < 253:
+            print(f"Skipping fen {n} ({fen})")
+            continue
 
         print(f"Current results: engine1 wins: {engine1Wins}, engine2 wins: {engine2Wins}, draws: {draws}")
         print(f"Starting on fen {n} ({fen})")
@@ -143,8 +152,9 @@ def storeComparison(engine1: ChessEngine, engine2: ChessEngine, result:tuple[int
 
 startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"
 if __name__ == "__main__":
-    e1 = ChessEngine("../releases/engine-v0.4.0")
-    e2 = ChessEngine("../build/app/engine")
+    e1 = ChessEngine("../releases/engine-v0.4.1")
+    e2 = ChessEngine("../releases/engine-v0.5.0")     
+    # e2 = ChessEngine("../build/app/engine")     
 
     result = compareEngines(e1, e2)
     storeComparison(e1, e2, result)

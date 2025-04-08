@@ -126,7 +126,14 @@ namespace chess
             curIdx++;
 
         m_pliesSince50MoveRuleReset = std::stoi(std::string(fen.substr(curIdx, 2)));
-        ;
+
+        // Full move counter
+        curIdx += 2;
+        while (fen.at(curIdx) != ' ')
+            curIdx++;
+
+        int fullMoves = std::stoi(std::string(fen.substr(curIdx, fen.length() - curIdx)));
+        m_ply = fullMoves / 2;
 
         // Ensure an up to date hash
         recomputeHash();
@@ -230,7 +237,11 @@ namespace chess
         else
             fen += " - ";
 
-        fen += (char)m_pliesSince50MoveRuleReset + '0';
+        fen += std::to_string(m_pliesSince50MoveRuleReset);
+
+        fen += " ";
+        int fullMoves = m_ply / 2;
+        fen += std::to_string(fullMoves);
 
         return fen;
     }

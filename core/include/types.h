@@ -28,9 +28,20 @@ namespace chess
     using key = uint64_t;
 
     // eval score
-    using score = uint16_t;
+    using score = int16_t;
+#define SCORE_MAX INT16_MAX
+#define SCORE_MIN INT16_MIN
 
     // The minimum int that is still forced mate
-    constexpr score MATE_EVAL = 30000;
+    constexpr score MIN_MATE_SCORE = 30000;
+    constexpr int MAX_DEPTH = 1000;
+    constexpr score MAX_MATE_SCORE = MIN_MATE_SCORE + MAX_DEPTH;
 
+    // The exact values correspond to the flags in the TTEntries
+    enum EvalBound : uint8_t
+    {
+        Lower = 0b10,
+        Upper = 0b100,
+        Exact = Lower | Upper
+    };
 }
