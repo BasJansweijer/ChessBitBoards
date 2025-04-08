@@ -81,7 +81,7 @@ namespace chess
 
         const bool root = true;
 
-        while (eval.type != Eval::Type::MATE)
+        while (eval.type != Eval::Type::MATE || eval.movesTillMate() > (m_depths.minDepth + 1) / 2)
         {
             // Update the info to the collected info from previous completed search
             prevDepths = m_depths;
@@ -163,7 +163,7 @@ namespace chess
         {
 
             // 8/8/8/P7/8/2K5/8/3k4 w - - 3 65
-            
+
             // found a usable entry
             score TTScore = scoreForRootNode(transEntry->eval, curDepth);
             switch (transEntry->bound())

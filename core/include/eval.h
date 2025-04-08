@@ -26,6 +26,14 @@ namespace chess
                 scoreVal = n;
         }
 
+        int16_t movesTillMate() const
+        {
+            if (type == MATE)
+                return mateIn;
+            else
+                throw std::runtime_error("Eval is not a mate");
+        }
+
     private:
         union
         {
