@@ -3,6 +3,8 @@ import chess.svg
 import os
 import sys
 import json
+import argparse
+
 
 # Ensures python can find play.py
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -112,6 +114,7 @@ def compareEngines(engine1: ChessEngine, engine2: ChessEngine, thinkTime=0.5, fe
     return (engine1Wins, draws, engine2Wins)
 
 compResultFile = "data/engineComparison.json"
+
 def storeComparison(engine1: ChessEngine, engine2: ChessEngine, result:tuple[int, int, int]):
     global compResultFile
 
@@ -144,11 +147,23 @@ def storeComparison(engine1: ChessEngine, engine2: ChessEngine, result:tuple[int
 
 startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="use --quick to run 100 fens instead of 10000")
+    parser.add_argument('--quick', action='store_true', help='Run quick benchmark with 100 fens')
+    args = parser.parse_args()
+
+    if args.quick:
+        fensFile = "data/openingFens100.txt"
+    else:
+        fensFile = "data/openingFens.txt"
+
+    print(f"Using fens file {fensFile}")
+
     e1 = ChessEngine("../releases/engine-v0.4.1")
     e2 = ChessEngine("../releases/engine-v0.5.0")     
     # e2 = ChessEngine("../build/app/engine")     
 
-    result = compareEngines(e1, e2)
+    result = compareEngines(e1, e2, fensFile=fensFile)
     storeComparison(e1, e2, result)
 
     # Quit engines
