@@ -96,7 +96,9 @@ namespace chess
                 newScore = minimax<false, root>(m_rootBoard, m_depths.minDepth, currentSearchBest);
 
             // if search is stopped early return using the previous depth results
-            if (m_stopped)
+            // If we are stopped and the minDepth is greater than 1000 we are probably dealing with
+            // a repetition in the search tree.
+            if (m_stopped || m_depths.minDepth > 1000)
             {
                 // highest completed depth is one less
                 m_depths.minDepth -= 1;
