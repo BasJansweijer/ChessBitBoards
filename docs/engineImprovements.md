@@ -39,3 +39,6 @@ To evaluate each individual improvement we only ran on 100 positions instead of 
 Before quiescent search was added the queen was always too eager to come out early. To discourage this the square table was tweaked. We now revert this change as we don't necessarily want to discourage the queen from comming out. Achieved 273 wins, 59 draws and 192 losses.
 
 ### Encourage trading down when ahead (v0.6.2)
+
+To encourage trading pieces we add 0.2 times the percentage of non pawn material times the material balance to the evaluation. This encourages us to trade non pawn pieces when the material balance is in our favor. (Initialy we tried to use the endgameness score but this is set to 1 when we're in an endgame and thus doesn't encourage trading in the endgame itself.)
+Acieved 80 wins, 30 draws and 68 losses against v0.6.1.

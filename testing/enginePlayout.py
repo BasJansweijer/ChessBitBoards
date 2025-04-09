@@ -159,8 +159,8 @@ if __name__ == "__main__":
 
     print(f"Using fens file {fensFile}")
 
-    e1 = ChessEngine("../releases/engine-v0.5.0")
-    e2 = ChessEngine("../releases/engine-v0.6.0")  
+    e1 = ChessEngine("../releases/engine-v0.6.1")
+    e2 = ChessEngine("../releases/engine-v0.6.2")
 
     result = compareEngines(e1, e2, fensFile=fensFile)
     storeComparison(e1, e2, result)

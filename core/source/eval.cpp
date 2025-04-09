@@ -15,7 +15,8 @@ constexpr int startingPieceMaterial = pieceVals[PT::Knight] * 2 +
 
 static uint8_t whitePieceCounts[5];
 static uint8_t blackPieceCounts[5];
-static float endGameNessScore;
+static float s_endGameNessScore;
+static float s_piecesMaterialLeft; // [0, 1]
 static chess::BoardState position;
 
 namespace tables = chess::evalTables;
@@ -54,9 +55,9 @@ namespace chess
         // We factor is lower when opponent has more material still on the board
         const int opponentMaterial = whiteMaterial > blackMaterial ? blackMaterial : whiteMaterial;
 
-        return materialAdvantage < minMaterialDiff || endGameNessScore < 0.5
+        return materialAdvantage < minMaterialDiff || s_endGameNessScore < 0.5
                    ? 0 // don't use mopup score
-                   : materialAdvantage * endGameNessScore / (float)(pieceVals[PieceType::Rook] + opponentMaterial);
+                   : materialAdvantage * s_endGameNessScore / (float)(pieceVals[PieceType::Rook] + opponentMaterial);
     }
 
     /*
@@ -64,7 +65,7 @@ namespace chess
     Where 0 means, this is not at all an endgame position and 1 means this is an endgame position.
     NOTE: we use "static" global pieceCount arrays for this
     */
-    inline float isEndGameScore(int whiteMaterial, int blackMaterial)
+    inline void calculateEndGameNess(int whiteMaterial, int blackMaterial)
     {
         // Remove pawns from the equation
         int whitePieceMaterial = whiteMaterial - pieceVals[PieceType::Pawn] * whitePieceCounts[PieceType::Pawn];
@@ -88,7 +89,7 @@ namespace chess
         // Prevents us from using endgame tables too early whilst still using them almost entirely when
         // the score gets lower
         float scoreSquare = score * score;
-        return scoreSquare * scoreSquare;
+        s_endGameNessScore = scoreSquare * scoreSquare;
     }
 
     inline int mopUpScore(const BoardState &position, int materialBalance)
@@ -162,7 +163,12 @@ namespace chess
             blackPieceCounts[pieceType] = bitBoards::bitCount(black[pieceType]);
             blackMaterial += blackPieceCounts[pieceType] * pieceVals[pieceType];
         }
-        endGameNessScore = isEndGameScore(whiteMaterial, blackMaterial);
+        calculateEndGameNess(whiteMaterial, blackMaterial);
+
+        // Calculate the percentage of (non pawn) pieces that is remaining
+        score whiteNonPawnMaterial = whiteMaterial - whitePieceCounts[PieceType::Pawn] * pieceVals[PieceType::Pawn];
+        score blackNonPawnMaterial = blackMaterial - blackPieceCounts[PieceType::Pawn] * pieceVals[PieceType::Pawn];
+        s_piecesMaterialLeft = (whiteNonPawnMaterial + blackNonPawnMaterial) / (float)(startingPieceMaterial * 2);
 
         score middleGameScore = 0;
         score endGameScore = 0;
@@ -188,22 +194,28 @@ namespace chess
         endGameScore += tables::endGameWhite[PieceType::King][whiteKing];
         endGameScore -= tables::endGameBlack[PieceType::King][blackKing];
 
-        float notEndGameNess = 1 - endGameNessScore;
+        float notEndGameNess = 1 - s_endGameNessScore;
 
         score materialBalance = whiteMaterial - blackMaterial;
 
         // score for placement of the pieces
-        score positioningScore = endGameNessScore * endGameScore + notEndGameNess * middleGameScore;
-
-        score eval = materialBalance + positioningScore;
+        score positioningScore = s_endGameNessScore * endGameScore + notEndGameNess * middleGameScore;
 
         // kingsafety should weigh less in the endgame
-        eval += kingSafety(position) * notEndGameNess;
+        score kingSafetyScore = kingSafety(position) * notEndGameNess;
+
+        // add score to encourage trading (non pawn) pieces when ahead
+        // We use the piece percentage left to determine how much we should encourage trading
+        constexpr float tradeEncouragementFactor = 0.2; // not experimentaly determined
+        // We square it to make trades more wothit as less pieces are left
+        float squaredPieceMaterialLeft = s_piecesMaterialLeft * s_piecesMaterialLeft;
+        score tradeDownBonus = (1 - squaredPieceMaterialLeft) * materialBalance * tradeEncouragementFactor;
 
         // add a score to encourage driving the king to the corner
         float weight = mopUpFactor(whiteMaterial, blackMaterial);
-        eval += weight != 0 ? mopUpScore(position, materialBalance) * weight : 0;
+        score mopUpBonus = weight != 0 ? mopUpScore(position, materialBalance) * weight : 0;
 
+        score eval = materialBalance + positioningScore + kingSafetyScore + tradeDownBonus + mopUpBonus;
         return eval;
     }
 }
