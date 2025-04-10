@@ -8,6 +8,7 @@ add_library(core STATIC
     source/hashBoard.cpp
     source/search.cpp
     source/eval.cpp
+    source/initEval.cpp
     source/runEngineCmd.cpp
 )
 

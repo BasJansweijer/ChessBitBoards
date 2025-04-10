@@ -5,26 +5,11 @@
 #include <algorithm>
 #include "evalTables.h"
 
-constexpr int pieceVals[5] = {100, 300, 320, 500, 900};
-// The initial value of all (non pawn) pieces for a single player
-using PT = chess::PieceType;
-constexpr int startingPieceMaterial = pieceVals[PT::Knight] * 2 +
-                                      pieceVals[PT::Bishop] * 2 +
-                                      pieceVals[PT::Rook] * 2 +
-                                      pieceVals[PT::Queen];
-
-static uint8_t whitePieceCounts[5];
-static uint8_t blackPieceCounts[5];
-static float s_endGameNessScore;
-static float s_piecesMaterialLeft; // [0, 1]
-static chess::BoardState position;
-
 namespace tables = chess::evalTables;
 
 namespace chess
 {
-
-    int kingSafety(const BoardState &board)
+    score Evaluator::kingSafety()
     {
         constexpr int KING_SAFETY_MULT = 10;
         square blackKing = board.getBlackKingSquare();
@@ -45,7 +30,7 @@ namespace chess
     }
 
     // mopup score strongly influences the normal evaluation at the very end of the game to promote cornering the losing king
-    float mopUpFactor(int whiteMaterial, int blackMaterial)
+    float Evaluator::mopUpFactor()
     {
         // If a player is up this much we might have to mop up.
         constexpr int minMaterialDiff = pieceVals[PieceType::Rook] - 2 * pieceVals[PieceType::Pawn];
@@ -55,53 +40,21 @@ namespace chess
         // We factor is lower when opponent has more material still on the board
         const int opponentMaterial = whiteMaterial > blackMaterial ? blackMaterial : whiteMaterial;
 
-        return materialAdvantage < minMaterialDiff || s_endGameNessScore < 0.5
+        return materialAdvantage < minMaterialDiff || endGameNessScore < 0.5
                    ? 0 // don't use mopup score
-                   : materialAdvantage * s_endGameNessScore / (float)(pieceVals[PieceType::Rook] + opponentMaterial);
+                   : materialAdvantage * endGameNessScore / (float)(pieceVals[PieceType::Rook] + opponentMaterial);
     }
 
-    /*
-    Using the material of both players we determine a number in the range [0, 1]
-    Where 0 means, this is not at all an endgame position and 1 means this is an endgame position.
-    NOTE: we use "static" global pieceCount arrays for this
-    */
-    inline void calculateEndGameNess(int whiteMaterial, int blackMaterial)
+    score Evaluator::mopUpScore()
     {
-        // Remove pawns from the equation
-        int whitePieceMaterial = whiteMaterial - pieceVals[PieceType::Pawn] * whitePieceCounts[PieceType::Pawn];
-        int blackPieceMaterial = blackMaterial - pieceVals[PieceType::Pawn] * blackPieceCounts[PieceType::Pawn];
-
-        // Value the queen as more than usual
-        whitePieceMaterial += whitePieceCounts[PieceType::Queen] * 300;
-        blackPieceMaterial += whitePieceCounts[PieceType::Queen] * 300;
-
-        // an offset of the highest material a side may have in an endgame
-        constexpr int maxEndGameMaterial = pieceVals[PieceType::Rook] * 2;
-
-        // A divisor such that when no pieces are taken we return 1
-        constexpr float divisor = startingPieceMaterial * 2 - maxEndGameMaterial * 2;
-
-        float score = (whitePieceMaterial + blackPieceMaterial - 2 * maxEndGameMaterial) / divisor;
-        // normalize score to let 1 be completely endgame and 0 be completely not endgame
-        score = score < 0 ? 1 : 1 - score;
-
-        // We run the score through a function which ensures that we "skew" more towards 1.
-        // Prevents us from using endgame tables too early whilst still using them almost entirely when
-        // the score gets lower
-        float scoreSquare = score * score;
-        s_endGameNessScore = scoreSquare * scoreSquare;
-    }
-
-    inline int mopUpScore(const BoardState &position, int materialBalance)
-    {
-        square whiteKing = position.getWhiteKingSquare();
-        square blackKing = position.getBlackKingSquare();
+        square whiteKing = board.getWhiteKingSquare();
+        square blackKing = board.getBlackKingSquare();
         int8_t wKingRank = whiteKing / 8;
         int8_t wKingFile = whiteKing % 8;
         int8_t bKingRank = blackKing / 8;
         int8_t bKingFile = blackKing % 8;
 
-        bool whiteToWin = materialBalance > 0;
+        bool whiteToWin = getMaterialBalance() > 0;
         uint8_t *matingPieceCounts = whiteToWin ? whitePieceCounts : blackPieceCounts;
 
         constexpr int centerDistMult = 20;
@@ -120,7 +73,7 @@ namespace chess
         // If we have to rely on our bishop then we need to push to the correct corner
         if (matingPieceCounts[PieceType::Bishop] == 1 && matingPieceCounts[PieceType::Rook] == 0 && matingPieceCounts[PieceType::Queen] == 0)
         {
-            bitboard bishops = whiteToWin ? position.getWhiteBishops() : position.getBlackBishops();
+            bitboard bishops = whiteToWin ? board.getWhiteBishops() : board.getBlackBishops();
             square bishPos = bitBoards::firstSetBit(bishops);
             uint8_t bishRank = bishPos / 8;
             uint8_t bishFile = bishPos % 8;
@@ -137,83 +90,27 @@ namespace chess
         return whiteToWin ? score : -score;
     }
 
-    // Usually 1 but starts to decrease as we have less then 25 full moves left
-    // NOTE: currently not used because it would mess up the evaluations
-    // in the transposition table.
-    inline float draw50MoveRuleFactor(const BoardState &b)
+    score Evaluator::evaluation()
     {
-        const uint8_t pliesLeft = b.pliesTill50MoveRule();
-        return pliesLeft < 50 ? 0.02 * pliesLeft : 1;
-    }
-
-    score evaluate(BoardState position)
-    {
-
-        const bitboard *white = position.getPieceSet(true);
-        const bitboard *black = position.getPieceSet(false);
-
-        // count the material for both sides
-        score whiteMaterial = 0;
-        score blackMaterial = 0;
-        // Go through every piece (except king)
-        for (int pieceType = 0; pieceType < 5; pieceType++)
-        {
-            whitePieceCounts[pieceType] = bitBoards::bitCount(white[pieceType]);
-            whiteMaterial += whitePieceCounts[pieceType] * pieceVals[pieceType];
-            blackPieceCounts[pieceType] = bitBoards::bitCount(black[pieceType]);
-            blackMaterial += blackPieceCounts[pieceType] * pieceVals[pieceType];
-        }
-        calculateEndGameNess(whiteMaterial, blackMaterial);
-
-        // Calculate the percentage of (non pawn) pieces that is remaining
-        score whiteNonPawnMaterial = whiteMaterial - whitePieceCounts[PieceType::Pawn] * pieceVals[PieceType::Pawn];
-        score blackNonPawnMaterial = blackMaterial - blackPieceCounts[PieceType::Pawn] * pieceVals[PieceType::Pawn];
-        s_piecesMaterialLeft = (whiteNonPawnMaterial + blackNonPawnMaterial) / (float)(startingPieceMaterial * 2);
-
-        score middleGameScore = 0;
-        score endGameScore = 0;
-        // Go through every piece (except king)
-        for (int pieceType = 0; pieceType < 5; pieceType++)
-        {
-            bitBoards::forEachBit(white[pieceType], [&](square s)
-                                  { 
-                middleGameScore += tables::middleGameWhite[pieceType][s];
-                endGameScore += tables::endGameBlack[pieceType][s]; });
-
-            bitBoards::forEachBit(black[pieceType], [&](square s)
-                                  { 
-                middleGameScore -= tables::middleGameBlack[pieceType][s];
-                endGameScore -= tables::endGameBlack[pieceType][s]; });
-        }
-
-        // Add the king position score
-        square whiteKing = position.getWhiteKingSquare();
-        square blackKing = position.getBlackKingSquare();
-        middleGameScore += tables::middleGameWhite[PieceType::King][whiteKing];
-        middleGameScore -= tables::middleGameBlack[PieceType::King][blackKing];
-        endGameScore += tables::endGameWhite[PieceType::King][whiteKing];
-        endGameScore -= tables::endGameBlack[PieceType::King][blackKing];
-
-        float notEndGameNess = 1 - s_endGameNessScore;
-
-        score materialBalance = whiteMaterial - blackMaterial;
+        score materialBalance = getMaterialBalance();
 
         // score for placement of the pieces
-        score positioningScore = s_endGameNessScore * endGameScore + notEndGameNess * middleGameScore;
+        float notEndGameNess = 1 - endGameNessScore;
+        score positioningScore = endGameNessScore * endGameScore + notEndGameNess * middleGameScore;
 
         // kingsafety should weigh less in the endgame
-        score kingSafetyScore = kingSafety(position) * notEndGameNess;
+        score kingSafetyScore = kingSafety() * notEndGameNess;
 
         // add score to encourage trading (non pawn) pieces when ahead
         // We use the piece percentage left to determine how much we should encourage trading
         constexpr float tradeEncouragementFactor = 0.2; // not experimentaly determined
         // We square it to make trades more wothit as less pieces are left
-        float squaredPieceMaterialLeft = s_piecesMaterialLeft * s_piecesMaterialLeft;
+        float squaredPieceMaterialLeft = piecesMaterialLeft * piecesMaterialLeft;
         score tradeDownBonus = (1 - squaredPieceMaterialLeft) * materialBalance * tradeEncouragementFactor;
 
         // add a score to encourage driving the king to the corner
-        float weight = mopUpFactor(whiteMaterial, blackMaterial);
-        score mopUpBonus = weight != 0 ? mopUpScore(position, materialBalance) * weight : 0;
+        float weight = mopUpFactor();
+        score mopUpBonus = weight != 0 ? mopUpScore() * weight : 0;
 
         score eval = materialBalance + positioningScore + kingSafetyScore + tradeDownBonus + mopUpBonus;
         return eval;

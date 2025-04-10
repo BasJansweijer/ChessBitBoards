@@ -42,3 +42,8 @@ Before quiescent search was added the queen was always too eager to come out ear
 
 To encourage trading pieces we add 0.2 times the percentage of non pawn material times the material balance to the evaluation. This encourages us to trade non pawn pieces when the material balance is in our favor. (Initialy we tried to use the endgameness score but this is set to 1 when we're in an endgame and thus doesn't encourage trading in the endgame itself.)
 Acieved 80 wins, 30 draws and 68 losses against v0.6.1.
+
+### Promote to make luft (v0.6.3)
+
+Promote moves such as h3h2 more by tweaking the midgame pawn tables.
+

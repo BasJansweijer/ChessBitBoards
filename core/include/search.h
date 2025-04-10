@@ -19,13 +19,13 @@ namespace chess
     public:
         struct SearchConfig
         {
-            std::function<score(BoardState)> evalFunction;
+            std::function<score(const BoardState &)> evalFunction;
             const RepetitionTable *repTable = nullptr;
             TranspositionTable *transTable = nullptr;
 
             SearchConfig() = default;
 
-            SearchConfig(std::function<int(BoardState)> evalFunc, const RepetitionTable *const rt = nullptr)
+            SearchConfig(std::function<int(const BoardState &)> evalFunc, const RepetitionTable *const rt = nullptr)
                 : evalFunction(evalFunc), repTable(rt)
             {
             }
@@ -98,7 +98,7 @@ namespace chess
         void stopTimeThread();
 
     private:
-        const std::function<score(BoardState)> m_evalFunc;
+        const std::function<score(const BoardState &)> m_evalFunc;
         // Repetition table passed down by the engine class
         const RepetitionTable *m_repTable;
         TranspositionTable *m_transTable;
