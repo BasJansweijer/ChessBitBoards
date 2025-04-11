@@ -90,33 +90,76 @@ namespace chess
         return whiteToWin ? score : -score;
     }
 
+    template <bool isWhite>
+    constexpr bitboard passedPawnMask(square s)
+    {
+        uint8_t rank = s / 8;
+        uint8_t file = s % 8;
+
+        bitboard mask = 0;
+        // Three files that can stop the pawn
+        mask |= bitBoards::fileMask(file);
+        mask |= file > 0 ? bitBoards::fileMask(file - 1) : 0;
+        mask |= file < 7 ? bitBoards::fileMask(file + 1) : 0;
+
+        // Shift up or down depending on the color
+        uint8_t shift = 8 * (rank + (isWhite ? 1 : 0));
+        isWhite ? mask <<= shift : mask >>= -shift;
+        return mask;
+    }
+
+    template <bool isWhite>
+    constexpr score passedPawnBonus(uint8_t rank, float endgameNessScore)
+    {
+        constexpr score baseBonus = 30; // small as we also give bonus per file
+        // There is already some bonus in the piece square tables but we give a little extra
+        constexpr score rankBonusMult = 3;
+
+        uint8_t movedRanks = isWhite ? rank - 1 : 6 - rank;
+        // Make rankBonus non linear (movedRanks^2 gives [0,1,4,9,16,25,36])
+        score rankBonus = rankBonusMult * (movedRanks * movedRanks);
+
+        // endgameNess score is between 0 and 1
+        float endgameNessMult = endgameNessScore + 0.2; // always give at least 0.2 of the rankBonus
+        return baseBonus + rankBonus * endgameNessMult;
+    }
+
+    template <bool isWhite>
     score Evaluator::pawnStructureAnalysis()
     {
-        bitboard whitePawns = m_whiteBitBoards[PieceType::Pawn];
-        bitboard blackPawns = m_whiteBitBoards[PieceType::Pawn];
+        bitboard ourPawns = isWhite ? m_whiteBitBoards[PieceType::Pawn] : m_blackBitBoards[PieceType::Pawn];
+        bitboard oppPawns = isWhite ? m_blackBitBoards[PieceType::Pawn] : m_whiteBitBoards[PieceType::Pawn];
 
         constexpr score isolationPenalty = 15;
         score isolatedPawnPenalties = 0;
+        score passedPawnBonuses = 0;
 
-        bitBoards::forEachBit(whitePawns, [&](square s)
-                              {
+        // Lambda to analyze a single pawn
+        auto pawnAnalysis = [&](square s)
+        {
             uint8_t file = s % 8;
-            bool hasLeftNeighbor = file > 0 && containsPawn<true>(m_fileTypes[file - 1]);
-            bool hasRightNeighbor = file < 7 && containsPawn<true>(m_fileTypes[file + 1]);
-            bool isIsolated = !(hasLeftNeighbor || hasRightNeighbor); 
-            if (isIsolated)
-                isolatedPawnPenalties -= isolationPenalty; });
+            uint8_t rank = s / 8;
 
-        bitBoards::forEachBit(whitePawns, [&](square s)
-                              {
-            uint8_t file = s % 8;
-            bool hasLeftNeighbor = file > 0 && containsPawn<false>(m_fileTypes[file - 1]);
-            bool hasRightNeighbor = file < 7 && containsPawn<false>(m_fileTypes[file + 1]);
-            bool isIsolated = !(hasLeftNeighbor || hasRightNeighbor); 
+            // isolatedPawn analysis
+            bool hasLeftNeighbor = file > 0 && containsPawn<isWhite>(m_fileTypes[file - 1]);
+            bool hasRightNeighbor = file < 7 && containsPawn<isWhite>(m_fileTypes[file + 1]);
+            bool isIsolated = !(hasLeftNeighbor || hasRightNeighbor);
             if (isIsolated)
-                isolatedPawnPenalties += isolationPenalty; });
+                isolatedPawnPenalties -= isolationPenalty;
 
-        return isolatedPawnPenalties;
+            // passedPawn analysis
+            bitboard mask = passedPawnMask<isWhite>(s);
+            // check if there are any opponent pawns in the mask
+            bool isPassedPawn = (mask & oppPawns) == 0;
+            if (isPassedPawn)
+                passedPawnBonuses += passedPawnBonus<isWhite>(rank, m_endGameNessScore);
+        };
+
+        // Do the analysis for each white/black pawn
+        bitBoards::forEachBit(ourPawns, pawnAnalysis);
+
+        // TODO: Isolated pawn penalties currently not included
+        return passedPawnBonuses;
     }
 
     score Evaluator::evaluation()
@@ -134,7 +177,10 @@ namespace chess
         eval += kingSafetyScore;
 
         // pawn structure analysis
-        // eval += pawnStructureAnalysis();
+        score whitePawnStructureScore = pawnStructureAnalysis<true>();
+        score blackPawnStructureScore = pawnStructureAnalysis<false>();
+        eval += whitePawnStructureScore;
+        eval -= blackPawnStructureScore;
 
         // add score to encourage trading (non pawn) pieces when ahead
         // We use the piece percentage left to determine how much we should encourage trading

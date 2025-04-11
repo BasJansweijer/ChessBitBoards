@@ -19,9 +19,9 @@ namespace chess
     enum class FileType : uint8_t
     {
         CLOSED = 0,
-        HALF_OPEN_WHITE = 0b1,
-        HALF_OPEN_BLACK = 0b10,
-        OPEN = HALF_OPEN_BLACK | HALF_OPEN_WHITE
+        HALF_OPEN_WHITE = 0b1,                   // no white pawn
+        HALF_OPEN_BLACK = 0b10,                  // no black pawn
+        OPEN = HALF_OPEN_BLACK | HALF_OPEN_WHITE // no pawns at all
     };
 
     // A class used to encapsulate all the data used during the evaluation process
@@ -75,6 +75,7 @@ namespace chess
         void calculateEndGameNess();
         void calculatePieceSquareTableScores();
 
+        template <bool isWhite>
         score pawnStructureAnalysis();
 
     private:
