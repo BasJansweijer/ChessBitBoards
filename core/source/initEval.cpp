@@ -16,51 +16,51 @@ namespace chess
      */
     void Evaluator::calculateMaterial()
     {
-        whiteMaterial = 0;
-        blackMaterial = 0;
+        m_whiteMaterial = 0;
+        m_blackMaterial = 0;
 
         for (int pieceType = 0; pieceType < 5; pieceType++)
         {
-            whitePieceCounts[pieceType] = bitBoards::bitCount(whiteBitBoards[pieceType]);
-            whiteMaterial += whitePieceCounts[pieceType] * pieceVals[pieceType];
-            blackPieceCounts[pieceType] = bitBoards::bitCount(blackBitBoards[pieceType]);
-            blackMaterial += blackPieceCounts[pieceType] * pieceVals[pieceType];
+            m_whitePieceCounts[pieceType] = bitBoards::bitCount(m_whiteBitBoards[pieceType]);
+            m_whiteMaterial += m_whitePieceCounts[pieceType] * pieceVals[pieceType];
+            m_blackPieceCounts[pieceType] = bitBoards::bitCount(m_blackBitBoards[pieceType]);
+            m_blackMaterial += m_blackPieceCounts[pieceType] * pieceVals[pieceType];
         }
 
-        score whiteNonPawnMaterial = whiteMaterial - whitePieceCounts[PieceType::Pawn] * pieceVals[PieceType::Pawn];
-        score blackNonPawnMaterial = blackMaterial - blackPieceCounts[PieceType::Pawn] * pieceVals[PieceType::Pawn];
+        score whiteNonPawnMaterial = m_whiteMaterial - m_whitePieceCounts[PieceType::Pawn] * pieceVals[PieceType::Pawn];
+        score blackNonPawnMaterial = m_blackMaterial - m_blackPieceCounts[PieceType::Pawn] * pieceVals[PieceType::Pawn];
 
         // Calculate the percentage of (non pawn) pieces that is remaining
-        piecesMaterialLeft = (whiteNonPawnMaterial + blackNonPawnMaterial) / (float)(startingPieceMaterial * 2);
+        m_piecesMaterialLeft = (whiteNonPawnMaterial + blackNonPawnMaterial) / (float)(startingPieceMaterial * 2);
     }
 
     // Arguably not initialization, but sets the middleGame and endGame scores
     void Evaluator::calculatePieceSquareTableScores()
     {
-        middleGameScore = 0;
-        endGameScore = 0;
+        m_middleGameScore = 0;
+        m_endGameScore = 0;
 
         // Go through every piece (except king)
         for (int pieceType = 0; pieceType < 5; pieceType++)
         {
-            bitBoards::forEachBit(whiteBitBoards[pieceType], [&](square s)
+            bitBoards::forEachBit(m_whiteBitBoards[pieceType], [&](square s)
                                   { 
-                middleGameScore += evalTables::middleGameWhite[pieceType][s];
-                endGameScore += evalTables::endGameBlack[pieceType][s]; });
+                m_middleGameScore += evalTables::middleGameWhite[pieceType][s];
+                m_endGameScore += evalTables::endGameBlack[pieceType][s]; });
 
-            bitBoards::forEachBit(blackBitBoards[pieceType], [&](square s)
+            bitBoards::forEachBit(m_blackBitBoards[pieceType], [&](square s)
                                   { 
-                middleGameScore -= evalTables::middleGameBlack[pieceType][s];
-                endGameScore -= evalTables::endGameBlack[pieceType][s]; });
+                m_middleGameScore -= evalTables::middleGameBlack[pieceType][s];
+                m_endGameScore -= evalTables::endGameBlack[pieceType][s]; });
         }
 
         // Add the king position score
-        square whiteKing = board.getWhiteKingSquare();
-        square blackKing = board.getBlackKingSquare();
-        middleGameScore += evalTables::middleGameWhite[PieceType::King][whiteKing];
-        middleGameScore -= evalTables::middleGameBlack[PieceType::King][blackKing];
-        endGameScore += evalTables::endGameWhite[PieceType::King][whiteKing];
-        endGameScore -= evalTables::endGameBlack[PieceType::King][blackKing];
+        square whiteKing = m_board.getWhiteKingSquare();
+        square blackKing = m_board.getBlackKingSquare();
+        m_middleGameScore += evalTables::middleGameWhite[PieceType::King][whiteKing];
+        m_middleGameScore -= evalTables::middleGameBlack[PieceType::King][blackKing];
+        m_endGameScore += evalTables::endGameWhite[PieceType::King][whiteKing];
+        m_endGameScore -= evalTables::endGameBlack[PieceType::King][blackKing];
     }
 
     /*
@@ -71,12 +71,12 @@ namespace chess
     void Evaluator::calculateEndGameNess()
     {
         // Remove pawns from the equation
-        int whitePieceMaterial = whiteMaterial - pieceVals[PieceType::Pawn] * whitePieceCounts[PieceType::Pawn];
-        int blackPieceMaterial = blackMaterial - pieceVals[PieceType::Pawn] * blackPieceCounts[PieceType::Pawn];
+        int whitePieceMaterial = m_whiteMaterial - pieceVals[PieceType::Pawn] * m_whitePieceCounts[PieceType::Pawn];
+        int blackPieceMaterial = m_blackMaterial - pieceVals[PieceType::Pawn] * m_blackPieceCounts[PieceType::Pawn];
 
         // Value the queen as more than usual
-        whitePieceMaterial += whitePieceCounts[PieceType::Queen] * 300;
-        blackPieceMaterial += whitePieceCounts[PieceType::Queen] * 300;
+        whitePieceMaterial += m_whitePieceCounts[PieceType::Queen] * 300;
+        blackPieceMaterial += m_whitePieceCounts[PieceType::Queen] * 300;
 
         // an offset of the highest material a side may have in an endgame
         constexpr int maxEndGameMaterial = pieceVals[PieceType::Rook] * 2;
@@ -92,7 +92,7 @@ namespace chess
         // Prevents us from using endgame tables too early whilst still using them almost entirely when
         // the score gets lower
         float scoreSquare = score * score;
-        endGameNessScore = scoreSquare * scoreSquare;
+        m_endGameNessScore = scoreSquare * scoreSquare;
     }
 
     // Initializes the fileTypes array
@@ -101,11 +101,11 @@ namespace chess
         // Set file types
         for (int i = 0; i < 8; i++)
         {
-            fileTypes[i] = FileType::CLOSED;
-            if (!(board.getWhitePawns() & bitBoards::fileMask(i)))
-                fileTypes[i] |= FileType::HALF_OPEN_WHITE;
-            if (!(board.getBlackPawns() & bitBoards::fileMask(i)))
-                fileTypes[i] |= FileType::HALF_OPEN_BLACK;
+            m_fileTypes[i] = FileType::CLOSED;
+            if (!(m_board.getWhitePawns() & bitBoards::fileMask(i)))
+                m_fileTypes[i] |= FileType::HALF_OPEN_WHITE;
+            if (!(m_board.getBlackPawns() & bitBoards::fileMask(i)))
+                m_fileTypes[i] |= FileType::HALF_OPEN_BLACK;
         }
     }
 }

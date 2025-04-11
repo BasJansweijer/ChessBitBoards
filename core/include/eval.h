@@ -8,7 +8,6 @@
 
 namespace chess
 {
-
     constexpr int pieceVals[5] = {100, 300, 320, 500, 900};
     // The initial value of all (non pawn) pieces for a single player
     using PT = chess::PieceType;
@@ -16,6 +15,14 @@ namespace chess
                                           pieceVals[PT::Bishop] * 2 +
                                           pieceVals[PT::Rook] * 2 +
                                           pieceVals[PT::Queen];
+
+    enum class FileType : uint8_t
+    {
+        CLOSED = 0,
+        HALF_OPEN_WHITE = 0b1,
+        HALF_OPEN_BLACK = 0b10,
+        OPEN = HALF_OPEN_BLACK | HALF_OPEN_WHITE
+    };
 
     // A class used to encapsulate all the data used during the evaluation process
     class Evaluator
@@ -30,13 +37,13 @@ namespace chess
 
         Evaluator() = delete;
         Evaluator(const BoardState &position)
-            : board(position)
+            : m_board(position)
         {
             // Ensure all variables stored in the class are initialized
 
             // Set the piece sets
-            whiteBitBoards = board.getPieceSet(true);
-            blackBitBoards = board.getPieceSet(false);
+            m_whiteBitBoards = m_board.getPieceSet(true);
+            m_blackBitBoards = m_board.getPieceSet(false);
 
             // Set the material / piece counts
             calculateMaterial();
@@ -55,7 +62,7 @@ namespace chess
 
         inline score getMaterialBalance() const
         {
-            return whiteMaterial - blackMaterial;
+            return m_whiteMaterial - m_blackMaterial;
         }
 
     private:
@@ -68,40 +75,45 @@ namespace chess
         void calculateEndGameNess();
         void calculatePieceSquareTableScores();
 
-        enum FileType : uint8_t
-        {
-            CLOSED = 0,
-            HALF_OPEN_WHITE = 0b1,
-            HALF_OPEN_BLACK = 0b10,
-            OPEN = HALF_OPEN_BLACK | HALF_OPEN_WHITE
-        };
-
-        friend FileType &operator|=(FileType &lhs, FileType rhs)
-        {
-            lhs = (FileType)((uint8_t)lhs | (uint8_t)rhs);
-            return lhs;
-        }
+        score pawnStructureAnalysis();
 
     private:
-        const BoardState &board;
+        const BoardState &m_board;
 
-        const bitboard *whiteBitBoards;
-        const bitboard *blackBitBoards;
+        const bitboard *m_whiteBitBoards;
+        const bitboard *m_blackBitBoards;
 
-        uint8_t whitePieceCounts[5];
-        uint8_t blackPieceCounts[5];
-        score whiteMaterial;
-        score blackMaterial;
+        uint8_t m_whitePieceCounts[5];
+        uint8_t m_blackPieceCounts[5];
+        score m_whiteMaterial;
+        score m_blackMaterial;
 
-        float endGameNessScore;   // [0, 1]
-        float piecesMaterialLeft; // [0, 1]
+        float m_endGameNessScore;   // [0, 1]
+        float m_piecesMaterialLeft; // [0, 1]
 
         // Piece square table scores
-        score middleGameScore;
-        score endGameScore;
+        score m_middleGameScore;
+        score m_endGameScore;
 
-        FileType fileTypes[8];
+        FileType m_fileTypes[8];
     };
+
+    // fileType helpers
+    inline FileType &operator|=(FileType &lhs, FileType rhs)
+    {
+        lhs = (FileType)((uint8_t)lhs | (uint8_t)rhs);
+        return lhs;
+    }
+
+    template <bool isWhite>
+    inline bool containsPawn(FileType ft)
+    {
+        constexpr uint8_t ftMask = isWhite
+                                       ? (uint8_t)FileType::HALF_OPEN_WHITE
+                                       : (uint8_t)FileType::HALF_OPEN_BLACK;
+        // Not half open for white means white pawn
+        return !((uint8_t)ft & ftMask);
+    }
 
     // A conveinient class to store the evaluation of a position (outside of search)
     class Eval
