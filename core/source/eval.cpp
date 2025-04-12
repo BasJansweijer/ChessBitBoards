@@ -110,7 +110,21 @@ namespace chess
         return mask;
     }
 
-        template <bool isWhite>
+    template <bool isWhite>
+    constexpr bitboard pawnAttackSquares(square pawnSquare)
+    {
+        uint8_t rank = pawnSquare / 8;
+        uint8_t file = pawnSquare % 8;
+
+        square inFront = isWhite ? pawnSquare + 8 : pawnSquare - 8;
+
+        bitboard leftAttack = file > 0 ? 1ULL << inFront - 1 : 0;
+        bitboard rightAttack = file < 7 ? 1ULL << inFront + 1 : 0;
+        bitboard mask = leftAttack | rightAttack;
+        return mask;
+    }
+
+    template <bool isWhite>
     constexpr score passedPawnBonus(uint8_t rank, float endgameNessScore)
     {
         constexpr score baseBonus = 30; // small as we also give bonus per file
@@ -133,8 +147,12 @@ namespace chess
         bitboard oppPawns = isWhite ? m_blackBitBoards[PieceType::Pawn] : m_whiteBitBoards[PieceType::Pawn];
 
         constexpr score isolationPenalty = 15;
-        score isolatedPawnPenalties = 0;
-        score passedPawnBonuses = 0;
+        constexpr score defendedPawnBonus = 5;
+        // We want to also multiply the value of the pawn when defended to
+        // prioritize defending valuable pawns
+        constexpr float defendedPawnMult = 1.1;
+
+        score structureScore = 0;
 
         // Lambda to analyze a single pawn
         auto pawnAnalysis = [&](square s)
@@ -146,21 +164,35 @@ namespace chess
             bool hasLeftNeighbor = file > 0 && containsPawn<isWhite>(m_fileTypes[file - 1]);
             bool hasRightNeighbor = file < 7 && containsPawn<isWhite>(m_fileTypes[file + 1]);
             bool isIsolated = !(hasLeftNeighbor || hasRightNeighbor);
+
+            score pawnScore = 0;
             if (isIsolated)
-                isolatedPawnPenalties -= isolationPenalty;
+                pawnScore -= isolationPenalty;
 
             // passedPawn analysis
             bitboard mask = passedPawnMask<isWhite>(s);
             // check if there are any opponent pawns in the mask
             bool isPassedPawn = (mask & oppPawns) == 0;
             if (isPassedPawn)
-                passedPawnBonuses += passedPawnBonus<isWhite>(rank, m_endGameNessScore);
+                pawnScore += passedPawnBonus<isWhite>(rank, m_endGameNessScore);
+
+            // Check if were defended
+            bool isDefended = (pawnAttackSquares<!isWhite>(s) & ourPawns) != 0;
+            if (isDefended)
+            {
+                pawnScore += defendedPawnBonus; // small bonus for being defended
+                // We also multiply to give extra value to defending valuable pawns (passed pawns)
+                pawnScore *= defendedPawnMult;
+            }
+
+            // Add this pawns score to the total
+            structureScore += pawnScore;
         };
 
         // Do the analysis for each white/black pawn
         bitBoards::forEachBit(ourPawns, pawnAnalysis);
 
-        return passedPawnBonuses + isolatedPawnPenalties;
+        return structureScore;
     }
 
     score Evaluator::evaluation()

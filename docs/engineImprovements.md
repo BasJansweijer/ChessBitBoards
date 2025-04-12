@@ -57,3 +57,8 @@ Against v0.6.3 this achieved 25 wins, 11 draws and 14 losses.
 We add a 15 centipawn penalty per isolated pawn.
 This also disincentivizes isolated doubled pawns heavily.
 Got 292 wins, 98 draws and 242 losses.
+
+### Defended pawn bonus (v0.6.6)
+
+We give small bonus to pawns when they are defended and also multiply the passed pawns score.
+Got 214 wins, 67 draws and 191 losses
