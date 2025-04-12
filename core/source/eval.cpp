@@ -5,6 +5,8 @@
 #include <algorithm>
 #include "evalTables.h"
 
+#include "boardVisualizer.h"
+
 namespace tables = chess::evalTables;
 
 namespace chess
@@ -108,7 +110,7 @@ namespace chess
         return mask;
     }
 
-    template <bool isWhite>
+        template <bool isWhite>
     constexpr score passedPawnBonus(uint8_t rank, float endgameNessScore)
     {
         constexpr score baseBonus = 30; // small as we also give bonus per file
@@ -158,8 +160,7 @@ namespace chess
         // Do the analysis for each white/black pawn
         bitBoards::forEachBit(ourPawns, pawnAnalysis);
 
-        // TODO: Isolated pawn penalties currently not included
-        return passedPawnBonuses;
+        return passedPawnBonuses + isolatedPawnPenalties;
     }
 
     score Evaluator::evaluation()

@@ -47,3 +47,13 @@ Acieved 80 wins, 30 draws and 68 losses against v0.6.1.
 
 Promote moves such as h3h2 more by tweaking the midgame pawn tables.
 
+### Passed pawn bonus (v0.6.4)
+
+Add a bonus for passed pawns. For each passed pawn we give 30 centipawns and an additional non linear bonus depending on how far up the board the pawn is (rank bonus). With the rank bonus being scaled also by how much we are in an endgame.
+Against v0.6.3 this achieved 25 wins, 11 draws and 14 losses.
+
+### isolated pawn penalty (v0.6.5)
+
+We add a 15 centipawn penalty per isolated pawn.
+This also disincentivizes isolated doubled pawns heavily.
+Got 292 wins, 98 draws and 242 losses.
