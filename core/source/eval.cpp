@@ -195,6 +195,30 @@ namespace chess
         return structureScore;
     }
 
+    template <bool isWhite>
+    score Evaluator::rookOpenFileBonus()
+    {
+        constexpr int openFileBonus = 20;
+        constexpr int halfOpenFileBonus = 10;
+
+        constexpr FileType halfOpen = isWhite ? FileType::HALF_OPEN_WHITE : FileType::HALF_OPEN_BLACK;
+
+        score bonusses = 0;
+        auto openFileAnalysis = [&](square s)
+        {
+            uint8_t file = s % 8;
+            if (m_fileTypes[file] == FileType::OPEN)
+                bonusses += openFileBonus;
+            else if (m_fileTypes[file] == halfOpen)
+                bonusses += halfOpenFileBonus;
+        };
+
+        bitBoards::forEachBit(isWhite ? m_whiteBitBoards[PieceType::Rook] : m_blackBitBoards[PieceType::Rook],
+                              openFileAnalysis);
+
+        return bonusses;
+    }
+
     score Evaluator::evaluation()
     {
         score materialBalance = getMaterialBalance();
@@ -210,10 +234,12 @@ namespace chess
         eval += kingSafetyScore;
 
         // pawn structure analysis
-        score whitePawnStructureScore = pawnStructureAnalysis<true>();
-        score blackPawnStructureScore = pawnStructureAnalysis<false>();
-        eval += whitePawnStructureScore;
-        eval -= blackPawnStructureScore;
+        eval += pawnStructureAnalysis<true>();  // white
+        eval -= pawnStructureAnalysis<false>(); // black
+
+        // rook open file bonus
+        eval += rookOpenFileBonus<true>();  // white bonusses
+        eval -= rookOpenFileBonus<false>(); // black bonusses
 
         // add score to encourage trading (non pawn) pieces when ahead
         // We use the piece percentage left to determine how much we should encourage trading

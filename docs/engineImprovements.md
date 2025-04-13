@@ -62,3 +62,8 @@ Got 292 wins, 98 draws and 242 losses.
 
 We give small bonus to pawns when they are defended and also multiply the passed pawns score.
 Got 214 wins, 67 draws and 191 losses
+
+### Rooks on open file bonus (v0.6.7)
+
+Give 10 centipawns for each rook on a half open file and 20 centipawns for each rook on a fully open file.
+Got 141 wins, 27 draws and 90 losses.

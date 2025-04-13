@@ -76,6 +76,9 @@ namespace chess
         void calculatePieceSquareTableScores();
 
         template <bool isWhite>
+        score rookOpenFileBonus();
+
+        template <bool isWhite>
         score pawnStructureAnalysis();
 
     private:
