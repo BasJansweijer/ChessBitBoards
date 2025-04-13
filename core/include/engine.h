@@ -83,7 +83,7 @@ namespace chess
         std::tuple<Move, Eval, Search::SearchStats> findBestMove(double thinkSeconds)
         {
             Search::SearchConfig config;
-            config.evalFunction = evaluate;
+            config.evalFunction = Evaluator::evaluate;
             config.repTable = &m_repTable;
             config.transTable = &m_transTable;
 

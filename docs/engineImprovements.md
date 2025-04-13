@@ -27,4 +27,43 @@ Interestingly the number of draws did not decrease much, this is probably becaus
 ## Transposition table (v0.5.0)
 
 Using the zobrist keys we add a transposition table. This table is persistant between searches and only purges old entries on collisions. The transposition table is filled with TTEntry struct and can store an exact, upper or lower bound for a position. In some cases this allows us to skip the search of a position if a good enough entry is stored for that position. The table is filled an used in the full search. Additionally the quiescent search uses entries aswell but doesn't store results.
-This addition resulted in 465 wins, 162 draws and 373 wins against the previous version (~40 elo increase). Though we suspect that the strength increase is larger in slower time controls as with only 0.5 seconds for each move the depth of the entries in the tables is never verry high.
+This addition resulted in 465 wins, 162 draws and 373 wins against the previous version (~40 elo increase). Though we suspect that the strength increase is larger in slower time controls as with only 0.5 seconds for each move the depth of the entries in the tables is never very high.
+
+## Evaluation Improvements (v0.6.x)
+
+This improvement mostly consists of small tweaks and additions to the evaluation function.
+To evaluate each individual improvement we only ran on 100 positions instead of on 1000.
+
+### Rework queen square table (v0.6.1)
+
+Before quiescent search was added the queen was always too eager to come out early. To discourage this the square table was tweaked. We now revert this change as we don't necessarily want to discourage the queen from comming out. Achieved 273 wins, 59 draws and 192 losses.
+
+### Encourage trading down when ahead (v0.6.2)
+
+To encourage trading pieces we add 0.2 times the percentage of non pawn material times the material balance to the evaluation. This encourages us to trade non pawn pieces when the material balance is in our favor. (Initialy we tried to use the endgameness score but this is set to 1 when we're in an endgame and thus doesn't encourage trading in the endgame itself.)
+Acieved 80 wins, 30 draws and 68 losses against v0.6.1.
+
+### Promote to make luft (v0.6.3)
+
+Promote moves such as h3h2 more by tweaking the midgame pawn tables.
+
+### Passed pawn bonus (v0.6.4)
+
+Add a bonus for passed pawns. For each passed pawn we give 30 centipawns and an additional non linear bonus depending on how far up the board the pawn is (rank bonus). With the rank bonus being scaled also by how much we are in an endgame.
+Against v0.6.3 this achieved 25 wins, 11 draws and 14 losses.
+
+### isolated pawn penalty (v0.6.5)
+
+We add a 15 centipawn penalty per isolated pawn.
+This also disincentivizes isolated doubled pawns heavily.
+Got 292 wins, 98 draws and 242 losses.
+
+### Defended pawn bonus (v0.6.6)
+
+We give small bonus to pawns when they are defended and also multiply the passed pawns score.
+Got 214 wins, 67 draws and 191 losses
+
+### Rooks on open file bonus (v0.6.7)
+
+Give 10 centipawns for each rook on a half open file and 20 centipawns for each rook on a fully open file.
+Got 141 wins, 27 draws and 90 losses.
