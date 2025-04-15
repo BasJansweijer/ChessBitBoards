@@ -46,21 +46,6 @@ namespace chess::bitBoards
         bb &= ~(1ULL << (rank * 8 + file));
     }
 
-    constexpr bitboard rankMask(int rank)
-    {
-        bitboard rankMask = 0xFF;
-        return rankMask << rank * 8;
-    }
-
-    constexpr bitboard fileMask(int file)
-    {
-        bitboard fileMask = 0x0101010101010101;
-        return fileMask << file;
-    }
-
-    // 1's all on the edges of the board
-    constexpr bitboard edgeMask = 0xFF818181818181FF;
-
     // Note that the output for 1 and 0 is the same!
     inline square firstSetBit(bitboard bb)
     {

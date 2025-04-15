@@ -7,6 +7,7 @@ This file implements all Evaluator functions that are called to initialize the i
 #include "bitBoard.h"
 #include "chess.h"
 #include "types.h"
+#include "masks.h"
 
 namespace chess
 {
@@ -99,9 +100,9 @@ namespace chess
         for (int i = 0; i < 8; i++)
         {
             m_fileTypes[i] = FileType::CLOSED;
-            if (!(m_board.getWhitePawns() & bitBoards::fileMask(i)))
+            if (!(m_board.getWhitePawns() & mask::fileMask(i)))
                 m_fileTypes[i] |= FileType::HALF_OPEN_WHITE;
-            if (!(m_board.getBlackPawns() & bitBoards::fileMask(i)))
+            if (!(m_board.getBlackPawns() & mask::fileMask(i)))
                 m_fileTypes[i] |= FileType::HALF_OPEN_BLACK;
         }
     }

@@ -4,8 +4,7 @@
 #include <cinttypes>
 #include <algorithm>
 #include "evalTables.h"
-
-#include "boardVisualizer.h"
+#include "masks.h"
 
 namespace tables = chess::evalTables;
 
@@ -15,7 +14,7 @@ namespace chess
     score Evaluator::kingSafety()
     {
         square king = isWhite ? m_board.getWhiteKingSquare() : m_board.getBlackKingSquare();
-        constexpr bitboard backRank = bitBoards::rankMask(isWhite ? 0 : 7);
+        constexpr bitboard backRank = mask::rankMask(isWhite ? 0 : 7);
 
         bitboard ourPawns = isWhite ? m_board.getWhitePawns() : m_board.getBlackPawns();
         // act as if there is a queen on the kins position
@@ -91,38 +90,6 @@ namespace chess
     }
 
     template <bool isWhite>
-    constexpr bitboard passedPawnMask(square s)
-    {
-        uint8_t rank = s / 8;
-        uint8_t file = s % 8;
-
-        bitboard mask = 0;
-        // Three files that can stop the pawn
-        mask |= bitBoards::fileMask(file);
-        mask |= file > 0 ? bitBoards::fileMask(file - 1) : 0;
-        mask |= file < 7 ? bitBoards::fileMask(file + 1) : 0;
-
-        // Shift up or down depending on the color
-        uint8_t shift = 8 * (rank + (isWhite ? 1 : 0));
-        isWhite ? mask <<= shift : mask >>= -shift;
-        return mask;
-    }
-
-    template <bool isWhite>
-    constexpr bitboard pawnAttackSquares(square pawnSquare)
-    {
-        uint8_t rank = pawnSquare / 8;
-        uint8_t file = pawnSquare % 8;
-
-        square inFront = isWhite ? pawnSquare + 8 : pawnSquare - 8;
-
-        bitboard leftAttack = file > 0 ? 1ULL << inFront - 1 : 0;
-        bitboard rightAttack = file < 7 ? 1ULL << inFront + 1 : 0;
-        bitboard mask = leftAttack | rightAttack;
-        return mask;
-    }
-
-    template <bool isWhite>
     constexpr score passedPawnBonus(uint8_t rank, float endgameNessScore)
     {
         constexpr score baseBonus = 30; // small as we also give bonus per file
@@ -168,14 +135,14 @@ namespace chess
                 pawnScore -= isolationPenalty;
 
             // passedPawn analysis
-            bitboard mask = passedPawnMask<isWhite>(s);
+            bitboard mask = mask::passedPawn<isWhite>(s);
             // check if there are any opponent pawns in the mask
             bool isPassedPawn = (mask & oppPawns) == 0;
             if (isPassedPawn)
                 pawnScore += passedPawnBonus<isWhite>(rank, m_endGameNessScore);
 
             // Check if were defended
-            bool isDefended = (pawnAttackSquares<!isWhite>(s) & ourPawns) != 0;
+            bool isDefended = (mask::pawnAttack<!isWhite>(s) & ourPawns) != 0;
             if (isDefended)
             {
                 pawnScore += defendedPawnBonus; // small bonus for being defended

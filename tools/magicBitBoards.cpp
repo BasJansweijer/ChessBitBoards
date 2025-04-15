@@ -12,6 +12,7 @@
 #include <regex>
 #include "toolUtils.h"
 #include "types.h"
+#include "masks.h"
 
 using bitboard = chess::bitboard;
 using square = chess::square;
@@ -53,7 +54,7 @@ bitboard blockerMaskBishop(square s)
 
     bitboard moves = chess::constants::bishopMoves[s];
 
-    return moves & ~chess::bitBoards::edgeMask;
+    return moves & ~chess::mask::edgeMask;
 }
 
 // generates the mask for the blockers
