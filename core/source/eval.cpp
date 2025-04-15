@@ -11,24 +11,22 @@ namespace tables = chess::evalTables;
 
 namespace chess
 {
+    template <bool isWhite>
     score Evaluator::kingSafety()
     {
+        square king = isWhite ? m_board.getWhiteKingSquare() : m_board.getBlackKingSquare();
+        constexpr bitboard backRank = bitBoards::rankMask(isWhite ? 0 : 7);
+
+        bitboard ourPawns = isWhite ? m_board.getWhitePawns() : m_board.getBlackPawns();
+        // act as if there is a queen on the kins position
+        bitboard virtualMoves = constants::getBishopMoves(king, ourPawns) | constants::getRookMoves(king, ourPawns);
+        // remove our pawns and the backrank from counting as open
+        virtualMoves &= ~(ourPawns & backRank);
+
         constexpr int KING_SAFETY_MULT = 10;
-        square blackKing = m_board.getBlackKingSquare();
-        square whiteKing = m_board.getWhiteKingSquare();
+        score safetyScore = -(bitBoards::bitCount(virtualMoves) * KING_SAFETY_MULT);
 
-        bitboard whitePawns = m_board.getWhitePawns();
-        bitboard blackPawns = m_board.getBlackPawns();
-
-        bitboard whiteMoves = constants::getBishopMoves(whiteKing, whitePawns) | constants::getRookMoves(whiteKing, whitePawns);
-        whiteMoves &= ~(whitePawns && bitBoards::rankMask(0));
-        int whiteSafetyScore = bitBoards::bitCount(whiteMoves) * -KING_SAFETY_MULT;
-
-        bitboard blackMoves = constants::getBishopMoves(blackKing, blackPawns) | constants::getRookMoves(blackKing, blackPawns);
-        blackMoves &= ~(whitePawns && bitBoards::rankMask(7));
-        int blackSafetyScore = bitBoards::bitCount(blackMoves) * KING_SAFETY_MULT;
-
-        return blackSafetyScore + whiteSafetyScore;
+        return safetyScore;
     }
 
     // mopup score strongly influences the normal evaluation at the very end of the game to promote cornering the losing king
@@ -37,10 +35,10 @@ namespace chess
         // If a player is up this much we might have to mop up.
         constexpr int minMaterialDiff = pieceVals[PieceType::Rook] - 2 * pieceVals[PieceType::Pawn];
 
-        const int materialAdvantage = std::abs(m_whiteMaterial - m_blackMaterial);
+        const int materialAdvantage = std::abs(getMaterialBalance());
 
-        // We factor is lower when opponent has more material still on the board
-        const int opponentMaterial = m_whiteMaterial > m_blackMaterial ? m_blackMaterial : m_whiteMaterial;
+        // thee factor is lower when opponent has more (non pawn) material still on the board
+        const int opponentMaterial = m_whitePieceMaterial > m_blackPieceMaterial ? m_blackPieceMaterial : m_whitePieceMaterial;
 
         return materialAdvantage < minMaterialDiff || m_endGameNessScore < 0.5
                    ? 0 // don't use mopup score
@@ -229,9 +227,10 @@ namespace chess
         score positioningScore = m_endGameNessScore * m_endGameScore + notEndGameNess * m_middleGameScore;
         eval += positioningScore;
 
-        // kingsafety should weigh less in the endgame
-        score kingSafetyScore = kingSafety() * notEndGameNess;
-        eval += kingSafetyScore;
+        // kingsafety is scaled internally by amount of pieces left of enemy
+        score whiteSafetyScore = kingSafety<true>();
+        score blackSafetyScore = kingSafety<false>();
+        eval += (whiteSafetyScore - blackSafetyScore) * notEndGameNess;
 
         // pawn structure analysis
         eval += pawnStructureAnalysis<true>();  // white

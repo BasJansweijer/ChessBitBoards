@@ -62,18 +62,23 @@ namespace chess
 
         inline score getMaterialBalance() const
         {
-            return m_whiteMaterial - m_blackMaterial;
+            // material including pawns:
+            score whiteMaterial = m_whitePieceMaterial + m_whitePieceCounts[Pawn] * pieceVals[Pawn];
+            score blackMaterial = m_blackPieceMaterial + m_blackPieceCounts[Pawn] * pieceVals[Pawn];
+            return whiteMaterial - blackMaterial;
         }
 
     private:
         void determineOpenFiles();
-        score kingSafety();
         float mopUpFactor(); // [0, 1] wether to use mopup score
         score mopUpScore();
 
         void calculateMaterial();
         void calculateEndGameNess();
         void calculatePieceSquareTableScores();
+
+        template <bool isWhite>
+        score kingSafety();
 
         template <bool isWhite>
         score rookOpenFileBonus();
@@ -89,8 +94,8 @@ namespace chess
 
         uint8_t m_whitePieceCounts[5];
         uint8_t m_blackPieceCounts[5];
-        score m_whiteMaterial;
-        score m_blackMaterial;
+        score m_whitePieceMaterial;
+        score m_blackPieceMaterial;
 
         float m_endGameNessScore;   // [0, 1]
         float m_piecesMaterialLeft; // [0, 1]
