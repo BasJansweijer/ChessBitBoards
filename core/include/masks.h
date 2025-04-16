@@ -54,6 +54,7 @@ namespace chess::mask
         return mask;
     }
 
+    // returns the mask of the squares that can be attacked by a specific pawn
     template <bool isWhite>
     constexpr bitboard pawnAttack(square pawnSquare)
     {
@@ -66,6 +67,54 @@ namespace chess::mask
         bitboard rightAttack = file < 7 ? 1ULL << inFront + 1 : 0;
         bitboard mask = leftAttack | rightAttack;
         return mask;
+    }
+
+    // returns the mask of attacked squares by all the given pawns
+    template <bool isWhite>
+    constexpr bitboard pawnAttacks(bitboard pawns)
+    {
+        bitboard leftAttack;
+        bitboard rightAttack;
+        if constexpr (isWhite)
+        {
+            leftAttack = (pawns & ~mask::fileMask(0)) << (8 - 1);
+            rightAttack = (pawns & ~mask::fileMask(7)) << (8 + 1);
+        }
+        else
+        {
+            leftAttack = (pawns & ~mask::fileMask(0)) >> (8 + 1);
+            rightAttack = (pawns & ~mask::fileMask(7)) >> (8 - 1);
+        }
+
+        bitboard mask = leftAttack | rightAttack;
+
+        return mask;
+    }
+
+    template <bool isWhite>
+    constexpr bitboard pawnAttackSpan(bitboard pawns)
+    {
+        bitboard attacks = pawnAttacks<isWhite>(pawns);
+
+        // Fill the attack span
+        auto fill = isWhite ? fillNorth : fillSouth;
+        bitboard attackSpan = fill(attacks);
+        return attackSpan;
+    }
+
+    template <bool isWhite>
+    constexpr bitboard backwardPawns(bitboard ourPawns, bitboard enemyPawns)
+    {
+        bitboard ourAttackSpan = pawnAttackSpan<isWhite>(ourPawns);
+
+        bitboard enemyAttacks = pawnAttacks<!isWhite>(enemyPawns);
+        // Spots we can't defend with our pawns but that are attacked by opponent
+        bitboard stopSquares = (~ourAttackSpan) & enemyAttacks;
+
+        auto enemyFill = isWhite ? fillSouth : fillNorth;
+        bitboard backwardArea = enemyFill(stopSquares);
+
+        return backwardArea & ourPawns;
     }
 
 }
