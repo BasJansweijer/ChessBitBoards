@@ -236,25 +236,15 @@ namespace chess::evalTables
             0,   0,   0,   0,   0,   0,   0,   0,
             0,   0,   0,   0,   0,   0,   0,   0
         };
-        constexpr int8_t whiteKing[64] = { // get away from the backrank
-            -40, -40, -40, -40, -40, -40, -40, -40,
-            -30, -25, -25, -25, -25, -25, -25, -30,
-            -13, -8,  -10, -10, -10, -10, -8,  -13,
-            -7,  -2,   0,   0,   0,   0,  -2,  -7,
-            -7,   2,   5,   5,   5,   5,   2,  -7,
-            -4,   4,   10,  10,  10,  10,  4,  -4, 
-            -4,   4,   7,   7,   7,   7,   4,  -4,
-            -15, -10, -10, -10, -10, -10, -10, -15,
-       };
        
-       constexpr int8_t blackKing[64] = {
-            -15, -10, -10, -10, -10, -10, -10, -15,
-            -4,   4,   7,   7,   7,   7,   4,  -4,
-            -4,   4,   10,  10,  10,  10,  4,  -4, 
-            -7,   2,   5,   5,   5,   5,   2,  -7,
-            -7,  -2,   0,   0,   0,   0,  -2,  -7,
-            -13, -8,  -10, -10, -10, -10, -8,  -13,
-            -30, -25, -25, -25, -25, -25, -25, -30,
+       constexpr int8_t endgameKing[64] = {
+            -40, -40, -40, -40, -40, -40, -40, -40,
+            -40, -25, -25, -25, -25, -25, -25, -40,
+            -40, -25,   0,   0,   0,   0, -25, -40, 
+            -40, -25,   0,   0,   0,   0, -25, -40,
+            -40, -25,   0,   0,   0,   0, -25, -40,
+            -40, -25,   0,   0,   0,   0, -25, -40,
+            -40, -25, -25, -25, -25, -25, -25, -40,
             -40, -40, -40, -40, -40, -40, -40, -40,
        };
         // clang-format on
@@ -266,9 +256,9 @@ namespace chess::evalTables
         {midGame::blackPawns, midGame::blackKnights, midGame::blackBishops, midGame::blackRooks, midGame::blackQueens, midGame::blackKing};
 
     constexpr int8_t const *endGameWhite[6] =
-        {endGame::whitePawns, endGame::whiteKnights, endGame::whiteBishops, endGame::whiteRooks, endGame::whiteQueens, endGame::whiteKing};
+        {endGame::whitePawns, endGame::whiteKnights, endGame::whiteBishops, endGame::whiteRooks, endGame::whiteQueens, endGame::endgameKing};
     constexpr int8_t const *endGameBlack[6] =
-        {endGame::blackPawns, endGame::blackKnights, endGame::blackBishops, endGame::blackRooks, endGame::blackQueens, endGame::blackKing};
+        {endGame::blackPawns, endGame::blackKnights, endGame::blackBishops, endGame::blackRooks, endGame::blackQueens, endGame::endgameKing};
 
     const uint8_t darkCornerDistance[64] = {
         7, 6, 5, 4, 3, 2, 1, 0,

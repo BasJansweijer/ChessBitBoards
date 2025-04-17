@@ -86,6 +86,9 @@ namespace chess
         template <bool isWhite>
         score pawnStructureAnalysis();
 
+        template <bool isWhite>
+        score kingPositionScore();
+
     private:
         const BoardState &m_board;
 

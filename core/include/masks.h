@@ -117,4 +117,39 @@ namespace chess::mask
         return backwardArea & ourPawns;
     }
 
+    // Returns a bitboard of all locations that were a single king move
+    // away from the given squares
+    constexpr bitboard oneStep(bitboard bb)
+    {
+        bb |= bb << 8; // up
+        bb |= bb >> 8; // down
+        // we now have the up and down as 1's
+
+        bitboard left = (bb & ~mask::fileMask(0)) >> 1;
+        bitboard right = (bb & ~mask::fileMask(7)) << 1;
+
+        return bb | left | right;
+    }
+
+    // Assumes that the pawn given is white if isWhite true.
+    // Also assumes that the current move is the player with the pawn
+    // (if not you can shift the pawn one more square)
+    template <bool isWhite>
+    constexpr bitboard pawnSquare(square pawn)
+    {
+        uint8_t rank = pawn / 8;
+        uint8_t stepsUntillQueening = isWhite ? 7 - rank : rank;
+
+        bitboard squareMask = 1ULL << pawn;
+
+        bitboard squareBorder = rankMask(isWhite ? rank - 1 : rank + 1);
+
+        for (int i = 0; i < stepsUntillQueening; i++)
+        {
+            squareMask = oneStep(squareMask);
+            squareMask &= ~squareBorder;
+        }
+
+        return squareMask;
+    }
 }

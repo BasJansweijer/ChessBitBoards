@@ -160,6 +160,74 @@ namespace chess
         return structureScore;
     }
 
+    // Score is used when endgameness > 0.9
+    // gives penalty for the distance to the nearest (friendly/enemy) pawn.
+    // gives penalty for passers that we cannot catch (especially when no other pieces are left)
+    template <bool isWhite>
+    score Evaluator::kingPositionScore()
+    {
+        if (m_endGameNessScore <= 0.9)
+            return 0; // not yet important
+
+        bitboard ourPawns = isWhite ? m_whiteBitBoards[Pawn] : m_blackBitBoards[Pawn];
+        bitboard enemyPawns = isWhite ? m_blackBitBoards[Pawn] : m_whiteBitBoards[Pawn];
+
+        bitboard pawns = ourPawns | enemyPawns;
+        if (pawns == 0)
+            return 0; // no pawns left to measure distance to
+
+        // normalize weight between [0-1]
+        float weight = 10 * (m_endGameNessScore - 0.9);
+
+        square king = isWhite ? m_board.getWhiteKingSquare() : m_board.getBlackKingSquare();
+        bitboard kingMask = 1ULL << king;
+
+        uint8_t dist = 0;
+        bitboard area = pawns;
+        while ((area & kingMask) == 0)
+        {
+            dist++;
+            // Increase mask to include the next step
+            area = mask::oneStep(area);
+        }
+
+        constexpr score kingDistPenalty = 5;
+        // dist - 1 since distance will always be atleast 1
+        score kingPosScore = -kingDistPenalty * (dist - 1);
+
+        // mask to check if the king is in "the square"
+        bitboard kingLocationMask = m_board.whitesMove() != isWhite
+                                        ? kingMask                    // passed pawn moves first
+                                        : constants::kingMoves[king]; // king moves first
+
+        constexpr score notInSquarePenalty = 20;
+        // If there are no pieces left besides the king and the passed pawn
+        // then we know that the pawn can 100% be promoted
+        constexpr score unCatchablePenalty = 300;
+
+        uint8_t *ourPieceCounts = isWhite ? m_whitePieceCounts : m_blackPieceCounts;
+        // used to determine if we have pieces left to catch the passed pawn if the king can't catch it
+        bool weHavePieces = ourPieceCounts[PieceType::Rook] > 0 || ourPieceCounts[PieceType::Queen] > 0 ||
+                            ourPieceCounts[PieceType::Knight] > 0 || ourPieceCounts[PieceType::Bishop] > 0;
+
+        bitBoards::forEachBit(enemyPawns,
+                              [&](square s)
+                              {
+            // Check if the pawn is passed
+            bitboard mask = mask::passedPawn<!isWhite>(s);
+            bool isPassedPawn = (mask & ourPawns) == 0;
+            if (!isPassedPawn)
+                return;
+            // check if we are 'in the square' of the passed pawn
+            bool inSquare = (kingLocationMask & mask::pawnSquare<!isWhite>(s)) != 0;
+            if (inSquare)
+                return; // no penalty as the king can catch the pawn
+            score penalty = weHavePieces ? notInSquarePenalty : unCatchablePenalty;
+            kingPosScore -= penalty; });
+
+        return weight * kingPosScore;
+    }
+
     template <bool isWhite>
     score Evaluator::rookOpenFileBonus()
     {
@@ -202,6 +270,9 @@ namespace chess
         // pawn structure analysis
         eval += pawnStructureAnalysis<true>();  // white
         eval -= pawnStructureAnalysis<false>(); // black
+
+        eval += kingPositionScore<true>();
+        eval -= kingPositionScore<false>();
 
         // rook open file bonus
         eval += rookOpenFileBonus<true>();  // white bonusses

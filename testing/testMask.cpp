@@ -35,12 +35,19 @@ namespace chess
         bitboard mask = 0;
 
         // mask |= mask::pawnAttacks<false>(b.getBlackPawns());
-        mask |= mask::backwardPawns<true>(b.getWhitePawns(), b.getBlackPawns());
+        mask = mask::oneStep(b.getWhitePawns());
+        mask |= mask::oneStep(mask);
         return mask;
     }
 }
 
 int main()
 {
+    for (chess::square s = 0; s < 64; s++)
+    {
+        chess::bitBoards::showBitboardGUI(chess::mask::pawnSquare<true>(s));
+
+        chess::bitBoards::showBitboardGUI(chess::mask::pawnSquare<false>(s));
+        }
     testMaskOnFens("testing/fens10000.txt", chess::testMask);
 }

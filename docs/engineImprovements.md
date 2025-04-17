@@ -67,3 +67,20 @@ Got 214 wins, 67 draws and 191 losses
 
 Give 10 centipawns for each rook on a half open file and 20 centipawns for each rook on a fully open file.
 Got 141 wins, 27 draws and 90 losses.
+
+### Rework king endgame behaviour (v0.6.8)
+
+We tweaked the endgame square tables of the king to just uniformly discourage the king from being near the edge. We then also added a distance penalty for the distance to the nearest pawn. Lastly we added the square rule for passed pawns with a decent penalty for not being able to catch the pawn with the king and an very large penalty if there aren't other pieces that could catch the pawn (only king an pawn left for player that is catching the pawn).
+Got 262 wins, 78 draws and 248 losses against v0.6.7.
+
+## TODO:
+
+- move ordering
+- move extensions
+- multi threading
+
+### evaluation
+
+- rework endgameness score
+- bishop pair
+- not enough material detection
