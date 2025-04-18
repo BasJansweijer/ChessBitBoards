@@ -7,6 +7,7 @@ This file implements all Evaluator functions that are called to initialize the i
 #include "bitBoard.h"
 #include "chess.h"
 #include "types.h"
+#include "masks.h"
 
 namespace chess
 {
@@ -16,22 +17,23 @@ namespace chess
      */
     void Evaluator::calculateMaterial()
     {
-        m_whiteMaterial = 0;
-        m_blackMaterial = 0;
+        m_whitePieceMaterial = 0;
+        m_blackPieceMaterial = 0;
 
-        for (int pieceType = 0; pieceType < 5; pieceType++)
+        for (int pieceType = 1; pieceType < 5; pieceType++)
         {
             m_whitePieceCounts[pieceType] = bitBoards::bitCount(m_whiteBitBoards[pieceType]);
-            m_whiteMaterial += m_whitePieceCounts[pieceType] * pieceVals[pieceType];
+            m_whitePieceMaterial += m_whitePieceCounts[pieceType] * pieceVals[pieceType];
             m_blackPieceCounts[pieceType] = bitBoards::bitCount(m_blackBitBoards[pieceType]);
-            m_blackMaterial += m_blackPieceCounts[pieceType] * pieceVals[pieceType];
+            m_blackPieceMaterial += m_blackPieceCounts[pieceType] * pieceVals[pieceType];
         }
 
-        score whiteNonPawnMaterial = m_whiteMaterial - m_whitePieceCounts[PieceType::Pawn] * pieceVals[PieceType::Pawn];
-        score blackNonPawnMaterial = m_blackMaterial - m_blackPieceCounts[PieceType::Pawn] * pieceVals[PieceType::Pawn];
+        // Set the material of the pawns
+        m_whitePieceCounts[PieceType::Pawn] = bitBoards::bitCount(m_whiteBitBoards[PieceType::Pawn]);
+        m_blackPieceCounts[PieceType::Pawn] = bitBoards::bitCount(m_blackBitBoards[PieceType::Pawn]);
 
         // Calculate the percentage of (non pawn) pieces that is remaining
-        m_piecesMaterialLeft = (whiteNonPawnMaterial + blackNonPawnMaterial) / (float)(startingPieceMaterial * 2);
+        m_piecesMaterialLeft = (m_whitePieceMaterial + m_blackPieceMaterial) / (float)(startingPieceMaterial * 2);
     }
 
     // Arguably not initialization, but sets the middleGame and endGame scores
@@ -70,13 +72,9 @@ namespace chess
     */
     void Evaluator::calculateEndGameNess()
     {
-        // Remove pawns from the equation
-        int whitePieceMaterial = m_whiteMaterial - pieceVals[PieceType::Pawn] * m_whitePieceCounts[PieceType::Pawn];
-        int blackPieceMaterial = m_blackMaterial - pieceVals[PieceType::Pawn] * m_blackPieceCounts[PieceType::Pawn];
-
         // Value the queen as more than usual
-        whitePieceMaterial += m_whitePieceCounts[PieceType::Queen] * 300;
-        blackPieceMaterial += m_whitePieceCounts[PieceType::Queen] * 300;
+        m_whitePieceMaterial += m_whitePieceCounts[PieceType::Queen] * 300;
+        m_blackPieceMaterial += m_whitePieceCounts[PieceType::Queen] * 300;
 
         // an offset of the highest material a side may have in an endgame
         constexpr int maxEndGameMaterial = pieceVals[PieceType::Rook] * 2;
@@ -84,7 +82,7 @@ namespace chess
         // A divisor such that when no pieces are taken we return 1
         constexpr float divisor = startingPieceMaterial * 2 - maxEndGameMaterial * 2;
 
-        float score = (whitePieceMaterial + blackPieceMaterial - 2 * maxEndGameMaterial) / divisor;
+        float score = (m_whitePieceMaterial + m_blackPieceMaterial - 2 * maxEndGameMaterial) / divisor;
         // normalize score to let 1 be completely endgame and 0 be completely not endgame
         score = score < 0 ? 1 : 1 - score;
 
@@ -102,9 +100,9 @@ namespace chess
         for (int i = 0; i < 8; i++)
         {
             m_fileTypes[i] = FileType::CLOSED;
-            if (!(m_board.getWhitePawns() & bitBoards::fileMask(i)))
+            if (!(m_board.getWhitePawns() & mask::fileMask(i)))
                 m_fileTypes[i] |= FileType::HALF_OPEN_WHITE;
-            if (!(m_board.getBlackPawns() & bitBoards::fileMask(i)))
+            if (!(m_board.getBlackPawns() & mask::fileMask(i)))
                 m_fileTypes[i] |= FileType::HALF_OPEN_BLACK;
         }
     }

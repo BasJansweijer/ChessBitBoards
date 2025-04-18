@@ -5,6 +5,7 @@
 #include <functional>
 #include "types.h"
 #include "bitBoard.h"
+#include "masks.h"
 
 using bitboard = chess::bitboard;
 
@@ -54,7 +55,7 @@ bitboard knightMoves(int rank, int file)
 
 bitboard rookMoves(int rank, int file)
 {
-    return chess::bitBoards::rankMask(rank) ^ chess::bitBoards::fileMask(file);
+    return chess::mask::rankMask(rank) ^ chess::mask::fileMask(file);
 }
 
 bitboard bishopMoves(int rank, int file)

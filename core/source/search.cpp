@@ -81,7 +81,7 @@ namespace chess
 
         const bool root = true;
 
-        while (eval.type != Eval::Type::MATE || eval.movesTillMate() > (m_depths.minDepth + 1) / 2)
+        while (eval.type != Eval::Type::MATE || std::abs(eval.movesTillMate()) >= (m_depths.minDepth + 1) / 2)
         {
             // Update the info to the collected info from previous completed search
             prevDepths = m_depths;

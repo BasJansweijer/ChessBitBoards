@@ -4,31 +4,28 @@
 #include <cinttypes>
 #include <algorithm>
 #include "evalTables.h"
-
-#include "boardVisualizer.h"
+#include "masks.h"
 
 namespace tables = chess::evalTables;
 
 namespace chess
 {
+    template <bool isWhite>
     score Evaluator::kingSafety()
     {
+        square king = isWhite ? m_board.getWhiteKingSquare() : m_board.getBlackKingSquare();
+        constexpr bitboard backRank = mask::rankMask(isWhite ? 0 : 7);
+
+        bitboard ourPawns = isWhite ? m_board.getWhitePawns() : m_board.getBlackPawns();
+        // act as if there is a queen on the kins position
+        bitboard virtualMoves = constants::getBishopMoves(king, ourPawns) | constants::getRookMoves(king, ourPawns);
+        // remove our pawns and the backrank from counting as open
+        virtualMoves &= ~(ourPawns & backRank);
+
         constexpr int KING_SAFETY_MULT = 10;
-        square blackKing = m_board.getBlackKingSquare();
-        square whiteKing = m_board.getWhiteKingSquare();
+        score safetyScore = -(bitBoards::bitCount(virtualMoves) * KING_SAFETY_MULT);
 
-        bitboard whitePawns = m_board.getWhitePawns();
-        bitboard blackPawns = m_board.getBlackPawns();
-
-        bitboard whiteMoves = constants::getBishopMoves(whiteKing, whitePawns) | constants::getRookMoves(whiteKing, whitePawns);
-        whiteMoves &= ~(whitePawns && bitBoards::rankMask(0));
-        int whiteSafetyScore = bitBoards::bitCount(whiteMoves) * -KING_SAFETY_MULT;
-
-        bitboard blackMoves = constants::getBishopMoves(blackKing, blackPawns) | constants::getRookMoves(blackKing, blackPawns);
-        blackMoves &= ~(whitePawns && bitBoards::rankMask(7));
-        int blackSafetyScore = bitBoards::bitCount(blackMoves) * KING_SAFETY_MULT;
-
-        return blackSafetyScore + whiteSafetyScore;
+        return safetyScore;
     }
 
     // mopup score strongly influences the normal evaluation at the very end of the game to promote cornering the losing king
@@ -37,10 +34,10 @@ namespace chess
         // If a player is up this much we might have to mop up.
         constexpr int minMaterialDiff = pieceVals[PieceType::Rook] - 2 * pieceVals[PieceType::Pawn];
 
-        const int materialAdvantage = std::abs(m_whiteMaterial - m_blackMaterial);
+        const int materialAdvantage = std::abs(getMaterialBalance());
 
-        // We factor is lower when opponent has more material still on the board
-        const int opponentMaterial = m_whiteMaterial > m_blackMaterial ? m_blackMaterial : m_whiteMaterial;
+        // thee factor is lower when opponent has more (non pawn) material still on the board
+        const int opponentMaterial = m_whitePieceMaterial > m_blackPieceMaterial ? m_blackPieceMaterial : m_whitePieceMaterial;
 
         return materialAdvantage < minMaterialDiff || m_endGameNessScore < 0.5
                    ? 0 // don't use mopup score
@@ -93,38 +90,6 @@ namespace chess
     }
 
     template <bool isWhite>
-    constexpr bitboard passedPawnMask(square s)
-    {
-        uint8_t rank = s / 8;
-        uint8_t file = s % 8;
-
-        bitboard mask = 0;
-        // Three files that can stop the pawn
-        mask |= bitBoards::fileMask(file);
-        mask |= file > 0 ? bitBoards::fileMask(file - 1) : 0;
-        mask |= file < 7 ? bitBoards::fileMask(file + 1) : 0;
-
-        // Shift up or down depending on the color
-        uint8_t shift = 8 * (rank + (isWhite ? 1 : 0));
-        isWhite ? mask <<= shift : mask >>= -shift;
-        return mask;
-    }
-
-    template <bool isWhite>
-    constexpr bitboard pawnAttackSquares(square pawnSquare)
-    {
-        uint8_t rank = pawnSquare / 8;
-        uint8_t file = pawnSquare % 8;
-
-        square inFront = isWhite ? pawnSquare + 8 : pawnSquare - 8;
-
-        bitboard leftAttack = file > 0 ? 1ULL << inFront - 1 : 0;
-        bitboard rightAttack = file < 7 ? 1ULL << inFront + 1 : 0;
-        bitboard mask = leftAttack | rightAttack;
-        return mask;
-    }
-
-    template <bool isWhite>
     constexpr score passedPawnBonus(uint8_t rank, float endgameNessScore)
     {
         constexpr score baseBonus = 30; // small as we also give bonus per file
@@ -170,14 +135,14 @@ namespace chess
                 pawnScore -= isolationPenalty;
 
             // passedPawn analysis
-            bitboard mask = passedPawnMask<isWhite>(s);
+            bitboard mask = mask::passedPawn<isWhite>(s);
             // check if there are any opponent pawns in the mask
             bool isPassedPawn = (mask & oppPawns) == 0;
             if (isPassedPawn)
                 pawnScore += passedPawnBonus<isWhite>(rank, m_endGameNessScore);
 
             // Check if were defended
-            bool isDefended = (pawnAttackSquares<!isWhite>(s) & ourPawns) != 0;
+            bool isDefended = (mask::pawnAttack<!isWhite>(s) & ourPawns) != 0;
             if (isDefended)
             {
                 pawnScore += defendedPawnBonus; // small bonus for being defended
@@ -193,6 +158,82 @@ namespace chess
         bitBoards::forEachBit(ourPawns, pawnAnalysis);
 
         return structureScore;
+    }
+
+    template <bool isWhite>
+    score Evaluator::bishopPairBonus()
+    {
+        constexpr score bishopPairBonus = 30;
+        uint8_t *ourPieceCounts = isWhite ? m_whitePieceCounts : m_blackPieceCounts;
+        return ourPieceCounts[PieceType::Bishop] >= 2 ? bishopPairBonus : 0;
+    }
+
+    // Score is used when endgameness > 0.9
+    // gives penalty for the distance to the nearest (friendly/enemy) pawn.
+    // gives penalty for passers that we cannot catch (especially when no other pieces are left)
+    template <bool isWhite>
+    score Evaluator::kingPositionScore()
+    {
+        if (m_endGameNessScore <= 0.9)
+            return 0; // not yet important
+
+        bitboard ourPawns = isWhite ? m_whiteBitBoards[Pawn] : m_blackBitBoards[Pawn];
+        bitboard enemyPawns = isWhite ? m_blackBitBoards[Pawn] : m_whiteBitBoards[Pawn];
+
+        bitboard pawns = ourPawns | enemyPawns;
+        if (pawns == 0)
+            return 0; // no pawns left to measure distance to
+
+        // normalize weight between [0-1]
+        float weight = 10 * (m_endGameNessScore - 0.9);
+
+        square king = isWhite ? m_board.getWhiteKingSquare() : m_board.getBlackKingSquare();
+        bitboard kingMask = 1ULL << king;
+
+        uint8_t dist = 0;
+        bitboard area = pawns;
+        while ((area & kingMask) == 0)
+        {
+            dist++;
+            // Increase mask to include the next step
+            area = mask::oneStep(area);
+        }
+
+        constexpr score kingDistPenalty = 5;
+        // dist - 1 since distance will always be atleast 1
+        score kingPosScore = -kingDistPenalty * (dist - 1);
+
+        // mask to check if the king is in "the square"
+        bitboard kingLocationMask = m_board.whitesMove() != isWhite
+                                        ? kingMask                    // passed pawn moves first
+                                        : constants::kingMoves[king]; // king moves first
+
+        constexpr score notInSquarePenalty = 20;
+        // If there are no pieces left besides the king and the passed pawn
+        // then we know that the pawn can 100% be promoted
+        constexpr score unCatchablePenalty = 300;
+
+        uint8_t *ourPieceCounts = isWhite ? m_whitePieceCounts : m_blackPieceCounts;
+        // used to determine if we have pieces left to catch the passed pawn if the king can't catch it
+        bool weHavePieces = ourPieceCounts[PieceType::Rook] > 0 || ourPieceCounts[PieceType::Queen] > 0 ||
+                            ourPieceCounts[PieceType::Knight] > 0 || ourPieceCounts[PieceType::Bishop] > 0;
+
+        bitBoards::forEachBit(enemyPawns,
+                              [&](square s)
+                              {
+            // Check if the pawn is passed
+            bitboard mask = mask::passedPawn<!isWhite>(s);
+            bool isPassedPawn = (mask & ourPawns) == 0;
+            if (!isPassedPawn)
+                return;
+            // check if we are 'in the square' of the passed pawn
+            bool inSquare = (kingLocationMask & mask::pawnSquare<!isWhite>(s)) != 0;
+            if (inSquare)
+                return; // no penalty as the king can catch the pawn
+            score penalty = weHavePieces ? notInSquarePenalty : unCatchablePenalty;
+            kingPosScore -= penalty; });
+
+        return weight * kingPosScore;
     }
 
     template <bool isWhite>
@@ -229,17 +270,25 @@ namespace chess
         score positioningScore = m_endGameNessScore * m_endGameScore + notEndGameNess * m_middleGameScore;
         eval += positioningScore;
 
-        // kingsafety should weigh less in the endgame
-        score kingSafetyScore = kingSafety() * notEndGameNess;
-        eval += kingSafetyScore;
+        // kingsafety is scaled internally by amount of pieces left of enemy
+        score whiteSafetyScore = kingSafety<true>();
+        score blackSafetyScore = kingSafety<false>();
+        eval += (whiteSafetyScore - blackSafetyScore) * notEndGameNess;
 
         // pawn structure analysis
         eval += pawnStructureAnalysis<true>();  // white
         eval -= pawnStructureAnalysis<false>(); // black
 
+        eval += kingPositionScore<true>();
+        eval -= kingPositionScore<false>();
+
         // rook open file bonus
         eval += rookOpenFileBonus<true>();  // white bonusses
         eval -= rookOpenFileBonus<false>(); // black bonusses
+
+        // bishop pair bonus
+        eval += bishopPairBonus<true>();
+        eval -= bishopPairBonus<false>();
 
         // add score to encourage trading (non pawn) pieces when ahead
         // We use the piece percentage left to determine how much we should encourage trading
