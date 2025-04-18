@@ -160,6 +160,14 @@ namespace chess
         return structureScore;
     }
 
+    template <bool isWhite>
+    score Evaluator::bishopPairBonus()
+    {
+        constexpr score bishopPairBonus = 30;
+        uint8_t *ourPieceCounts = isWhite ? m_whitePieceCounts : m_blackPieceCounts;
+        return ourPieceCounts[PieceType::Bishop] >= 2 ? bishopPairBonus : 0;
+    }
+
     // Score is used when endgameness > 0.9
     // gives penalty for the distance to the nearest (friendly/enemy) pawn.
     // gives penalty for passers that we cannot catch (especially when no other pieces are left)
@@ -277,6 +285,10 @@ namespace chess
         // rook open file bonus
         eval += rookOpenFileBonus<true>();  // white bonusses
         eval -= rookOpenFileBonus<false>(); // black bonusses
+
+        // bishop pair bonus
+        eval += bishopPairBonus<true>();
+        eval -= bishopPairBonus<false>();
 
         // add score to encourage trading (non pawn) pieces when ahead
         // We use the piece percentage left to determine how much we should encourage trading

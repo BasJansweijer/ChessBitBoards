@@ -89,6 +89,9 @@ namespace chess
         template <bool isWhite>
         score kingPositionScore();
 
+        template <bool isWhite>
+        score bishopPairBonus();
+
     private:
         const BoardState &m_board;
 

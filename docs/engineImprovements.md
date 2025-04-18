@@ -73,14 +73,21 @@ Got 141 wins, 27 draws and 90 losses.
 We tweaked the endgame square tables of the king to just uniformly discourage the king from being near the edge. We then also added a distance penalty for the distance to the nearest pawn. Lastly we added the square rule for passed pawns with a decent penalty for not being able to catch the pawn with the king and an very large penalty if there aren't other pieces that could catch the pawn (only king an pawn left for player that is catching the pawn).
 Got 262 wins, 78 draws and 248 losses against v0.6.7.
 
+### Bishop pair bonus (v0.6.9)
+
+Add a 30 centipawn bonus for having 2 or more bishops. The bishop pair is a commonly known concept in high level chess.
+Got 408 wins, 143 draws and 383 losses
+
 ## TODO:
 
 - move ordering
+- don't discard partial search
 - move extensions
 - multi threading
 
 ### evaluation
 
+- space with pawns
+- penalty for being stuck (for bishops/rooks)
 - rework endgameness score
-- bishop pair
 - not enough material detection
