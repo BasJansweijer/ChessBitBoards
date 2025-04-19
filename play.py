@@ -58,6 +58,19 @@ class ChessEngine:
         self.process.stdin.flush()
         response = self.process.stdout.readline().strip()
         return response
+    
+    def benchDepth(self, depth):
+        response = self.runCmd(f"bench depth {depth}")
+        pattern = r'\n took (d+(.d+)?) seconds'
+        match = re.search(pattern, response)
+        
+        if match:
+            time = match.group(1)
+            nodes = match.group(2)
+            return time, nodes
+        
+        print("failed on response:", response)
+        raise Exception("benchDepth Not parsed correctly")
 
     def getPosition(self):
         return self.runCmd("getPosition")

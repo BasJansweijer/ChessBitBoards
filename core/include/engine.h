@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <tuple>
+#include <optional>
 #include "chess.h"
 #include "search.h"
 #include "eval.h"
@@ -107,8 +108,15 @@ namespace chess
             Depth
         };
 
+        struct BenchResult
+        {
+            double seconds;
+            int searchedNodes;
+            int depth;
+        };
+
         template <BenchType benchType>
-        void bench(double quantity);
+        std::optional<BenchResult> bench(double quantity);
 
     private:
         bool m_quit;

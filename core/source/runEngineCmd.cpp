@@ -57,7 +57,16 @@ namespace chess
             double quantity = std::stod(match[2]);
             if (benchType == "depth")
             {
-                bench<BenchType::Depth>(quantity);
+                std::optional<BenchResult> result = bench<BenchType::Depth>(quantity);
+                if (!result)
+                {
+                    std::cout << "Invalid benchmark configuration" << std::endl;
+                    return;
+                }
+
+                BenchResult res = *result;
+                std::cout << "Bench result: " << res.searchedNodes << " nodes in " << res.seconds
+                          << " seconds (depth: " << res.depth << ")" << std::endl;
                 return;
             }
 

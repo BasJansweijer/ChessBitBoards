@@ -10,6 +10,7 @@ add_library(core STATIC
     source/eval.cpp
     source/initEval.cpp
     source/runEngineCmd.cpp
+    source/bench.cpp
 )
 
 target_include_directories(core PUBLIC

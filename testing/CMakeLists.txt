@@ -36,6 +36,14 @@ target_link_libraries(testMask PRIVATE tools_common)
 target_include_directories(testMask PRIVATE ${CMAKE_SOURCE_DIR}/external/stb)
 
 
+add_executable(benchEngine benchEngineSearch.cpp)
+target_link_libraries(benchEngine PRIVATE core)
+target_link_libraries(benchEngine PRIVATE imgui glfw OpenGL::GL)
+target_link_libraries(benchEngine PRIVATE core)
+target_link_libraries(benchEngine PRIVATE tools_common)
+target_include_directories(benchEngine PRIVATE ${CMAKE_SOURCE_DIR}/external/stb)
+
+
 # Define paths
 set(DATA_DIR ${CMAKE_SOURCE_DIR}/testing/data)
 set(TEST_FENS_BUILD ${CMAKE_BINARY_DIR}/testing/)

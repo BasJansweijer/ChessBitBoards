@@ -21,16 +21,13 @@ namespace chess
     };
 
     template <>
-    void Engine::bench<Engine::BenchType::Depth>(double quantity)
+    std::optional<Engine::BenchResult> Engine::bench<Engine::BenchType::Depth>(double quantity)
     {
         // We need to convert the quantity to an int
         // since the depth is an int
         int depth = static_cast<int>(quantity);
         if (depth < 1)
-        {
-            std::cout << "Depth must be greater than 0" << std::endl;
-            return;
-        }
+            return std::nullopt;
 
         Search::SearchConfig config;
         config.evalFunction = Evaluator::evaluate;
@@ -46,7 +43,15 @@ namespace chess
         else
             s.minimax<false, true>(m_currentBoard, quantity, out);
 
+        int searchedNodes = s.getStats().searchedNodes;
+
         double seconds = timer.elapsedSeconds();
-        std::cout << "took " << seconds << " seconds" << std::endl;
+
+        BenchResult result;
+        result.seconds = seconds;
+        result.searchedNodes = searchedNodes;
+        result.depth = depth;
+
+        return result;
     }
 }
