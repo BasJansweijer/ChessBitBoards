@@ -17,6 +17,7 @@ namespace chess
         std::regex setPosRegex("setPosition ([\\w/0-9\\-\\s]+)");
         std::regex bestMoveRegex("bestMove (\\d+(\\.\\d+)?)");
         std::regex makeMoveRegex("makeMove (\\w+)");
+        std::regex benchmarkRegex("bench (\\w+) (\\d+(\\.\\d+)?)");
         std::smatch match;
 
         if (std::regex_match(cmd, match, setPosRegex))
@@ -27,9 +28,7 @@ namespace chess
             std::cout << "done" << std::endl;
         }
         else if (cmd.starts_with("getPosition"))
-        {
             std::cout << m_currentBoard.fen() << std::endl;
-        }
         else if (std::regex_match(cmd, match, makeMoveRegex))
         {
             bool succes = makeMove(match[1]);
@@ -52,7 +51,19 @@ namespace chess
             std::cout << move.toUCI() << " (eval: " << eval << ", searchinfo: " << info
                       << ", ttFullness: " << ttFullness << ")" << std::endl;
         }
-        else if (cmd == "showBoard")
+        else if (std::regex_match(cmd, match, benchmarkRegex))
+        {
+            std::string benchType = match[1];
+            double quantity = std::stod(match[2]);
+            if (benchType == "depth")
+            {
+                bench<BenchType::Depth>(quantity);
+                return;
+            }
+
+            std::cout << "Invalid benchmark type: " << benchType << std::endl;
+        }
+        else if (cmd == "showBoard" || cmd == "show")
         {
             std::cout << m_currentBoard.fen() << std::endl;
             showBoardGUI(m_currentBoard);

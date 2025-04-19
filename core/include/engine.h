@@ -102,6 +102,14 @@ namespace chess
             m_repTable.addState(m_currentBoard);
         }
 
+        enum class BenchType
+        {
+            Depth
+        };
+
+        template <BenchType benchType>
+        void bench(double quantity);
+
     private:
         bool m_quit;
         BoardState m_currentBoard;

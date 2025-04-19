@@ -22,3 +22,7 @@ Not that the thinkTime is in seconds.
 ## quit
 
 `quit` stops the engine.
+
+## bench
+
+`bench [type] [quantity]`. Currently bench supports `depth` and returns the time it took.
