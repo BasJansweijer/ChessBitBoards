@@ -45,6 +45,27 @@ namespace chess
         m_timerThread.join();
     }
 
+    // Is used to order the moves in the move list
+    // this increases the performance of the search as we can prune more
+    score Search::moveScore(const Move &move, const BoardState &board) const
+    {
+        // We want to always try promotion to queen early on in the search
+        constexpr score queenPromotionValue = pieceVals[Queen];
+        if (move.promotion && move.piece == Queen)
+            return queenPromotionValue;
+
+        // not a promotion to a queen or a capture
+        if (!move.takesPiece)
+            return 0;
+
+        score capturingPieceValue = pieceVals[move.piece];
+        PieceType capturedPiece = board.whitesMove() ? board.pieceOnSquare<false>(move.to) : board.pieceOnSquare<true>(move.to);
+        score differenceInValue = pieceVals[capturedPiece] - capturingPieceValue;
+        // we assume the capture is save (but slightly prefer taking with a lower value piece)
+        score moveScore = pieceVals[capturedPiece] + (differenceInValue / 50);
+        return moveScore;
+    }
+
     Search::DepthSettings Search::initialDepths(double thinkSeconds)
     {
         constexpr int MAX_INITIAL_DEPTH = 4;
@@ -146,6 +167,9 @@ namespace chess
         if (m_stopped.load(std::memory_order_relaxed))
             return 0;
 
+        // update searched node count
+        m_statistics.searchedNodes++;
+
         // In the root we cannot exit early like this
         // + the curBoard will be the last item in the repTable
         if (!Root && (curBoard.drawBy50MoveRule() || m_repTable->contains(curBoard)))
@@ -187,6 +211,9 @@ namespace chess
         score bestEval = Max ? SCORE_MIN : SCORE_MAX;
 
         MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Normal>();
+
+        // order the moves to improve pruning
+        orderMoves(pseudoLegalMoves, curBoard);
 
         for (const Move &m : pseudoLegalMoves)
         {
@@ -257,6 +284,9 @@ namespace chess
         if (m_stopped.load(std::memory_order_relaxed))
             return 0;
 
+        // update searched node count
+        m_statistics.searchedNodes++;
+
         // Note: no need to check repetition table as each move is a capture (no repetition possible)
 
         int curDepth = m_depths.minDepth + extraDepth;
@@ -293,6 +323,8 @@ namespace chess
             return bestEval;
 
         MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Quiescent>();
+        // order the moves to improve pruning
+        orderMoves(pseudoLegalMoves, curBoard);
 
         for (const Move &m : pseudoLegalMoves)
         {

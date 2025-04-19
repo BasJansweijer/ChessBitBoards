@@ -91,8 +91,8 @@ namespace chess
         MoveList() = default;
 
         int size() { return numMoves; }
-        const Move *end() const { return &moves[numMoves]; }
-        const Move *begin() const { return moves; }
+        Move *end() { return &moves[numMoves]; }
+        Move *begin() { return moves; }
 
         Move &operator[](int index) { return moves[index]; }
 
@@ -218,6 +218,9 @@ namespace chess
         // NOTE: this should not be used outside of testing purposes
         void recomputeHash();
 
+        template <bool white>
+        PieceType pieceOnSquare(square s) const;
+
     private:
         bitboard m_whitePieces[5];
         bitboard m_blackPieces[5];
@@ -293,8 +296,5 @@ namespace chess
 
         // Helper which returns a char representing the piece (according to fen) int 0 if no piece is there
         char charOnSquare(square s) const;
-
-        template <bool white>
-        PieceType pieceOnSquare(square s) const;
     };
 }

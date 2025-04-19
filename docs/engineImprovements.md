@@ -78,6 +78,19 @@ Got 262 wins, 78 draws and 248 losses against v0.6.7.
 Add a 30 centipawn bonus for having 2 or more bishops. The bishop pair is a commonly known concept in high level chess.
 Got 408 wins, 143 draws and 383 losses
 
+## Move ordering (v0.7.0)
+
+If we order the moves from best to worst the engine can more effectively prune our search tree. We added a simple move ordering score which encourages first exploring queen promotions, then captures (first of more valuable pieces with less valuable pieces) and lastly the other moves.
+This had the following effect on our performance when doing a full search untill depth 5 (and quiescent search after) on the positions in data/fens10.txt.
+
+| Approach                                      | Average time (seconds) | Average nodes searched |
+| --------------------------------------------- | ---------------------- | ---------------------- |
+| No ordering                                   | 0.7422                 | 1,579,360              |
+| Ordering in minimax                           | 0.0505                 | 77442                  |
+| Ordering in both minimax and quiescent search | 0.0501                 | 77442                  |
+
+The performance difference is significant (though sorting in quiescent search seems to have little impact). Note that the nodes per second does go down but we don't have to search as many nodes in return.
+
 ## TODO:
 
 - move ordering

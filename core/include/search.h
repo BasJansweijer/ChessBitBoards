@@ -14,6 +14,7 @@
 
 namespace chess
 {
+
     class Search
     {
     public:
@@ -57,14 +58,22 @@ namespace chess
             int minDepth = 0;
             // Maximum depth including quiescent search
             int reachedDepth = 0;
+            int searchedNodes = 0;
 
             // Overload operator<< for printing
             friend std::ostream &operator<<(std::ostream &os, const SearchStats &info)
             {
-                os << "{ minDepth=" << info.minDepth << ", maxDepth=" << info.reachedDepth << "}";
+                os << "{ minDepth=" << info.minDepth
+                   << ", maxDepth=" << info.reachedDepth
+                   << ", nodesSearched=" << info.searchedNodes << "}";
                 return os;
             }
         };
+
+        SearchStats getStats() const
+        {
+            return m_statistics;
+        }
 
         // Returns the Move and eval and highest completed depth
         std::tuple<Move, Eval, SearchStats> iterativeDeepening(double thinkSeconds);
@@ -96,6 +105,17 @@ namespace chess
 
         // Used to stop the timer early
         void stopTimeThread();
+
+        // Orders the moves in the move list
+        inline void orderMoves(MoveList &moves, const BoardState &board)
+        {
+            std::sort(moves.begin(), moves.end(), [&](const Move &a, const Move &b)
+                      { return moveScore(a, board) > moveScore(b, board); });
+        }
+
+        // Gives a rough heuristic based on which we can order the moves in our search
+        // Put in this class because we can use info from the search to help the ordering
+        score moveScore(const Move &move, const BoardState &board) const;
 
     private:
         const std::function<score(const BoardState &)> m_evalFunc;
