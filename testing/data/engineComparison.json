@@ -1,37 +1,44 @@
 [
-  {
-    "engine1": "../releases/engine-v0.1.0",
-    "engine2": "../releases/engine-v0.1.0",
-    "engine1Wins": 239,
-    "draws": 519,
-    "engine2Wins": 242
-  },
-  {
-    "engine1": "../releases/engine-v0.1.0",
-    "engine2": "../releases/engine-v0.2.0",
-    "engine1Wins": 234,
-    "draws": 488,
-    "engine2Wins": 278
-  },
-  {
-    "engine1": "../releases/engine-v0.2.0",
-    "engine2": "../releases/engine-v0.3.0",
-    "engine1Wins": 116,
-    "draws": 435,
-    "engine2Wins": 449
-  },
-  {
-    "engine1": "../releases/engine-v0.3.0",
-    "engine2": "../releases/engine-v0.4.0",
-    "engine1Wins": 192,
-    "draws": 419,
-    "engine2Wins": 389
-  },
-  {
-    "engine1": "../releases/engine-v0.4.1",
-    "engine2": "../releases/engine-v0.5.0",
-    "engine1Wins": 373,
-    "draws": 162,
-    "engine2Wins": 465
-  }
+    {
+        "engine1": "../releases/engine-v0.1.0",
+        "engine2": "../releases/engine-v0.1.0",
+        "engine1Wins": 239,
+        "draws": 519,
+        "engine2Wins": 242
+    },
+    {
+        "engine1": "../releases/engine-v0.1.0",
+        "engine2": "../releases/engine-v0.2.0",
+        "engine1Wins": 234,
+        "draws": 488,
+        "engine2Wins": 278
+    },
+    {
+        "engine1": "../releases/engine-v0.2.0",
+        "engine2": "../releases/engine-v0.3.0",
+        "engine1Wins": 116,
+        "draws": 435,
+        "engine2Wins": 449
+    },
+    {
+        "engine1": "../releases/engine-v0.3.0",
+        "engine2": "../releases/engine-v0.4.0",
+        "engine1Wins": 192,
+        "draws": 419,
+        "engine2Wins": 389
+    },
+    {
+        "engine1": "../releases/engine-v0.4.1",
+        "engine2": "../releases/engine-v0.5.0",
+        "engine1Wins": 373,
+        "draws": 162,
+        "engine2Wins": 465
+    },
+    {
+        "engine1": "../releases/engine-v0.5.0",
+        "engine2": "../releases/engine-v0.6.9",
+        "engine1Wins": 299,
+        "draws": 85,
+        "engine2Wins": 616
+    }
 ]
