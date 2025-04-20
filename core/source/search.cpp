@@ -142,23 +142,29 @@ namespace chess
         return {bestMove, eval, m_statistics};
     }
 
-    template <bool Max>
-    bool entryIsUsable(TTEntry *entry, int remainingDepth, score curAlpha, score curBeta)
-    {
-        bool goodDepth = entry->depth >= remainingDepth;
+    // template <bool Max>
+    // // Determines wether we can emediately use the eval given in the transposition table
+    // bool entryEvalUsable(TTEntry *entry, int remainingDepth, score curAlpha, score curBeta)
+    // {
+    //     bool goodDepth = entry->depth >= remainingDepth;
+    //     if (!goodDepth)
+    //         return false; // need deeper search
 
-        /*
-         * Bound is usable if:
-         *  - it is exact
-         *  - we are white and it is an upper bound (or black and it is a lower bound)
-         *  - or if it would produce a cutoff in the !Max call above our current one.
-         */
-        bool usableBound = entry->bound() == EvalBound::Exact ||
-                           (Max && (entry->bound() == EvalBound::Upper || entry->eval >= curAlpha)) ||
-                           (!Max && (entry->bound() == EvalBound::Lower || entry->eval <= curBeta));
-
-        return goodDepth && usableBound;
-    }
+    //     /*
+    //      * Bound is usable if:
+    //      *  - it is exact
+    //      *  - if a cutoff can be produced from this
+    //      */
+    //     switch (entry->bound())
+    //     {
+    //     case EvalBound::Exact:
+    //         return true; // always usable
+    //     case EvalBound::Lower:
+    //         return Max && curBeta < TTScore; // true if produces cutoff
+    //     case EvalBound::Upper:
+    //         return !Max && curAlpha > TTScore; // true if produces cutoff
+    //     }
+    // }
 
     template <bool Max, bool Root>
     score Search::minimax(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpha, score beta)
@@ -184,27 +190,15 @@ namespace chess
         // Look in the transposition table for a usable entry for this board
         key boardHash = curBoard.getHash();
         TTEntry *transEntry = m_transTable->get(boardHash);
-        // In the root we need to return a move.
-        if (!Root && transEntry->containsHash(boardHash) && entryIsUsable<Max>(transEntry, remainingDepth, alpha, beta))
+        if (transEntry->containsHash(boardHash))
         {
+            // In the root we need to return a move so we can't return like this
+            // TODO: return move if root
+            if (!Root && transEntry->evalUsable(curDepth, remainingDepth, alpha, beta))
+                return scoreForRootNode(transEntry->eval, curDepth);
+            ; // use evaluation emediately
 
-            // 8/8/8/P7/8/2K5/8/3k4 w - - 3 65
-
-            // found a usable entry
-            score TTScore = scoreForRootNode(transEntry->eval, curDepth);
-            switch (transEntry->bound())
-            {
-            case EvalBound::Exact:
-                return TTScore; // always usable
-            case EvalBound::Lower:
-                if (Max && beta < TTScore) // only return if a cutoff can be produced from this
-                    return TTScore;
-                break;
-            case EvalBound::Upper:
-                if (!Max && alpha > TTScore) // only return if a cutoff can be produced from this
-                    return TTScore;
-                break;
-            }
+            // we can use the best move from the entry still
         }
 
         // Start with the worst possible eval
@@ -293,24 +287,13 @@ namespace chess
         // Look in the transposition table for a usable entry for this board
         key boardHash = curBoard.getHash();
         TTEntry *transEntry = m_transTable->get(boardHash);
-        // In the root we need to return a move.
-        if (transEntry->containsHash(boardHash) && entryIsUsable<Max>(transEntry, 0, alpha, beta))
+        if (transEntry->containsHash(boardHash))
         {
-            // found a usable entry
-            score TTScore = scoreForRootNode(transEntry->eval, curDepth);
-            switch (transEntry->bound())
-            {
-            case EvalBound::Exact:
-                return TTScore; // always usable
-            case EvalBound::Lower:
-                if (Max && beta < TTScore) // only return if a cutoff can be produced from this
-                    return TTScore;
-                break;
-            case EvalBound::Upper:
-                if (!Max && alpha > TTScore) // only return if a cutoff can be produced from this
-                    return TTScore;
-                break;
-            }
+            // remaining depth is zero
+            if (transEntry->evalUsable(curDepth, 0, alpha, beta))
+                return scoreForRootNode(transEntry->eval, curDepth);
+
+            // TODO: use the best move from the entry
         }
 
         // Update max depth statistic

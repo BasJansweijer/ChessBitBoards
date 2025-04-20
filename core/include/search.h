@@ -134,23 +134,4 @@ namespace chess
         std::thread m_timerThread;
     };
 
-    inline score scoreForCurrentNode(score s, int curDepth)
-    {
-        if (abs(s) < MIN_MATE_SCORE)
-            return s;
-
-        return s > 0
-                   ? s + curDepth  // mate in N for white
-                   : s - curDepth; // mate in N for black
-    }
-
-    inline score scoreForRootNode(score s, int curDepth)
-    {
-        if (abs(s) < MIN_MATE_SCORE)
-            return s;
-
-        return s > 0
-                   ? s - curDepth  // mate in N for white
-                   : s + curDepth; // mate in N for black
-    }
 }

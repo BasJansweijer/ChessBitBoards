@@ -199,4 +199,24 @@ namespace chess
         // For black mates we do minus n
         return Eval(Eval::Type::MATE, whiteMating ? n : -n);
     }
+
+    constexpr score scoreForCurrentNode(score s, int curDepth)
+    {
+        if (abs(s) < MIN_MATE_SCORE)
+            return s;
+
+        return s > 0
+                   ? s + curDepth  // mate in N for white
+                   : s - curDepth; // mate in N for black
+    }
+
+    constexpr score scoreForRootNode(score s, int curDepth)
+    {
+        if (abs(s) < MIN_MATE_SCORE)
+            return s;
+
+        return s > 0
+                   ? s - curDepth  // mate in N for white
+                   : s + curDepth; // mate in N for black
+    }
 }

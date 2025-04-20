@@ -8,6 +8,7 @@
 
 #include "chess.h"
 #include "types.h"
+#include "eval.h"
 
 namespace chess
 {
@@ -15,13 +16,14 @@ namespace chess
      * Layout:
      * 2 bytes: eval
      * 1 byte: depth
+     * 8 bytes: move
      * 1 byte: generation
      * 2 bytes: hash (only first 16 bits)
      * 1 byte: flags (occupied, bound type, etc)
      *
      *
-     * In total this is 2+1+4+1+1 = 9 bytes
-     * (12 bytes with natural allignment)
+     * In total this is 2+1+8+4+1+1 = 17 bytes
+     * (24 bytes with natural allignment)
      *
      * 131,072 entries per 1 MiB
      * 8,388,608 entries with the default 64 MiB table
@@ -37,6 +39,7 @@ namespace chess
 
         score eval;    // 16 bits
         uint8_t depth; // depth < 0 means it was a QUIESCENT Search
+        // Move move;     // the best move found
 
         inline bool occupied() const
         {
@@ -53,6 +56,32 @@ namespace chess
         {
             // The eval bound options have been chosen to match the 0bxx0
             return (EvalBound)(flags & 0b110);
+        }
+
+        inline bool evalUsable(int curDepth, int remainingDepth, score curAlpha, score curBeta) const
+        {
+            bool goodDepth = depth >= remainingDepth;
+            if (!goodDepth)
+                return false; // need deeper search
+
+            score rootEval = scoreForRootNode(eval, curDepth);
+
+            /*
+             * Eval is usable if:
+             *  - it is exact
+             *  - if a cutoff can be produced from this
+             */
+            switch (bound())
+            {
+            case EvalBound::Exact:
+                return true; // always usable
+            case EvalBound::Lower:
+                return curBeta < rootEval; // true if produces cutoff
+            case EvalBound::Upper:
+                return curAlpha > rootEval; // true if produces cutoff
+            default:
+                throw std::runtime_error("Invalid bound type");
+            }
         }
 
     private:
