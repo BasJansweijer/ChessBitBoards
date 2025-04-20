@@ -78,6 +78,11 @@ Got 262 wins, 78 draws and 248 losses against v0.6.7.
 Add a 30 centipawn bonus for having 2 or more bishops. The bishop pair is a commonly known concept in high level chess.
 Got 408 wins, 143 draws and 383 losses
 
+### Total evaluation improvement
+
+v0.6.9 achieved the following score against v0.5.0:
+616 wins, 85 draws and 299 losses.
+
 ## Move ordering (v0.7.0)
 
 If we order the moves from best to worst the engine can more effectively prune our search tree. We added a simple move ordering score which encourages first exploring queen promotions, then captures (first of more valuable pieces with less valuable pieces) and lastly the other moves.

@@ -40,5 +40,12 @@
         "engine1Wins": 299,
         "draws": 85,
         "engine2Wins": 616
+    },
+    {
+        "engine1": "../releases/engine-v0.6.9",
+        "engine2": "../releases/engine-v0.7.0",
+        "engine1Wins": 123,
+        "draws": 104,
+        "engine2Wins": 773
     }
 ]
