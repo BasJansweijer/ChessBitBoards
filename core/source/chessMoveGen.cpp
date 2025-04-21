@@ -16,13 +16,13 @@ namespace chess
     inline void addPromotionMove(square from, square to, bool wasCapture, MoveList &outMoves)
     {
         outMoves.emplace_back(from, to, PieceType::Knight, wasCapture);
-        outMoves.back().promotion = true;
+        outMoves.back().setPromotion();
         outMoves.emplace_back(from, to, PieceType::Bishop, wasCapture);
-        outMoves.back().promotion = true;
+        outMoves.back().setPromotion();
         outMoves.emplace_back(from, to, PieceType::Rook, wasCapture);
-        outMoves.back().promotion = true;
+        outMoves.back().setPromotion();
         outMoves.emplace_back(from, to, PieceType::Queen, wasCapture);
-        outMoves.back().promotion = true;
+        outMoves.back().setPromotion();
     }
 
     template <MoveGenType GenT>

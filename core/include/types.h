@@ -40,8 +40,8 @@ namespace chess
     // The exact values correspond to the flags in the TTEntries
     enum EvalBound : uint8_t
     {
-        Lower = 0b10,
-        Upper = 0b100,
+        Lower = 0b1000000,
+        Upper = 0b10000000,
         Exact = Lower | Upper
     };
 }

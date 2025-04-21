@@ -95,6 +95,16 @@ This had the following effect on our performance when doing a full search untill
 | Ordering in both minimax and quiescent search | 0.0501                 | 77442                  |
 
 The performance difference is significant (though sorting in quiescent search seems to have little impact). Note that the nodes per second does go down but we don't have to search as many nodes in return.
+This Version is a massive improvement over v0.6.9 with 773 wins, 104 draws and 123 losses.
+
+## Hash move (v0.7.1)
+
+We can store the best (or cut-off producing) move in the transposition table entries. We can then order our moves such that we try this move first in the event that there is a TTEntry which is just not deep enough.
+Doing so gave a slight increase in the depth we are able to reach (on 0.5 seconds think time almost always 1 depth deeper and sometimes even 2 deeper).
+
+Again a large improvement against v0.7.0 with 466 wins, 181 draws and 223 losses.
+
+## Use parial search results (v0.7.2)
 
 ## TODO:
 

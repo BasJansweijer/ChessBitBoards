@@ -51,11 +51,11 @@ namespace chess
     {
         // We want to always try promotion to queen early on in the search
         constexpr score queenPromotionValue = pieceVals[Queen];
-        if (move.promotion && move.piece == Queen)
+        if (move.isPromotion() && move.piece == Queen)
             return queenPromotionValue;
 
         // not a promotion to a queen or a capture
-        if (!move.takesPiece)
+        if (!move.isCapture())
             return 0;
 
         score capturingPieceValue = pieceVals[move.piece];
@@ -142,30 +142,6 @@ namespace chess
         return {bestMove, eval, m_statistics};
     }
 
-    // template <bool Max>
-    // // Determines wether we can emediately use the eval given in the transposition table
-    // bool entryEvalUsable(TTEntry *entry, int remainingDepth, score curAlpha, score curBeta)
-    // {
-    //     bool goodDepth = entry->depth >= remainingDepth;
-    //     if (!goodDepth)
-    //         return false; // need deeper search
-
-    //     /*
-    //      * Bound is usable if:
-    //      *  - it is exact
-    //      *  - if a cutoff can be produced from this
-    //      */
-    //     switch (entry->bound())
-    //     {
-    //     case EvalBound::Exact:
-    //         return true; // always usable
-    //     case EvalBound::Lower:
-    //         return Max && curBeta < TTScore; // true if produces cutoff
-    //     case EvalBound::Upper:
-    //         return !Max && curAlpha > TTScore; // true if produces cutoff
-    //     }
-    // }
-
     template <bool Max, bool Root>
     score Search::minimax(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpha, score beta)
     {
@@ -190,24 +166,26 @@ namespace chess
         // Look in the transposition table for a usable entry for this board
         key boardHash = curBoard.getHash();
         TTEntry *transEntry = m_transTable->get(boardHash);
-        if (transEntry->containsHash(boardHash))
+
+        bool containsCurBoard = transEntry->containsHash(boardHash);
+        if (containsCurBoard)
         {
             // In the root we need to return a move so we can't return like this
             // TODO: return move if root
             if (!Root && transEntry->evalUsable(curDepth, remainingDepth, alpha, beta))
-                return scoreForRootNode(transEntry->eval, curDepth);
-            ; // use evaluation emediately
-
-            // we can use the best move from the entry still
+                return scoreForRootNode(transEntry->eval, curDepth); // use evaluation emediately
         }
+
+        // get the move from the transposition table if available
+        Move TTMove = containsCurBoard ? transEntry->move : Move::Null();
+
+        MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Normal>();
+        // order the moves to improve pruning
+        orderMoves(pseudoLegalMoves, curBoard, TTMove);
 
         // Start with the worst possible eval
         score bestEval = Max ? SCORE_MIN : SCORE_MAX;
-
-        MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Normal>();
-
-        // order the moves to improve pruning
-        orderMoves(pseudoLegalMoves, curBoard);
+        Move bestMove = Move::Null();
 
         for (const Move &m : pseudoLegalMoves)
         {
@@ -224,13 +202,18 @@ namespace chess
             if (Max ? bestEval < moveEval : bestEval > moveEval)
             {
                 bestEval = moveEval;
+                bestMove = m;
 
                 if (Root)
+                    // TODO: remove "outMove" parameter
                     outMove = m;
             }
 
             if (Max ? bestEval > beta : bestEval < alpha)
+            {
+                bestMove = m;
                 break; // The opponent could have chosen a better move in a previous step.
+            }
 
             // max alpha / min beta depending on what player we are
             Max ? alpha = std::max(alpha, bestEval) : beta = std::min(beta, bestEval);
@@ -266,7 +249,7 @@ namespace chess
 
         score eval = scoreForCurrentNode(bestEval, curDepth);
 
-        m_transTable->set(boardHash, TTEntry(eval, remainingDepth, bound));
+        m_transTable->set(boardHash, TTEntry(eval, remainingDepth, bound, bestMove));
 
         return bestEval;
     }
@@ -287,14 +270,16 @@ namespace chess
         // Look in the transposition table for a usable entry for this board
         key boardHash = curBoard.getHash();
         TTEntry *transEntry = m_transTable->get(boardHash);
-        if (transEntry->containsHash(boardHash))
+        bool containsCurBoard = transEntry->containsHash(boardHash);
+        if (containsCurBoard)
         {
             // remaining depth is zero
             if (transEntry->evalUsable(curDepth, 0, alpha, beta))
                 return scoreForRootNode(transEntry->eval, curDepth);
-
-            // TODO: use the best move from the entry
         }
+
+        // get the move from the transposition table if available
+        Move TTMove = containsCurBoard ? transEntry->move : Move::Null();
 
         // Update max depth statistic
         m_statistics.reachedDepth = std::max(m_depths.minDepth + extraDepth, m_statistics.reachedDepth);
@@ -307,7 +292,7 @@ namespace chess
 
         MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Quiescent>();
         // order the moves to improve pruning
-        orderMoves(pseudoLegalMoves, curBoard);
+        orderMoves(pseudoLegalMoves, curBoard, TTMove);
 
         for (const Move &m : pseudoLegalMoves)
         {

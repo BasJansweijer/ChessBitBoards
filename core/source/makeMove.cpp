@@ -118,7 +118,7 @@ namespace chess
                 m_castleRights &= ~0b1100;
         }
 
-        if (move.takesPiece)
+        if (move.isCapture())
         { // if there was a rook on that square we would have captured it so we revoke the rights
             switch (move.to)
             {
@@ -172,14 +172,14 @@ namespace chess
         square prevEnpassentLoc = m_enpassentSquare;
         m_enpassentSquare = -1;
 
-        if (move.takesPiece)
+        if (move.isCapture())
         {
             // remove the piece on the square we moved to
             PieceType takenPiece = pieceOnSquare<!whitesMove>(move.to);
             togglePiece<!whitesMove>(takenPiece, move.to);
         }
 
-        if (move.promotion)
+        if (move.isPromotion())
             makePromotionMove<whitesMove>(move);
         else
         {

@@ -107,10 +107,21 @@ namespace chess
         void stopTimeThread();
 
         // Orders the moves in the move list
-        inline void orderMoves(MoveList &moves, const BoardState &board)
+        // We also use the transposition table to get the best move
+        // from the previous search and put it at the front of the list
+        inline void orderMoves(MoveList &moves, const BoardState &board, const Move &TTMove)
         {
             std::sort(moves.begin(), moves.end(), [&](const Move &a, const Move &b)
-                      { return moveScore(a, board) > moveScore(b, board); });
+                      {
+                        // Check if the move is the best move from the transposition table
+                        if (a == TTMove)
+                            return true;
+
+                        if (b == TTMove)
+                            return false;
+
+                        // If not, we sort the moves based on their score
+                        return moveScore(a, board) > moveScore(b, board); });
         }
 
         // Gives a rough heuristic based on which we can order the moves in our search

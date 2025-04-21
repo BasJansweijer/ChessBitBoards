@@ -15,36 +15,32 @@ namespace chess
     /*
      * Layout:
      * 2 bytes: eval
-     * 1 byte: depth
-     * 8 bytes: move
      * 1 byte: generation
-     * 2 bytes: hash (only first 16 bits)
-     * 1 byte: flags (occupied, bound type, etc)
+     * 1 byte: flags (occupied, bound type etc)
+     * 4 bytes: move
+     * 4 bytes: hash (only first 32 bits)
      *
+     * In total this is 2+1+1+4+4 = 12 bytes
+     * (12 bytes with natural allignment)
      *
-     * In total this is 2+1+8+4+1+1 = 17 bytes
-     * (24 bytes with natural allignment)
-     *
-     * 131,072 entries per 1 MiB
-     * 8,388,608 entries with the default 64 MiB table
      */
     struct TTEntry
     {
     public:
         TTEntry() : flags(0) {}
-        TTEntry(score normalizedEval, uint8_t depth, EvalBound bound)
-            : flags(1 | bound), depth(depth), eval(normalizedEval)
+        TTEntry(score normalizedEval, uint8_t depth, EvalBound bound, Move bestMove)
+            : flags(depth | 0b100000 | bound), // depth (bits 1-5) occupied (bit 6) bound (bit 78)
+              eval(normalizedEval),
+              move(bestMove)
         {
         }
 
-        score eval;    // 16 bits
-        uint8_t depth; // depth < 0 means it was a QUIESCENT Search
-        // Move move;     // the best move found
+        score eval; // 16 bits
 
         inline bool occupied() const
         {
             // check first bit
-            return flags & 1;
+            return flags & 0b100000;
         }
 
         inline bool containsHash(key boardHash) const
@@ -55,12 +51,12 @@ namespace chess
         inline EvalBound bound() const
         {
             // The eval bound options have been chosen to match the 0bxx0
-            return (EvalBound)(flags & 0b110);
+            return (EvalBound)(flags & 0b11000000);
         }
 
         inline bool evalUsable(int curDepth, int remainingDepth, score curAlpha, score curBeta) const
         {
-            bool goodDepth = depth >= remainingDepth;
+            bool goodDepth = depth() >= remainingDepth;
             if (!goodDepth)
                 return false; // need deeper search
 
@@ -84,31 +80,42 @@ namespace chess
             }
         }
 
+        // The depth of the search that was used to generate this entry
+        uint8_t depth() const
+        {
+            return flags & 0b11111; // first 5 bits
+        }
+
     private:
         // Returns true if the newEntry should replace the current (it is more relevant)
         static bool
         overwrite(const TTEntry *currentEntry, const TTEntry *newEntry)
         {
             return !currentEntry->occupied() ||                         // unoccupied
-                   currentEntry->depth <= newEntry->depth ||            // better depth
+                   currentEntry->depth() <= newEntry->depth() ||        // better depth
                    newEntry->generation - currentEntry->generation > 5; // stale current entry
         }
 
     private:
         friend class TranspositionTable;
+        uint8_t generation; // at what search this was added
+
+        /*
+         * bit 1-5: depth (assumes depth < 32)
+         * bit 6: occupied
+         * bit 7: is lower bound
+         * bit 8: is upper bound
+         * (Exact bound is bit 1 and 2 set)
+         */
+        uint8_t flags;
 
         // we could use int16_t cast of full key (to save more space)
         // (need additional validation checks to prevent collisions)
         int32_t partialHash;
-        uint8_t generation; // at what search this was added
 
-        /*
-         * bit 0: occupied
-         * bit 1: is lower bound
-         * bit 2: is upper bound
-         * (Exact bound is bit 1 and 2 set)
-         */
-        uint8_t flags;
+    public:
+        // Placed here to avoid padding in TTEntry due to natural allignment
+        Move move; // the best move found
     };
 
     class TranspositionTable
@@ -118,6 +125,7 @@ namespace chess
         TranspositionTable(int mbSize)
             : size((mbSize * 1024 * 1024) / sizeof(TTEntry))
         {
+            static_assert(sizeof(TTEntry) == 12);
             table = new TTEntry[size];
         }
 

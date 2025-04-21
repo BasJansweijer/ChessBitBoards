@@ -3,11 +3,12 @@
 #include "types.h"
 #include <string>
 #include "zobristHash.h"
+#include <cstring>
 
 namespace chess
 {
 
-    struct Move
+    struct Move // (4 bytes)
     {
         // stores the move locations
         square from;
@@ -15,10 +16,6 @@ namespace chess
 
         // stores the moved piece (new piece type for promotion)
         PieceType piece;
-
-        // stores what piece was taken
-        bool takesPiece;
-        bool promotion;
 
         Move() = default;
 
@@ -35,7 +32,7 @@ namespace chess
 
         Move(square from, square to, PieceType piece, bool takesPiece)
             : from(from), to(to),
-              piece(piece), takesPiece(takesPiece), promotion(false)
+              piece(piece), m_flags(takesPiece ? 0b1 : 0)
         {
         }
 
@@ -52,7 +49,7 @@ namespace chess
             uciMove[2] = to % 8 + 'a'; // File (a-h)
             uciMove[3] = to / 8 + '1'; // Rank (1-8)
 
-            if (promotion)
+            if (isPromotion())
             {
                 switch (piece)
                 {
@@ -76,8 +73,36 @@ namespace chess
 
         bool resets50MoveRule() const
         {
-            return promotion || takesPiece || piece == PieceType::Pawn;
+            return isPromotion() || isCapture() || piece == PieceType::Pawn;
         }
+
+        inline bool isCapture() const
+        {
+            return m_flags & 0b1;
+        }
+
+        inline void setPromotion()
+        {
+            m_flags |= 0b10;
+        }
+
+        inline bool isPromotion() const
+        {
+            return m_flags & 0b10;
+        }
+
+        inline bool operator==(const Move &other) const
+        {
+            // we simply compare the memory of both move objects
+            return std::memcmp(this, &other, sizeof(Move)) == 0;
+        }
+
+    private:
+        /*
+         * bit 1: is capture
+         * bit 2: is promotion
+         */
+        uint8_t m_flags;
     };
 
     // We assume no possition has more possible moves than this.

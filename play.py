@@ -159,5 +159,5 @@ def playAgainstEngine(engine: ChessEngine, engineThinkSeconds, playWhite: bool, 
     input("enter to quit")
 
 if __name__ == "__main__":
-    engine = ChessEngine("./releases/engine-v0.6.8")
-    playAgainstEngine(engine, 10, True, fen=STARTfen)
+    engine = ChessEngine("./releases/engine-v0.7.1")
+    playAgainstEngine(engine, 30, True, fen=STARTfen)
