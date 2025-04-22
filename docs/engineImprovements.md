@@ -106,6 +106,8 @@ Again a large improvement against v0.7.0 with 466 wins, 181 draws and 223 losses
 
 ## Use parial search results (v0.7.2)
 
+Since we all but guarantee that the previous best move is searched first (except if we opt to not store the root result in the transposition table due to a collision). We can use the results even from the uncompleted searches. Since, either it didn't change our result or a better result than the best move was found in the partial search. Using these results got us 220 wins, 92 draws and 158 losses against v0.7.1, a significant improvement.
+
 ## TODO:
 
 - move ordering

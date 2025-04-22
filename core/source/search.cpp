@@ -17,7 +17,7 @@ namespace chess
     void Search::startTimeThread(double thinkSeconds)
     {
         m_stopped = false; // Reset before starting
-        m_cancelled = false;
+        m_cancelTimer = false;
 
         // Launch a detached thread to stop search after thinkSeconds
         m_timerThread = std::thread([this, thinkSeconds]()
@@ -26,7 +26,7 @@ namespace chess
 
                                         while (std::chrono::steady_clock::now() < endTime)
                                         {
-                                            if (m_cancelled)
+                                            if (m_cancelTimer)
                                             {
                                                 // If cancelled, exit early
                                                 m_stopped = true;
@@ -41,7 +41,7 @@ namespace chess
 
     void Search::stopTimeThread()
     {
-        m_cancelled = true;
+        m_cancelTimer = true;
         m_timerThread.join();
     }
 
@@ -88,11 +88,12 @@ namespace chess
         // Signal to the transposition table that we start a new search (generation)
         m_transTable->startNewSearch();
 
-        Move bestMove = Move::Null();
+        // reset bestFoundMove
+        m_bestFoundMove = Move::Null();
+
         int evalScore;
         Eval eval = evalFromScore(0, 0);
 
-        Move currentSearchBest;
         int newScore;
 
         Search::DepthSettings prevDepths;
@@ -112,9 +113,9 @@ namespace chess
             m_depths.maxQuiescentDepth += 1;
 
             if (m_rootBoard.whitesMove())
-                newScore = minimax<true, root>(m_rootBoard, m_depths.minDepth, currentSearchBest);
+                newScore = minimax<true, root>(m_rootBoard, m_depths.minDepth);
             else
-                newScore = minimax<false, root>(m_rootBoard, m_depths.minDepth, currentSearchBest);
+                newScore = minimax<false, root>(m_rootBoard, m_depths.minDepth);
 
             // if search is stopped early return using the previous depth results
             // If we are stopped and the minDepth is greater than 1000 we are probably dealing with
@@ -130,7 +131,6 @@ namespace chess
             // only update with each completed search
             evalScore = newScore;
             eval = evalFromScore(evalScore, m_depths.minDepth);
-            bestMove = currentSearchBest;
         }
 
         // The search is done so we stop any still going timer
@@ -139,14 +139,14 @@ namespace chess
         // Set the actually used minDepth
         m_statistics.minDepth = prevDepths.minDepth;
 
-        return {bestMove, eval, m_statistics};
+        return {m_bestFoundMove, eval, m_statistics};
     }
 
     template <bool Max, bool Root>
-    score Search::minimax(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpha, score beta)
+    score Search::minimax(const BoardState &curBoard, int remainingDepth, score alpha, score beta)
     {
         // cancel the search
-        if (m_stopped.load(std::memory_order_relaxed))
+        if (stopSearch())
             return 0;
 
         // update searched node count
@@ -172,12 +172,23 @@ namespace chess
         {
             // In the root we need to return a move so we can't return like this
             // TODO: return move if root
-            if (!Root && transEntry->evalUsable(curDepth, remainingDepth, alpha, beta))
-                return scoreForRootNode(transEntry->eval, curDepth); // use evaluation emediately
+            if (transEntry->evalUsable(curDepth, remainingDepth, alpha, beta))
+            {
+                score rootEval = scoreForRootNode(transEntry->eval, curDepth);
+                if constexpr (!Root)
+                    return rootEval; // use evaluation emediately
+
+                // if this is the root we need to first set the found move
+                m_bestFoundMove = transEntry->move;
+                // and then return the score
+                return rootEval;
+            }
         }
 
         // get the move from the transposition table if available
         Move TTMove = containsCurBoard ? transEntry->move : Move::Null();
+        // Either we should reference the search result or a local move (not at root)
+        Move &bestMove = Root ? m_bestFoundMove : TTMove;
 
         MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Normal>();
         // order the moves to improve pruning
@@ -185,7 +196,6 @@ namespace chess
 
         // Start with the worst possible eval
         score bestEval = Max ? SCORE_MIN : SCORE_MAX;
-        Move bestMove = Move::Null();
 
         for (const Move &m : pseudoLegalMoves)
         {
@@ -195,7 +205,11 @@ namespace chess
                 continue; // skip since move was illegal
 
             // search with opposite of min/max and not root and 1 less depth
-            score moveEval = minimax<!Max, false>(newBoard, remainingDepth - 1, outMove, alpha, beta);
+            score moveEval = minimax<!Max, false>(newBoard, remainingDepth - 1, alpha, beta);
+
+            if (stopSearch())
+                // if the search is stopped we need to return to prevent using this moveEval result
+                return 0;
 
             // Update the bestEval and move only when a strictly better option is found
             // (this prevents using pruned options)
@@ -203,10 +217,6 @@ namespace chess
             {
                 bestEval = moveEval;
                 bestMove = m;
-
-                if (Root)
-                    // TODO: remove "outMove" parameter
-                    outMove = m;
             }
 
             if (Max ? bestEval > beta : bestEval < alpha)
@@ -232,10 +242,6 @@ namespace chess
             bestEval = Max ? -MAX_MATE_SCORE + curDepth : MAX_MATE_SCORE - curDepth;
         }
 
-        if (m_stopped.load(std::memory_order_relaxed))
-            // if the search was cancelled don't store the results as they are 'faulty'.
-            return bestEval;
-
         /*
          * Store the evaluation in the transposition table
          */
@@ -258,7 +264,7 @@ namespace chess
     score Search::quiescentSearch(const BoardState &curBoard, int extraDepth, score alpha, score beta)
     {
         // cancel the search
-        if (m_stopped.load(std::memory_order_relaxed))
+        if (stopSearch())
             return 0;
 
         // update searched node count
@@ -319,8 +325,8 @@ namespace chess
         return bestEval;
     }
 
-    template score Search::minimax<true, true>(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpha, score beta);
-    template score Search::minimax<false, true>(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpha, score beta);
-    template score Search::minimax<true, false>(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpha, score beta);
-    template score Search::minimax<false, false>(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpha, score beta);
+    template score Search::minimax<true, true>(const BoardState &curBoard, int remainingDepth, score alpha, score beta);
+    template score Search::minimax<false, true>(const BoardState &curBoard, int remainingDepth, score alpha, score beta);
+    template score Search::minimax<true, false>(const BoardState &curBoard, int remainingDepth, score alpha, score beta);
+    template score Search::minimax<false, false>(const BoardState &curBoard, int remainingDepth, score alpha, score beta);
 }

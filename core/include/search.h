@@ -80,7 +80,7 @@ namespace chess
 
         // This method is more so used internally, but can also directly be called to search a certain depth.
         template <bool Max, bool Root>
-        score minimax(const BoardState &curBoard, int remainingDepth, Move &outMove, score alpa = SCORE_MIN, score beta = SCORE_MAX);
+        score minimax(const BoardState &curBoard, int remainingDepth, score alpa = SCORE_MIN, score beta = SCORE_MAX);
 
     private:
         // Used for hard limits on search depth etc.
@@ -128,12 +128,19 @@ namespace chess
         // Put in this class because we can use info from the search to help the ordering
         score moveScore(const Move &move, const BoardState &board) const;
 
+        inline bool stopSearch() const
+        {
+            return m_stopped.load(std::memory_order_relaxed);
+        }
+
     private:
         const std::function<score(const BoardState &)> m_evalFunc;
         // Repetition table passed down by the engine class
         const RepetitionTable *m_repTable;
         TranspositionTable *m_transTable;
         const BoardState m_rootBoard;
+        // current best found move:
+        Move m_bestFoundMove;
 
         // Handles the limits of the search
         DepthSettings m_depths;
@@ -141,7 +148,7 @@ namespace chess
         SearchStats m_statistics;
 
         std::atomic<bool> m_stopped = false;
-        std::atomic<bool> m_cancelled = false;
+        std::atomic<bool> m_cancelTimer = false;
         std::thread m_timerThread;
     };
 
