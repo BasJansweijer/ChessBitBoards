@@ -88,12 +88,11 @@ namespace chess
 
     private:
         // Returns true if the newEntry should replace the current (it is more relevant)
-        static bool
-        overwrite(const TTEntry *currentEntry, const TTEntry *newEntry)
+        bool shouldOverwrite(const TTEntry &newEntry)
         {
-            return !currentEntry->occupied() ||                         // unoccupied
-                   currentEntry->depth() <= newEntry->depth() ||        // better depth
-                   newEntry->generation - currentEntry->generation > 5; // stale current entry
+            return !occupied() ||                        // unoccupied
+                   depth() <= newEntry.depth() ||        // better depth
+                   newEntry.generation - generation > 5; // stale current entry
         }
 
     private:
@@ -145,7 +144,7 @@ namespace chess
             TTEntry *entry = &table[boardHash % size];
 
             // Check if we should overwrite our current entry
-            if (!TTEntry::overwrite(entry, &newEntry))
+            if (!entry->shouldOverwrite(newEntry))
                 return;
 
             // Overwrite
