@@ -47,15 +47,24 @@ class ChessBoardGUI:
         self.canvas.create_image(0, 0, anchor="nw", image=self.img)
         self.root.update()
 
-class ChessEngine:
-    def __init__(self, engine_path):
-        self.engine_path = engine_path
-        self.process = subprocess.Popen([self.engine_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+class EngineConfig:
+    transpositionTableMbs = 64
 
+
+class ChessEngine:
+    def __init__(self, engine_path, config:EngineConfig=EngineConfig()):
+        self.engine_path = engine_path
+        args = ["-ttMbs", str(config.transpositionTableMbs)]
+        self.process = subprocess.Popen([self.engine_path] + args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    
     def runCmd(self, cmd):
         self.process.stdin.write(cmd + '\n')
         self.process.stdin.flush()
         response = self.process.stdout.readline().strip()
+        while response.startswith("info"):
+            print(response)
+            response = self.process.stdout.readline().strip()
+
         return response
     
     def benchDepth(self, depth):
@@ -92,6 +101,25 @@ class ChessEngine:
         
         print("failed on response:", response)
         raise Exception("bestMove Not parsed correctly")
+    
+    # Times all in seconds
+    def go(self, wtimeSeconds: float, btimeSeconds: float, wincSeconds: float, bincSeconds: float):
+        def toMS(t):
+            return int(t*1000)
+        
+        print("Start thinking")
+        
+        cmd = f"go wtime {toMS(wtimeSeconds)} btime {toMS(btimeSeconds)} winc {toMS(wincSeconds)} binc {toMS(bincSeconds)}"
+        response = self.runCmd(cmd)
+
+        pattern = r'bestmove (\S+)'
+        match = re.search(pattern, response)
+        if match:
+            move = match.group(1)
+            return move
+        
+        print("failed on response:", response)
+        raise Exception("go Not parsed correctly")
 
     def makeMove(self, uci_move):
         self.runCmd(f"makeMove {uci_move}")

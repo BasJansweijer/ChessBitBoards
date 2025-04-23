@@ -1,4 +1,4 @@
-import berserk.exceptions
+import datetime
 from engineWrapper import ChessEngine
 import os
 import re
@@ -8,6 +8,8 @@ import threading
 from dotenv import load_dotenv
 from time import sleep
 
+MAX_CONCURRENT_GAMES = 4
+gameCounter = 0
 RELEASES_DIR = "releases/" 
 def getLatestReleasePath():
     # Pattern for engine-v0.x.x where x is a number
@@ -39,8 +41,8 @@ session = berserk.TokenSession(lichessToken)
 client = berserk.Client(session=session)
 
 def gameStartEvent(event):
-    white_player = event['white']['id']
-    black_player = event['black']['id']
+    white_player = event['white']['id'] if 'id' in event['white'] else 'unknown'
+    black_player = event['black']['id'] if 'id' in event['black'] else 'unknown'
     my_id = client.account.get()['id'].lower()
     opponent = black_player if my_id == white_player.lower() else white_player
 
@@ -62,6 +64,8 @@ def setEngineToCurrentPosition(engine: ChessEngine, moves):
         engine.makeMove(move)
 
 def playGame(game_id):
+    global gameCounter
+    gameCounter += 1
     # Fetch initial game info
     ongoingGame = None
     for game in client.games.get_ongoing():
@@ -80,11 +84,23 @@ def playGame(game_id):
     if lastMove != '':
         # Set to current position
         engine.setPosition(ongoingGame['fen'])
-        if ongoingGame['isMyTurn']:
-            move, _ = engine.bestMove(10)
-            client.bots.make_move(game_id, move)
     else:
         threading.Thread(target=gameWelcome, args=(game_id,)).start()
+
+    if ongoingGame['isMyTurn']:
+        ourTime = ongoingGame['secondsLeft']
+    
+        if (engineIsWhite):
+            move = engine.go(ourTime, 0, 0, 0)
+        else:
+            move = engine.go(0, ourTime, 0, 0)
+        try:
+            client.bots.make_move(game_id, move)
+        except:
+            print(f"Error could not make move {move}")
+            print("Engine position: ", engine.getPosition())
+            engine.quit()
+            return
 
     for event in client.bots.stream_game_state(game_id):
         match event['type']:
@@ -110,8 +126,20 @@ def playGame(game_id):
                     continue
 
                 # If it is our turn we make a move
-                engineMove, _ = engine.bestMove(10)
-                client.bots.make_move(game_id, engineMove)
+                wtime = event['wtime'].timestamp()
+                btime = event['btime'].timestamp()
+                winc = event['winc'].timestamp()
+                binc = event['binc'].timestamp()
+                print(f"Time w: {wtime} b: {btime}, inc: {(winc, binc)}")
+                engineMove = engine.go(wtime, btime, winc, binc)
+                
+                try:
+                    client.bots.make_move(game_id, engineMove)
+                except:
+                    print(f"Error could not make move {engineMove}")
+                    print("Engine position: ", engine.getPosition())
+                    break
+                
             case "chatLine":
                 pass
             case "opponentGone":
@@ -120,6 +148,7 @@ def playGame(game_id):
                 print(f"unknown event type in game {event['type']}")
 
     # game done
+    print("engine Quit")
     engine.quit()
 
 def isStandardGame(challenge):
@@ -132,6 +161,7 @@ def correctTimeControll(challenge):
     return speed_ok and timeControl_ok
 
 def handleEvents():
+    global gameCounter
     for event in client.bots.stream_incoming_events():
         match event['type']:
             case 'challenge':
@@ -144,14 +174,20 @@ def handleEvents():
                     client.bots.decline_challenge(challenge_id, reason="timeControl")
                     continue
 
+                if (MAX_CONCURRENT_GAMES <= gameCounter):
+                    # Too many concurrent games
+                    client.bots.decline_challenge(challenge_id, reason="later")
+
                 client.bots.accept_challenge(challenge_id)
             case 'gameStart':
                 game_id = event['game']['id']
                 threading.Thread(target=playGame, args=(game_id,)).start()
             case 'gameFinish':
-                print(event)
+                gameCounter -= 1
+                print(f"Game finished (still playing {gameCounter} games)")
             case _:
                 print(f"Unkown event type '{event['type']}'")
 
 if __name__ == "__main__":
+    print("Running engine: ", latestEngineExecutable)
     handleEvents()
