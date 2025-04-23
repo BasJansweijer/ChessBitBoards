@@ -18,6 +18,7 @@ namespace chess
         std::regex bestMoveRegex("bestMove (\\d+(\\.\\d+)?)");
         std::regex makeMoveRegex("makeMove (\\w+)");
         std::regex benchmarkRegex("bench (\\w+) (\\d+(\\.\\d+)?)");
+        std::regex goRegex("go wtime (\\d+) btime (\\d+)( winc (\\d+) binc (\\d+))?");
         std::smatch match;
 
         if (std::regex_match(cmd, match, setPosRegex))
@@ -37,6 +38,31 @@ namespace chess
             else
                 std::cout << "'" << match[1] << "' is not a legal move!" << std::endl;
         }
+        else if (std::regex_match(cmd, match, goRegex))
+        {
+            Time wtime = std::stol(match[1]);
+            Time btime = std::stol(match[2]);
+            Time winc = 0;
+            Time binc = 0;
+
+            if (match[3].matched)
+            {
+                winc = std::stol(match[4]);
+                binc = std::stol(match[5]);
+            }
+
+            ClockState clock(wtime, btime, winc, binc);
+            int moveCounter = m_currentBoard.ply() / 2;
+            Time thinkTime = m_currentBoard.whitesMove()
+                                 ? clock.currentMoveTime<true>(moveCounter)
+                                 : clock.currentMoveTime<false>(moveCounter);
+
+            auto [move, eval, info] = findBestMove(thinkTime);
+            double ttFullness = m_transTable.fullNess();
+            std::cout << "info (eval: " << eval << ", searchinfo: " << info
+                      << ", ttFullness: " << ttFullness << ")" << std::endl;
+            std::cout << "bestmove " << move.toUCI() << std::endl;
+        }
         else if (std::regex_match(cmd, match, bestMoveRegex))
         {
             double seconds = std::stod(match[1]);
@@ -46,7 +72,7 @@ namespace chess
                 return;
             }
 
-            auto [move, eval, info] = findBestMove(seconds);
+            auto [move, eval, info] = findBestMove(seconds * 1000);
             double ttFullness = m_transTable.fullNess();
             std::cout << move.toUCI() << " (eval: " << eval << ", searchinfo: " << info
                       << ", ttFullness: " << ttFullness << ")" << std::endl;

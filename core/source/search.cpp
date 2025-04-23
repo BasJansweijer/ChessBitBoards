@@ -14,15 +14,15 @@ namespace chess
 {
     using MoveGenType = BoardState::MoveGenType;
 
-    void Search::startTimeThread(double thinkSeconds)
+    void Search::startTimeThread(Time thinkTime)
     {
         m_stopped = false; // Reset before starting
         m_cancelTimer = false;
 
         // Launch a detached thread to stop search after thinkSeconds
-        m_timerThread = std::thread([this, thinkSeconds]()
+        m_timerThread = std::thread([this, thinkTime]()
                                     {
-                                        auto endTime = std::chrono::steady_clock::now() + std::chrono::duration<double>(thinkSeconds);
+                                        auto endTime = std::chrono::steady_clock::now() + std::chrono::duration<double, std::milli>(thinkTime);
 
                                         while (std::chrono::steady_clock::now() < endTime)
                                         {
@@ -66,10 +66,10 @@ namespace chess
         return moveScore;
     }
 
-    Search::DepthSettings Search::initialDepths(double thinkSeconds)
+    Search::DepthSettings Search::initialDepths(Time thinkTime)
     {
         constexpr int MAX_INITIAL_DEPTH = 4;
-        float sqrtTime = std::sqrt(thinkSeconds);
+        float sqrtTime = std::sqrt(timeToSeconds(thinkTime));
         int minDepth = std::min((int)(0.5 * sqrtTime), MAX_INITIAL_DEPTH);
 
         constexpr int MAX_QUIESCENT_MAX = 12;
@@ -81,9 +81,9 @@ namespace chess
     }
 
     std::tuple<Move, Eval, Search::SearchStats>
-    Search::iterativeDeepening(double thinkSeconds)
+    Search::iterativeDeepening(Time thinkTime)
     {
-        startTimeThread(thinkSeconds);
+        startTimeThread(thinkTime);
 
         // Signal to the transposition table that we start a new search (generation)
         m_transTable->startNewSearch();
@@ -99,7 +99,7 @@ namespace chess
         Search::DepthSettings prevDepths;
         Search::SearchStats prevStats;
 
-        m_depths = initialDepths(thinkSeconds);
+        m_depths = initialDepths(thinkTime);
 
         const bool root = true;
 

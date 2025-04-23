@@ -9,9 +9,11 @@
 #include "eval.h"
 #include "repetitionTable.h"
 #include "transposition.h"
+#include "timeman.h"
 
 namespace chess
 {
+
     class Engine
     {
     public:
@@ -81,7 +83,7 @@ namespace chess
         }
 
         // Returns the best found move, evaluation (int), max completed depth (int)
-        std::tuple<Move, Eval, Search::SearchStats> findBestMove(double thinkSeconds)
+        std::tuple<Move, Eval, Search::SearchStats> findBestMove(Time thinkTime)
         {
             Search::SearchConfig config;
             config.evalFunction = Evaluator::evaluate;
@@ -89,7 +91,7 @@ namespace chess
             config.transTable = &m_transTable;
 
             Search s(m_currentBoard, config);
-            return s.iterativeDeepening(thinkSeconds);
+            return s.iterativeDeepening(thinkTime);
         }
 
         BoardState board() const { return m_currentBoard; }
