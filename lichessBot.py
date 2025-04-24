@@ -1,5 +1,5 @@
 import datetime
-from engineWrapper import ChessEngine
+from engineWrapper import ChessEngine, EngineConfig
 import os
 import re
 from packaging import version 
@@ -57,11 +57,13 @@ def gameWelcome(game_id):
     sleep(1)
     client.bots.post_message(game_id, msgs[1])
 
+startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 def setEngineToCurrentPosition(engine: ChessEngine, moves):
-    startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     engine.setPosition(startFen)
     for move in moves:
         engine.makeMove(move)
+
+
 
 def playGame(game_id):
     global gameCounter
@@ -79,7 +81,7 @@ def playGame(game_id):
     lastMove = ongoingGame['lastMove']
     engineIsWhite = ongoingGame['color'] == 'white'
 
-    engine = ChessEngine(latestEngineExecutable)
+    engine = ChessEngine(latestEngineExecutable, defaultConfig())
     
     if lastMove != '':
         # Set to current position
@@ -112,13 +114,17 @@ def playGame(game_id):
                 
                 # Catch up to current position
                 moves = event['moves'].split(' ')
-                lastMoveIdx = -1
-                while lastMove != '' and moves[lastMoveIdx] != lastMove:
-                    lastMoveIdx += 1
+                if lastMove in moves:
+                    lastMoveIdx = moves.index(lastMove)
+                    newMoves = moves[lastMoveIdx+1:]
+                else:
+                    newMoves = moves  # start from scratch if we don't know the last move
+                    engine.setPosition(startFen)
 
                 # make missed moves on engine board
-                for move in moves[lastMoveIdx+1:]:
+                for move in newMoves:
                     engine.makeMove(move)
+
                 lastMove = moves[-1]
 
                 whiteToMove = len(moves) % 2 == 0
@@ -187,6 +193,12 @@ def handleEvents():
                 print(f"Game finished (still playing {gameCounter} games)")
             case _:
                 print(f"Unkown event type '{event['type']}'")
+
+def defaultConfig() -> EngineConfig:
+    config = EngineConfig()
+    config.transpositionTableMbs = 512
+    return config
+
 
 if __name__ == "__main__":
     print("Running engine: ", latestEngineExecutable)

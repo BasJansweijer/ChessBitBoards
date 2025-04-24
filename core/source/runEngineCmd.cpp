@@ -60,7 +60,8 @@ namespace chess
             auto [move, eval, info] = findBestMove(thinkTime);
             double ttFullness = m_transTable.fullNess();
             std::cout << "info (eval: " << eval << ", searchinfo: " << info
-                      << ", ttFullness: " << ttFullness << ")" << std::endl;
+                      << ", ttFullness: " << ttFullness
+                      << ", spend time: " << (thinkTime / 1000) << ")" << std::endl;
             std::cout << "bestmove " << move.toUCI() << std::endl;
         }
         else if (std::regex_match(cmd, match, bestMoveRegex))
