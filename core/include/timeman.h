@@ -35,7 +35,7 @@ namespace chess
             constexpr int AVG_GAME_LENGTH = 45;
             // we divide our think time evenly
             // for each second of increment we are 1 move less conservative in our time slices
-            Time thinkTime = ourTime / (AVG_GAME_LENGTH - (ourIncrement / 1000) - moveCounter);
+            Time thinkTime = ourTime / (AVG_GAME_LENGTH - moveCounter);
 
             // we always use up our increment:
             thinkTime += ourIncrement;
