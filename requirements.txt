@@ -1,3 +1,4 @@
 chess==1.11.2
 cairosvg==2.7.1
 tk==0.1.0
+berserk==0.13.2

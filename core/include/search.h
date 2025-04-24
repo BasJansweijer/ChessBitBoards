@@ -11,6 +11,7 @@
 #include "eval.h"
 #include "repetitionTable.h"
 #include "transposition.h"
+#include "timeman.h"
 
 namespace chess
 {
@@ -76,7 +77,7 @@ namespace chess
         }
 
         // Returns the Move and eval and highest completed depth
-        std::tuple<Move, Eval, SearchStats> iterativeDeepening(double thinkSeconds);
+        std::tuple<Move, Eval, SearchStats> iterativeDeepening(Time thinkTime);
 
         // This method is more so used internally, but can also directly be called to search a certain depth.
         template <bool Max, bool Root>
@@ -94,14 +95,14 @@ namespace chess
                 : minDepth(minDepth), maxQuiescentDepth(maxQuiescentDepth) {}
         };
 
-        DepthSettings initialDepths(double thinkSeconds);
+        DepthSettings initialDepths(Time thinkTime);
 
         // does a search only using captures (MoveGenType::Quiescent)
         template <bool Max>
         score quiescentSearch(const BoardState &curBoard, int extraDepth, score alpha = SCORE_MIN, score beta = SCORE_MAX);
 
         // Starts a thread which will set m_stopped to true once the specified time has run out
-        void startTimeThread(double thinkSeconds);
+        void startTimeThread(Time thinkTime);
 
         // Used to stop the timer early
         void stopTimeThread();

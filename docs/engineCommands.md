@@ -26,3 +26,7 @@ Not that the thinkTime is in seconds.
 ## bench
 
 `bench [type] [quantity]`. Currently bench supports `depth` and returns the time it took.
+
+## go
+
+Usage can be either `go wtime [ms] btime [ms]` or `go wtime [ms] btime [ms] winc [ms] binc [ms]`
