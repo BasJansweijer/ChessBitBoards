@@ -108,6 +108,11 @@ Again a large improvement against v0.7.0 with 466 wins, 181 draws and 223 losses
 
 Since we all but guarantee that the previous best move is searched first (except if we opt to not store the root result in the transposition table due to a collision). We can use the results even from the uncompleted searches. Since, either it didn't change our result or a better result than the best move was found in the partial search. Using these results got us 220 wins, 92 draws and 158 losses against v0.7.1, a significant improvement.
 
+## Killer moves (v0.7.3)
+
+We add killer moves heuristic to the move ordering. We store for each ply the last two moves that produced alpha/beta cutoffs at that depth. The idea is that these moves might be good in sibling nodes aswell. The killer moves are tried right after the hash move is tried.
+This seems to allow deeper searches in specific positions where the there are killer moves.
+
 ## TODO:
 
 - move ordering
