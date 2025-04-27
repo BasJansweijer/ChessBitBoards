@@ -192,7 +192,7 @@ namespace chess
 
         MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Normal>();
         // order the moves to improve pruning
-        orderMoves(pseudoLegalMoves, curBoard, TTMove);
+        orderMoves(pseudoLegalMoves, curBoard, TTMove, curDepth);
 
         // Start with the worst possible eval
         score bestEval = Max ? SCORE_MIN : SCORE_MAX;
@@ -220,9 +220,11 @@ namespace chess
             }
 
             if (Max ? bestEval > beta : bestEval < alpha)
-            {
+            { // cut-off (The opponent could have chosen a better move in a previous step.)
                 bestMove = m;
-                break; // The opponent could have chosen a better move in a previous step.
+                // store the move as a killer move for use in sibling nodes move ordering
+                // storeKillerMove(m, curDepth);
+                break;
             }
 
             // max alpha / min beta depending on what player we are
@@ -298,7 +300,7 @@ namespace chess
 
         MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Quiescent>();
         // order the moves to improve pruning
-        orderMoves(pseudoLegalMoves, curBoard, TTMove);
+        orderMoves(pseudoLegalMoves, curBoard, TTMove, curDepth);
 
         for (const Move &m : pseudoLegalMoves)
         {

@@ -15,7 +15,6 @@
 
 namespace chess
 {
-
     class Search
     {
     public:
@@ -110,8 +109,11 @@ namespace chess
         // Orders the moves in the move list
         // We also use the transposition table to get the best move
         // from the previous search and put it at the front of the list
-        inline void orderMoves(MoveList &moves, const BoardState &board, const Move &TTMove)
+        inline void orderMoves(MoveList &moves, const BoardState &board, const Move &TTMove, int curDepth)
         {
+            //     Move killer1 = m_killerMoves[curDepth][0];
+            //     Move killer2 = m_killerMoves[curDepth][1];
+
             std::sort(moves.begin(), moves.end(), [&](const Move &a, const Move &b)
                       {
                         // Check if the move is the best move from the transposition table
@@ -120,6 +122,15 @@ namespace chess
 
                         if (b == TTMove)
                             return false;
+                            
+                        // check if the moves are killer moves
+                        // if b is killer1 we should return false instead
+                        // if ((a == killer1 || a == killer2) && b != killer1)
+                        //     return true;
+                    
+                        // we already know a was not a killer
+                        // if (b == killer1 || b == killer2)
+                        //     return false;
 
                         // If not, we sort the moves based on their score
                         return moveScore(a, board) > moveScore(b, board); });
@@ -132,6 +143,17 @@ namespace chess
         inline bool stopSearch() const
         {
             return m_stopped.load(std::memory_order_relaxed);
+        }
+
+        inline void storeKillerMove(Move killer, uint8_t curDepth)
+        {
+            if (m_killerMoves[curDepth][0] == killer)
+                return; // already stored
+
+            // delete the [1] move and put the current [0] there
+            // this also ensures we keep most recent killer moves
+            m_killerMoves[curDepth][1] = m_killerMoves[curDepth][0];
+            m_killerMoves[curDepth][0] = killer;
         }
 
     private:
@@ -147,6 +169,9 @@ namespace chess
         DepthSettings m_depths;
         // tracks the actual search depth etc
         SearchStats m_statistics;
+
+        // killer moves (2 per ply, because that is easy to check for uniqueness)
+        Move m_killerMoves[MAX_SEARCH_DEPTH][2];
 
         std::atomic<bool> m_stopped = false;
         std::atomic<bool> m_cancelTimer = false;

@@ -124,7 +124,7 @@ namespace chess
         void emplace_back(square from, square to, PieceType piece, bool takesPiece)
         {
             new (&moves[numMoves]) Move(from, to, piece, takesPiece);
-            ++numMoves;
+            numMoves++;
         }
 
         Move &back() { return moves[numMoves - 1]; }

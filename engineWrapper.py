@@ -64,6 +64,11 @@ class ChessEngine:
         while response.startswith("info"):
             print(response)
             response = self.process.stdout.readline().strip()
+        
+        if response == '':
+            print("ENGINE CRASH?!?!")
+            print(self.process.stderr.read())
+            raise Exception("Engine crash?")
 
         return response
     
@@ -99,7 +104,7 @@ class ChessEngine:
         if response.startswith("Draw by 50 move rule"):
             return "Draw by 50 move rule"
         
-        print("failed on response:", response)
+        print(f"failed on response: '{response}'")
         raise Exception("bestMove Not parsed correctly")
     
     # Times all in seconds

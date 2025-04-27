@@ -34,8 +34,8 @@ namespace chess
 
     // The minimum int that is still forced mate
     constexpr score MIN_MATE_SCORE = 30000;
-    constexpr int MAX_DEPTH = 1000;
-    constexpr score MAX_MATE_SCORE = MIN_MATE_SCORE + MAX_DEPTH;
+    constexpr int MAX_SEARCH_DEPTH = 128; // we assume we will never reach this depth
+    constexpr score MAX_MATE_SCORE = MIN_MATE_SCORE + MAX_SEARCH_DEPTH;
 
     // The exact values correspond to the flags in the TTEntries
     enum EvalBound : uint8_t
