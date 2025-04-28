@@ -222,8 +222,6 @@ namespace chess
             if (Max ? bestEval > beta : bestEval < alpha)
             { // cut-off (The opponent could have chosen a better move in a previous step.)
                 bestMove = m;
-                // store the move as a killer move for use in sibling nodes move ordering
-                // storeKillerMove(m, curDepth);
                 break;
             }
 
