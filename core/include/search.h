@@ -145,17 +145,6 @@ namespace chess
             return m_stopped.load(std::memory_order_relaxed);
         }
 
-        inline void storeKillerMove(Move killer, uint8_t curDepth)
-        {
-            if (m_killerMoves[curDepth][0] == killer)
-                return; // already stored
-
-            // delete the [1] move and put the current [0] there
-            // this also ensures we keep most recent killer moves
-            m_killerMoves[curDepth][1] = m_killerMoves[curDepth][0];
-            m_killerMoves[curDepth][0] = killer;
-        }
-
     private:
         const std::function<score(const BoardState &)> m_evalFunc;
         // Repetition table passed down by the engine class
@@ -169,9 +158,6 @@ namespace chess
         DepthSettings m_depths;
         // tracks the actual search depth etc
         SearchStats m_statistics;
-
-        // killer moves (2 per ply, because that is easy to check for uniqueness)
-        Move m_killerMoves[MAX_SEARCH_DEPTH][2];
 
         std::atomic<bool> m_stopped = false;
         std::atomic<bool> m_cancelTimer = false;
