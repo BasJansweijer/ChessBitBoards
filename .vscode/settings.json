@@ -99,6 +99,7 @@
     "format": "cpp",
     "*.ipp": "cpp",
     "version": "cpp",
-    "cassert": "cpp"
+    "cassert": "cpp",
+    "ranges": "cpp"
   }
 }

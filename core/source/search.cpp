@@ -4,6 +4,7 @@
 #include <chrono>
 #include <thread>
 #include <cmath>
+#include <ranges>
 
 #include "chess.h"
 #include "search.h"
@@ -164,9 +165,6 @@ namespace chess
         if (stopSearch())
             return 0;
 
-        // update searched node count
-        m_statistics.searchedNodes++;
-
         // In the root we cannot exit early like this
         if (!Root && (m_repTable->drawBy50MoveRule() || m_repTable->contains(curBoard)))
             return 0; // On repetition we should return draw eval
@@ -175,6 +173,8 @@ namespace chess
         if (remainingDepth == 0)
             return quiescentSearch(curBoard, 0, alpha, beta);
 
+        // update searched node count
+        m_statistics.searchedNodes++;
         uint8_t curDepth = m_depths.minDepth - remainingDepth;
 
         // Look in the transposition table for a usable entry for this board
@@ -258,6 +258,8 @@ namespace chess
             if (bestEval > beta)
             { // cut-off (The opponent could have chosen a better move in a previous step.)
                 bestMove = m;
+                // store the move as a killer move for use in sibling nodes move ordering
+                storeKillerMove(m, curDepth);
                 break;
             }
 
