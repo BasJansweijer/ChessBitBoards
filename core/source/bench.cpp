@@ -37,10 +37,7 @@ namespace chess
         Search s(m_currentBoard, config);
 
         Timer timer;
-        if (m_currentBoard.whitesMove())
-            s.minimax<true, true>(m_currentBoard, quantity);
-        else
-            s.minimax<false, true>(m_currentBoard, quantity);
+        s.minimax<true>(m_currentBoard, quantity);
 
         int searchedNodes = s.getStats().searchedNodes;
 

@@ -79,8 +79,8 @@ namespace chess
         std::tuple<Move, Eval, SearchStats> iterativeDeepening(Time thinkTime);
 
         // This method is more so used internally, but can also directly be called to search a certain depth.
-        template <bool Max, bool Root>
-        score minimax(const BoardState &curBoard, int remainingDepth, score alpa = SCORE_MIN, score beta = SCORE_MAX);
+        template <bool Root>
+        score minimax(const BoardState &curBoard, int remainingDepth, score alpha = SCORE_MIN, score beta = SCORE_MAX);
 
     private:
         // Used for hard limits on search depth etc.
@@ -97,7 +97,6 @@ namespace chess
         DepthSettings initialDepths(Time thinkTime);
 
         // does a search only using captures (MoveGenType::Quiescent)
-        template <bool Max>
         score quiescentSearch(const BoardState &curBoard, int extraDepth, score alpha = SCORE_MIN, score beta = SCORE_MAX);
 
         // Starts a thread which will set m_stopped to true once the specified time has run out
