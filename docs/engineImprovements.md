@@ -108,10 +108,11 @@ Again a large improvement against v0.7.0 with 466 wins, 181 draws and 223 losses
 
 Since we all but guarantee that the previous best move is searched first (except if we opt to not store the root result in the transposition table due to a collision). We can use the results even from the uncompleted searches. Since, either it didn't change our result or a better result than the best move was found in the partial search. Using these results got us 220 wins, 92 draws and 158 losses against v0.7.1, a significant improvement.
 
-## Killer moves (v0.7.3)
+## Principle Variation Search (PVS) (v0.7.3)
 
-We add killer moves heuristic to the move ordering. We store for each ply the last two moves that produced alpha/beta cutoffs at that depth. The idea is that these moves might be good in sibling nodes aswell. The killer moves are tried right after the hash move is tried.
-This seems to allow deeper searches in specific positions where the there are killer moves.
+We first refactored our search to the negamax approach instead of templating on bool Max. Which might have slightly boosted performance. To implement PVS we always search the first move (principle variation) fully and then only do a null window search on other moves to check if they need a full search. In some cases the bestEval in the search will be the result of a null window search. In these cases this only gives an upper bound even though the eval is between beta and alpha.
+Decent improvement: 
+
 
 ## TODO:
 
