@@ -29,8 +29,10 @@ namespace chess
 
     // eval score
     using score = int16_t;
-#define SCORE_MAX INT16_MAX
-#define SCORE_MIN INT16_MIN
+
+    // The SCORE_MAX/MIN are chosen so -SCORE_MAX doesn't cause an overflow
+#define SCORE_MAX (INT16_MAX - 1)
+#define SCORE_MIN -SCORE_MAX
 
     // The minimum int that is still forced mate
     constexpr score MIN_MATE_SCORE = 30000;

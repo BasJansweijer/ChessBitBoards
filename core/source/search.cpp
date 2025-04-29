@@ -112,10 +112,8 @@ namespace chess
             m_depths.minDepth += 1;
             m_depths.maxQuiescentDepth += 1;
 
-            if (m_rootBoard.whitesMove())
-                newScore = minimax<true, root>(m_rootBoard, m_depths.minDepth);
-            else
-                newScore = minimax<false, root>(m_rootBoard, m_depths.minDepth);
+            int8_t sideToMove = m_rootBoard.whitesMove() ? 1 : -1;
+            newScore = minimax<root>(m_rootBoard, m_depths.minDepth) * sideToMove;
 
             // if search is stopped early return using the previous depth results
             // If we are stopped and the minDepth is greater than 1000 we are probably dealing with
@@ -142,7 +140,7 @@ namespace chess
         return {m_bestFoundMove, eval, m_statistics};
     }
 
-    template <bool Max, bool Root>
+    template <bool Root>
     score Search::minimax(const BoardState &curBoard, int remainingDepth, score alpha, score beta)
     {
         // cancel the search
@@ -159,14 +157,13 @@ namespace chess
 
         // Base case (do a quiescent search)
         if (remainingDepth == 0)
-            return quiescentSearch<Max>(curBoard, 0, alpha, beta);
+            return quiescentSearch(curBoard, 0, alpha, beta);
 
         uint8_t curDepth = m_depths.minDepth - remainingDepth;
 
         // Look in the transposition table for a usable entry for this board
         key boardHash = curBoard.getHash();
         TTEntry *transEntry = m_transTable->get(boardHash);
-
         bool containsCurBoard = transEntry->containsHash(boardHash);
         if (containsCurBoard)
         {
@@ -195,17 +192,36 @@ namespace chess
         orderMoves(pseudoLegalMoves, curBoard, TTMove, curDepth);
 
         // Start with the worst possible eval
-        score bestEval = Max ? SCORE_MIN : SCORE_MAX;
-
+        score bestEval = SCORE_MIN;
+        score originalAlpha = alpha;
+        bool firstMove = true;
+        bool evalFromFullSearch = false;
         for (const Move &m : pseudoLegalMoves)
         {
             BoardState newBoard = curBoard;
             newBoard.makeMove(m);
-            if (newBoard.kingAttacked(Max))
+            if (newBoard.kingAttacked(curBoard.whitesMove()))
                 continue; // skip since move was illegal
 
-            // search with opposite of min/max and not root and 1 less depth
-            score moveEval = minimax<!Max, false>(newBoard, remainingDepth - 1, alpha, beta);
+            score moveEval;
+            if (!firstMove)
+            {
+                // PVS null/zero window search
+                score nextBeta = -alpha;
+                moveEval = -minimax<false>(newBoard, remainingDepth - 1, nextBeta - 1, nextBeta);
+                // check if we need a full search
+                evalFromFullSearch = moveEval > alpha && beta - alpha > 1;
+                if (evalFromFullSearch)
+                    // full search
+                    moveEval = moveEval = -minimax<false>(newBoard, remainingDepth - 1, -beta, -alpha);
+            }
+            else // is firstMove
+            {
+                // full search
+                moveEval = moveEval = -minimax<false>(newBoard, remainingDepth - 1, -beta, -alpha);
+                evalFromFullSearch = true;
+                firstMove = false;
+            }
 
             if (stopSearch())
                 // if the search is stopped we need to return to prevent using this moveEval result
@@ -213,24 +229,24 @@ namespace chess
 
             // Update the bestEval and move only when a strictly better option is found
             // (this prevents using pruned options)
-            if (Max ? bestEval < moveEval : bestEval > moveEval)
+            if (bestEval < moveEval)
             {
                 bestEval = moveEval;
                 bestMove = m;
             }
 
-            if (Max ? bestEval > beta : bestEval < alpha)
+            if (bestEval > beta)
             { // cut-off (The opponent could have chosen a better move in a previous step.)
                 bestMove = m;
                 break;
             }
 
-            // max alpha / min beta depending on what player we are
-            Max ? alpha = std::max(alpha, bestEval) : beta = std::min(beta, bestEval);
+            // max alpha (we use negamax so alpha=-beta on next depth)
+            alpha = std::max(alpha, bestEval);
         }
 
         // Stalemate/mate detection
-        bool noLegalMoves = bestEval == SCORE_MIN || bestEval == SCORE_MAX;
+        bool noLegalMoves = bestEval == SCORE_MIN;
         if (noLegalMoves)
         {
             // Stalemate is a draw. (if the king is not in check)
@@ -239,17 +255,21 @@ namespace chess
 
             // calculate mate evaluation
             // The higher the depth the closer the score it to zero
-            bestEval = Max ? -MAX_MATE_SCORE + curDepth : MAX_MATE_SCORE - curDepth;
+            bestEval = -MAX_MATE_SCORE + curDepth;
         }
 
         /*
          * Store the evaluation in the transposition table
          */
         EvalBound bound;
+
         if (bestEval > beta)
             bound = EvalBound::Lower; // Beta cutoff (fail-high, could be higher)
-        else if (bestEval < alpha)
+        else if (bestEval < originalAlpha)
             bound = EvalBound::Upper; // Alpha cutoff (fail-low, could be lower)
+        else if (!evalFromFullSearch)
+            // even though we are between alpha and beta the null window still caused a alpha cutoff (likely)
+            bound = EvalBound::Upper;
         else
             bound = EvalBound::Exact; // Full search was done
 
@@ -260,7 +280,6 @@ namespace chess
         return bestEval;
     }
 
-    template <bool Max>
     score Search::quiescentSearch(const BoardState &curBoard, int extraDepth, score alpha, score beta)
     {
         // cancel the search
@@ -288,10 +307,12 @@ namespace chess
         Move TTMove = containsCurBoard ? transEntry->move : Move::Null();
 
         // Update max depth statistic
-        m_statistics.reachedDepth = std::max(m_depths.minDepth + extraDepth, m_statistics.reachedDepth);
+        m_statistics.reachedDepth = std::max(curDepth, m_statistics.reachedDepth);
 
         // Captures aren't forced so we assume the current positions evaluation as a minimum
-        score bestEval = m_evalFunc(curBoard);
+        // scale to current players perspective (negamax)
+        int8_t sideToMove = (curBoard.whitesMove() ? 1 : -1);
+        score bestEval = m_evalFunc(curBoard) * sideToMove;
 
         if (m_depths.maxQuiescentDepth <= extraDepth)
             return bestEval;
@@ -302,31 +323,29 @@ namespace chess
 
         for (const Move &m : pseudoLegalMoves)
         {
-            if (Max ? bestEval > beta : bestEval < alpha)
+            if (bestEval > beta)
                 return bestEval; // The opponent could have chosen a better move in a previous step.
 
-            // max alpha / min beta depending on what player we are
-            Max ? alpha = std::max(alpha, bestEval) : beta = std::min(beta, bestEval);
+            // max alpha (alpha == -beta on next recursion)
+            alpha = std::max(alpha, bestEval);
 
             BoardState newBoard = curBoard;
             newBoard.makeMove(m);
-            if (newBoard.kingAttacked(Max))
+            if (newBoard.kingAttacked(curBoard.whitesMove()))
                 continue; // skip since move was illegal
 
-            // search with opposite of min/max and not root and 1 less depth
-            int moveEval = quiescentSearch<!Max>(newBoard, extraDepth + 1, alpha, beta);
+            // negamax recursion (next depth)
+            int moveEval = -quiescentSearch(newBoard, extraDepth + 1, -beta, -alpha);
 
             // Update the bestEval and move only when a strictly better option is found
             // (this prevents using pruned options)
-            if (Max ? bestEval < moveEval : bestEval > moveEval)
+            if (bestEval < moveEval)
                 bestEval = moveEval;
         }
 
         return bestEval;
     }
 
-    template score Search::minimax<true, true>(const BoardState &curBoard, int remainingDepth, score alpha, score beta);
-    template score Search::minimax<false, true>(const BoardState &curBoard, int remainingDepth, score alpha, score beta);
-    template score Search::minimax<true, false>(const BoardState &curBoard, int remainingDepth, score alpha, score beta);
-    template score Search::minimax<false, false>(const BoardState &curBoard, int remainingDepth, score alpha, score beta);
+    template score Search::minimax<true>(const BoardState &curBoard, int remainingDepth, score alpha, score beta);
+    template score Search::minimax<false>(const BoardState &curBoard, int remainingDepth, score alpha, score beta);
 }
