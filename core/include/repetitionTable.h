@@ -5,7 +5,6 @@
 
 namespace chess
 {
-
     struct RepetitionTable
     {
 
@@ -14,18 +13,13 @@ namespace chess
             m_length = 0;
         }
 
-        // Not performance critical, this is only called when a move is made on the root board
-        // via the engine makeMove method.
-        // returns wether the insert was succesfull (table not full)
         inline bool addState(const BoardState &b)
         {
             if (!m_length)
                 m_startsOnWhite = b.whitesMove();
 
-            if (m_length > 100)
-                return false;
-
             m_table[m_length] = b.repetitionHash();
+
             m_length++;
             return true;
         }
@@ -34,6 +28,9 @@ namespace chess
         {
             m_length = 0;
         }
+
+        // Pops the last entry in the repetition table
+        inline void pop() { m_length--; }
 
         inline bool drawBy50MoveRule() const
         {
@@ -48,6 +45,8 @@ namespace chess
         inline bool contains(const BoardState &b) const
         {
             bool checkEvenIdx = b.whitesMove() == m_startsOnWhite;
+            key boardHash = b.repetitionHash();
+
             int idx = m_length - 1;
 
             // Ensure we start on an even/odd idx
@@ -60,7 +59,7 @@ namespace chess
             {
                 // If the b.getHash contains enpassent data then we cannot have repetition anyways!
                 // (from the root we cannot do a double pawn move and have repetition at any point)
-                if (m_table[idx] == b.repetitionHash())
+                if (m_table[idx] == boardHash)
                     return true;
 
                 // Skip hashes where it isn't the same colors turn

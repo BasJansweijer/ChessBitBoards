@@ -8,8 +8,6 @@
 #include "chess.h"
 #include "search.h"
 
-#include "boardVisualizer.h"
-
 namespace chess
 {
     using MoveGenType = BoardState::MoveGenType;
@@ -140,6 +138,25 @@ namespace chess
         return {m_bestFoundMove, eval, m_statistics};
     }
 
+    // Uses RAII to pop and add a board to the repetition table
+    class RepetitionScope
+    {
+    public:
+        RepetitionScope(RepetitionTable *repTable, BoardState b)
+            : m_repTable(repTable)
+        {
+            m_repTable->addState(b);
+        }
+
+        ~RepetitionScope()
+        {
+            m_repTable->pop();
+        }
+
+    private:
+        RepetitionTable *m_repTable;
+    };
+
     template <bool Root>
     score Search::minimax(const BoardState &curBoard, int remainingDepth, score alpha, score beta)
     {
@@ -151,8 +168,7 @@ namespace chess
         m_statistics.searchedNodes++;
 
         // In the root we cannot exit early like this
-        // + the curBoard will be the last item in the repTable
-        if (!Root && (curBoard.drawBy50MoveRule() || m_repTable->contains(curBoard)))
+        if (!Root && (m_repTable->drawBy50MoveRule() || m_repTable->contains(curBoard)))
             return 0; // On repetition we should return draw eval
 
         // Base case (do a quiescent search)
@@ -190,6 +206,10 @@ namespace chess
         MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Normal>();
         // order the moves to improve pruning
         orderMoves(pseudoLegalMoves, curBoard, TTMove, curDepth);
+
+        // add the current board to the repetition table
+        // we use RAII to automatically pop it again when we exit this depth
+        RepetitionScope repStateRAII = RepetitionScope(m_repTable, curBoard);
 
         // Start with the worst possible eval
         score bestEval = SCORE_MIN;
@@ -249,13 +269,11 @@ namespace chess
         bool noLegalMoves = bestEval == SCORE_MIN;
         if (noLegalMoves)
         {
-            // Stalemate is a draw. (if the king is not in check)
-            if (!curBoard.kingAttacked(curBoard.whitesMove()))
-                return 0;
-
-            // calculate mate evaluation
-            // The higher the depth the closer the score it to zero
-            bestEval = -MAX_MATE_SCORE + curDepth;
+            // Stalemate if the king is not in check)
+            bool isStalemate = !curBoard.kingAttacked(curBoard.whitesMove());
+            return isStalemate
+                       ? 0                           // stalemate
+                       : -MAX_MATE_SCORE + curDepth; // calculate mate evaluation
         }
 
         /*
