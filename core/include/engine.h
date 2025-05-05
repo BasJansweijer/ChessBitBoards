@@ -30,7 +30,6 @@ namespace chess
         Engine(EngineConfig config = EngineConfig())
             : m_quit(false), m_transTable(config.transpositionTableMBs)
         {
-            m_repTable.addState(m_currentBoard);
         }
 
         // The main way users will interface with the engine
@@ -74,11 +73,11 @@ namespace chess
             if (chosenMove.resets50MoveRule())
                 m_repTable.clear();
 
+            // Add the previous board to the repetition table for memory
+            // (current board is added at the root of the search)
+            m_repTable.addState(m_currentBoard);
+
             m_currentBoard.makeMove(chosenMove);
-
-            // Add the current board to the reperition table
-            bool success = m_repTable.addState(m_currentBoard);
-
             return true;
         }
 
@@ -101,8 +100,6 @@ namespace chess
 
             m_transTable.clear();
             m_repTable.clear();
-
-            m_repTable.addState(m_currentBoard);
         }
 
         enum class BenchType

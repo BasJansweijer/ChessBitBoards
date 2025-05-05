@@ -21,12 +21,12 @@ namespace chess
         struct SearchConfig
         {
             std::function<score(const BoardState &)> evalFunction;
-            const RepetitionTable *repTable = nullptr;
+            RepetitionTable *repTable = nullptr;
             TranspositionTable *transTable = nullptr;
 
             SearchConfig() = default;
 
-            SearchConfig(std::function<int(const BoardState &)> evalFunc, const RepetitionTable *const rt = nullptr)
+            SearchConfig(std::function<int(const BoardState &)> evalFunc, RepetitionTable *const rt = nullptr)
                 : evalFunction(evalFunc), repTable(rt)
             {
             }
@@ -147,7 +147,7 @@ namespace chess
     private:
         const std::function<score(const BoardState &)> m_evalFunc;
         // Repetition table passed down by the engine class
-        const RepetitionTable *m_repTable;
+        RepetitionTable *m_repTable;
         TranspositionTable *m_transTable;
         const BoardState m_rootBoard;
         // current best found move:
