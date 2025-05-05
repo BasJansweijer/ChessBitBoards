@@ -98,10 +98,11 @@ def playGame(game_id):
             move = engine.go(0, ourTime, 0, 0)
         try:
             client.bots.make_move(game_id, move)
-        except:
+        except Exception as e:
             print(f"Error could not make move {move}")
             print("Engine position: ", engine.getPosition())
             engine.quit()
+            print(e)
             return
 
     for event in client.bots.stream_game_state(game_id):
@@ -138,12 +139,17 @@ def playGame(game_id):
                 binc = event['binc'].timestamp()
                 print(f"Time w: {wtime} b: {btime}, inc: {(winc, binc)}")
                 engineMove = engine.go(wtime, btime, winc, binc)
+                print("Engine position: ", engine.getPosition())
                 
                 try:
                     client.bots.make_move(game_id, engineMove)
-                except:
+                except Exception as e:
                     print(f"Error could not make move {engineMove}")
                     print("Engine position: ", engine.getPosition())
+                    engine.quit()
+                    print(e)
+                    # Retry
+                    playGame(game_id)
                     break
                 
             case "chatLine":

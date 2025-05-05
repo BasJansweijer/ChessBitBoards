@@ -111,13 +111,15 @@ Since we all but guarantee that the previous best move is searched first (except
 ## Principle Variation Search (PVS) (v0.7.3)
 
 We first refactored our search to the negamax approach instead of templating on bool Max. Which might have slightly boosted performance. To implement PVS we always search the first move (principle variation) fully and then only do a null window search on other moves to check if they need a full search. In some cases the bestEval in the search will be the result of a null window search. In these cases this only gives an upper bound even though the eval is between beta and alpha.
-Decent improvement: 
+Decent improvement: 142 wins, 70 draws and 110 losses.
 
+## In search repetition (v0.7.4)
+
+Previously we were only comparing against positions from the game and not against positions reached during the search to determine repetitions. We now also detect repetitions against positions in the search tree itself.
+Slight improvement: 417 wins, 195 draws and 388 losses.
 
 ## TODO:
 
-- move ordering
-- don't discard partial search
 - move extensions
 - multi threading
 
