@@ -39,7 +39,8 @@ namespace chess
         The evaluations that are bellow and above this are used for mate in 0 through mate in MAX_DEPTH.
         */
         Search(BoardState board, SearchConfig config)
-            : m_rootBoard(board), m_evalFunc(config.evalFunction), m_repTable(config.repTable), m_transTable(config.transTable)
+            : m_rootBoard(board), m_evalFunc(config.evalFunction),
+              m_repTable(config.repTable), m_transTable(config.transTable)
         {
             // If no repetition table is given we use an empty "dummy" table as a placeholder
             if (m_repTable == nullptr)
@@ -47,6 +48,9 @@ namespace chess
 
             if (m_transTable == nullptr)
                 throw std::runtime_error("Missing transposition table in search config");
+
+            // initialize the history table to all zeros
+            std::fill(m_moveHistoryTable, &m_moveHistoryTable[Move::MAX_MOVE_IDX + 1], 0);
         };
 
         void stop() { m_stopped = true; }
@@ -110,8 +114,6 @@ namespace chess
         // from the previous search and put it at the front of the list
         inline void orderMoves(MoveList &moves, const BoardState &board, const Move &TTMove, int curDepth)
         {
-            //     Move killer1 = m_killerMoves[curDepth][0];
-            //     Move killer2 = m_killerMoves[curDepth][1];
 
             std::sort(moves.begin(), moves.end(), [&](const Move &a, const Move &b)
                       {
@@ -122,15 +124,6 @@ namespace chess
                         if (b == TTMove)
                             return false;
                             
-                        // check if the moves are killer moves
-                        // if b is killer1 we should return false instead
-                        // if ((a == killer1 || a == killer2) && b != killer1)
-                        //     return true;
-                    
-                        // we already know a was not a killer
-                        // if (b == killer1 || b == killer2)
-                        //     return false;
-
                         // If not, we sort the moves based on their score
                         return moveScore(a, board) > moveScore(b, board); });
         }
@@ -149,6 +142,8 @@ namespace chess
         // Repetition table passed down by the engine class
         RepetitionTable *m_repTable;
         TranspositionTable *m_transTable;
+        uint16_t m_moveHistoryTable[Move::MAX_MOVE_IDX + 1];
+
         const BoardState m_rootBoard;
         // current best found move:
         Move m_bestFoundMove;
