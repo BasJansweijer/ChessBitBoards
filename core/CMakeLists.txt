@@ -11,6 +11,7 @@ add_library(core STATIC
     source/initEval.cpp
     source/runEngineCmd.cpp
     source/bench.cpp
+    source/moveOrder.cpp
 )
 
 target_include_directories(core PUBLIC

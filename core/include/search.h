@@ -12,6 +12,7 @@
 #include "repetitionTable.h"
 #include "transposition.h"
 #include "timeman.h"
+#include "moveOrdering.h"
 
 namespace chess
 {
@@ -48,9 +49,6 @@ namespace chess
 
             if (m_transTable == nullptr)
                 throw std::runtime_error("Missing transposition table in search config");
-
-            // initialize the history table to all zeros
-            std::fill(m_moveHistoryTable, &m_moveHistoryTable[Move::MAX_MOVE_IDX + 1], 0);
         };
 
         void stop() { m_stopped = true; }
@@ -59,16 +57,16 @@ namespace chess
         struct SearchStats
         {
             // Depth untill which everything is explored
-            int minDepth = 0;
+            uint8_t minDepth = 0;
             // Maximum depth including quiescent search
-            int reachedDepth = 0;
+            uint8_t reachedDepth = 0;
             int searchedNodes = 0;
 
             // Overload operator<< for printing
             friend std::ostream &operator<<(std::ostream &os, const SearchStats &info)
             {
-                os << "{ minDepth=" << info.minDepth
-                   << ", maxDepth=" << info.reachedDepth
+                os << "{ minDepth=" << (int)info.minDepth
+                   << ", maxDepth=" << (int)info.reachedDepth
                    << ", nodesSearched=" << info.searchedNodes << "}";
                 return os;
             }
@@ -109,29 +107,6 @@ namespace chess
         // Used to stop the timer early
         void stopTimeThread();
 
-        // Orders the moves in the move list
-        // We also use the transposition table to get the best move
-        // from the previous search and put it at the front of the list
-        inline void orderMoves(MoveList &moves, const BoardState &board, const Move &TTMove, int curDepth)
-        {
-
-            std::sort(moves.begin(), moves.end(), [&](const Move &a, const Move &b)
-                      {
-                        // Check if the move is the best move from the transposition table
-                        if (a == TTMove)
-                            return true;
-
-                        if (b == TTMove)
-                            return false;
-                            
-                        // If not, we sort the moves based on their score
-                        return moveScore(a, board) > moveScore(b, board); });
-        }
-
-        // Gives a rough heuristic based on which we can order the moves in our search
-        // Put in this class because we can use info from the search to help the ordering
-        score moveScore(const Move &move, const BoardState &board) const;
-
         inline bool stopSearch() const
         {
             return m_stopped.load(std::memory_order_relaxed);
@@ -142,11 +117,14 @@ namespace chess
         // Repetition table passed down by the engine class
         RepetitionTable *m_repTable;
         TranspositionTable *m_transTable;
-        uint16_t m_moveHistoryTable[Move::MAX_MOVE_IDX + 1];
+        MoveScorer m_moveScorer;
 
         const BoardState m_rootBoard;
         // current best found move:
         Move m_bestFoundMove;
+
+        // current line we are searching (contantly updated during search)
+        Move m_currentLine[MAX_SEARCH_DEPTH];
 
         // Handles the limits of the search
         DepthSettings m_depths;

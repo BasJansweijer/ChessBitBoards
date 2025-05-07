@@ -118,6 +118,23 @@ Decent improvement: 142 wins, 70 draws and 110 losses.
 Previously we were only comparing against positions from the game and not against positions reached during the search to determine repetitions. We now also detect repetitions against positions in the search tree itself.
 Slight improvement: 417 wins, 195 draws and 388 losses.
 
+## Move History (v0.7.5)
+
+To improve the move ordering we track the moves (by the to square and piece type) and store a score based on wether they produced (early) cut-offs.
+This improves the order the (quiet) moves are searched in which should allow for more pruning to be done.
+From the testing I observed it could sometimes search one ply deeper than the previous version.
+Minimal improvement: 161 wins, 87 draws, losses 142.
+
+## Counter Move (v0.7.6)
+
+We store for each move (by the to square and piece type) a history table. This allows us to track which move (after a specific previous move) produced cutoffs. The idea is that certain moves will have the same 'counter move' in many variations.
+The indexing of moves by to-square + piece types gives 384 moves resulting in a 288 Kib counter move table.
+
+## Late Move Reductions (LMR) (v0.7.7)
+
+Now that the move ordering has been improved we make the assumption that moves that we order later are probably not that good. To save computation we therefore don't search these moves fully but instead decrease the search depth for these moves slightly. If it turns out in the null window search that the move is good we then need to do an full search anyways.
+
+
 ## TODO:
 
 - move extensions

@@ -20,7 +20,7 @@ namespace chess
         Move() = default;
 
         // Defines the Null move
-        static Move Null()
+        static constexpr Move Null()
         {
             return Move(0, 0, PieceType::Pawn, false);
         }
@@ -30,7 +30,7 @@ namespace chess
             return from == 0 && to == 0;
         }
 
-        Move(square from, square to, PieceType piece, bool takesPiece)
+        constexpr Move(square from, square to, PieceType piece, bool takesPiece)
             : from(from), to(to),
               piece(piece), m_flags(takesPiece ? 0b1 : 0)
         {
@@ -69,21 +69,6 @@ namespace chess
             }
 
             return uciMove;
-        }
-
-        /*
-         * Returns a unique 2 byte index that can be used in any
-         * tables indexed by moves.
-         * In actuality only the first 15 bytes are used (can be 0-32767)
-         */
-        static constexpr int MAX_MOVE_IDX = 32767;
-        uint16_t uniqueIndex() const
-        {
-            uint16_t idx = to;
-            idx |= from << 6;
-            idx |= piece << 12;
-
-            return idx;
         }
 
         bool resets50MoveRule() const
