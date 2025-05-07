@@ -123,9 +123,6 @@ namespace chess
         // current best found move:
         Move m_bestFoundMove;
 
-        // current line we are searching (contantly updated during search)
-        Move m_currentLine[MAX_SEARCH_DEPTH];
-
         // Handles the limits of the search
         DepthSettings m_depths;
         // tracks the actual search depth etc

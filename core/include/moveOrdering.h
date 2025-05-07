@@ -32,14 +32,13 @@ namespace chess
         MoveScorer()
         {
             memset(&m_historyTable[0], SCORE_MIN, sizeof(m_historyTable));
-            memset(&m_counterMoveTable[0][0], SCORE_MIN, sizeof(m_counterMoveTable));
         }
 
         // Gives a rough heuristic based on which we can order the moves in our search
         // Put in this class because we can use info from the search to help the ordering
-        score moveScore(Move move, const BoardState &board, Move prevMove) const;
+        score moveScore(Move move, const BoardState &board) const;
 
-        void registerBetaCutOff(Move m, uint8_t remainingDepth, Move prevMove)
+        void registerBetaCutOff(Move m, uint8_t remainingDepth)
         {
             uint16_t idx = moveIdx(m);
             score bonus = remainingDepth * remainingDepth;
@@ -47,18 +46,13 @@ namespace chess
             // update history table
             m_historyTable[idx] += bonus;
             m_historyTable[idx] = std::min(m_historyTable[idx], TABLE_MAX);
-
-            // update counter move table
-            uint16_t prevMoveIdx = moveIdx(prevMove);
-            m_counterMoveTable[prevMoveIdx][idx] += bonus;
-            m_counterMoveTable[prevMoveIdx][idx] = std::min(m_counterMoveTable[prevMoveIdx][idx], TABLE_MAX);
         }
 
         // Orders the moves in the move list
         // We also use the transposition table to get the best move
         // from the previous search and put it at the front of the list
         // additionally for countermove heuristic we also need the previous move
-        void orderMoves(MoveList &moves, const BoardState &board, Move TTMove, Move prevMove)
+        void orderMoves(MoveList &moves, const BoardState &board, Move TTMove)
         {
             std::sort(moves.begin(), moves.end(), [&](const Move &a, const Move &b)
                       {
@@ -70,14 +64,11 @@ namespace chess
                 return false;
                 
                 // If not, we sort the moves based on their score
-                return moveScore(a, board, prevMove) > moveScore(b, board, prevMove); });
+                return moveScore(a, board) > moveScore(b, board); });
         }
 
     private:
         score m_historyTable[NUM_MOVES];
-
-        // for each move we store a move table (384x384)
-        score m_counterMoveTable[NUM_MOVES][NUM_MOVES];
     };
 
 }

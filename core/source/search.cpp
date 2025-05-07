@@ -155,8 +155,6 @@ namespace chess
             return quiescentSearch(curBoard, 0, alpha, beta);
 
         uint8_t curDepth = m_depths.minDepth - remainingDepth;
-        // last move made
-        Move prevMove = curDepth != 0 ? m_currentLine[curDepth - 1] : Move::Null();
 
         // Look in the transposition table for a usable entry for this board
         key boardHash = curBoard.getHash();
@@ -186,7 +184,7 @@ namespace chess
 
         MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Normal>();
         // order the moves to improve pruning
-        m_moveScorer.orderMoves(pseudoLegalMoves, curBoard, TTMove, prevMove);
+        m_moveScorer.orderMoves(pseudoLegalMoves, curBoard, TTMove);
 
         // add the current board to the repetition table
         // we use RAII to automatically pop it again when we exit this depth
@@ -203,9 +201,6 @@ namespace chess
             newBoard.makeMove(m);
             if (newBoard.kingAttacked(curBoard.whitesMove()))
                 continue; // skip since move was illegal
-
-            // set the move in the current line
-            m_currentLine[curDepth] = m;
 
             score moveEval;
             if (!firstMove)
@@ -244,7 +239,7 @@ namespace chess
                 bestMove = m;
 
                 // we register the move producing the cut off to improve future move ordering
-                m_moveScorer.registerBetaCutOff(m, remainingDepth, prevMove);
+                m_moveScorer.registerBetaCutOff(m, remainingDepth);
                 break;
             }
 
@@ -297,8 +292,6 @@ namespace chess
         // Note: no need to check repetition table as each move is a capture (no repetition possible)
 
         uint8_t curDepth = m_depths.minDepth + extraDepth;
-        // last move made
-        Move prevMove = curDepth != 0 ? m_currentLine[curDepth - 1] : Move::Null();
 
         // Look in the transposition table for a usable entry for this board
         key boardHash = curBoard.getHash();
@@ -327,7 +320,7 @@ namespace chess
 
         MoveList pseudoLegalMoves = curBoard.pseudoLegalMoves<MoveGenType::Quiescent>();
         // order the moves to improve pruning
-        m_moveScorer.orderMoves(pseudoLegalMoves, curBoard, TTMove, prevMove);
+        m_moveScorer.orderMoves(pseudoLegalMoves, curBoard, TTMove);
 
         for (const Move &m : pseudoLegalMoves)
         {
@@ -341,9 +334,6 @@ namespace chess
             newBoard.makeMove(m);
             if (newBoard.kingAttacked(curBoard.whitesMove()))
                 continue; // skip since move was illegal
-
-            // set the move in the current line
-            m_currentLine[curDepth] = m;
 
             // negamax recursion (next depth)
             int moveEval = -quiescentSearch(newBoard, extraDepth + 1, -beta, -alpha);

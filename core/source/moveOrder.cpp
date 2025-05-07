@@ -14,7 +14,7 @@ namespace chess
     }
     // Is used to order the moves in the move list
     // this increases the performance of the search as we can prune more
-    score MoveScorer::moveScore(Move move, const BoardState &board, Move prevMove) const
+    score MoveScorer::moveScore(Move move, const BoardState &board) const
     {
         // if a quiet move has the maximum value in the history table we still order it before our bad captures
         constexpr score NON_QUIET_OFFSET = TABLE_MAX - 800;
@@ -28,14 +28,9 @@ namespace chess
             return captureScore(move, board) + NON_QUIET_OFFSET;
 
         uint16_t idx = moveIdx(move);
-        uint16_t prevMoveIdx = moveIdx(prevMove);
 
         // This has been tuned a bit by looking at the nodes searched at depth 8 on the starting position
-        constexpr float HISTORY_WEIGHT = 0.85;
-        constexpr float COUNTER_WEIGHT = 0.15;
-        score moveScore = m_historyTable[idx] * HISTORY_WEIGHT +
-                          m_counterMoveTable[prevMoveIdx][idx] * COUNTER_WEIGHT;
 
-        return moveScore;
+        return m_historyTable[idx];
     }
 }
