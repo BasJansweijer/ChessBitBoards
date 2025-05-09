@@ -112,6 +112,25 @@ namespace chess
             return m_stopped.load(std::memory_order_relaxed);
         }
 
+        uint8_t lateMoveReduction(uint8_t moveIdx, uint8_t curDepth)
+        {
+            // Divisor (higher is more conservative)
+            // Some examples:
+            // move 10 at depth 8 -> 1
+            // move 10 at depth 6 -> 0
+            // move 16 at depth 4 -> 1
+            // move 15 at depth 4 -> 0
+            // move 20 at depth 3 -> 0
+            constexpr int divisor = 64;
+
+            // Compute reduction
+            uint8_t reduction = (curDepth * moveIdx) / divisor;
+
+            // Clamp maximum reduction
+            constexpr int maxReduction = 3;
+            return reduction > maxReduction ? maxReduction : reduction;
+        }
+
     private:
         const std::function<score(const BoardState &)> m_evalFunc;
         // Repetition table passed down by the engine class

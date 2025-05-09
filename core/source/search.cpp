@@ -151,7 +151,7 @@ namespace chess
             return 0; // On repetition we should return draw eval
 
         // Base case (do a quiescent search)
-        if (remainingDepth == 0)
+        if (remainingDepth <= 0)
             return quiescentSearch(curBoard, 0, alpha, beta);
 
         uint8_t curDepth = m_depths.minDepth - remainingDepth;
@@ -163,15 +163,13 @@ namespace chess
         if (containsCurBoard)
         {
             // In the root we need to return a move so we can't return like this
-            // TODO: return move if root
             if (transEntry->evalUsable(curDepth, remainingDepth, alpha, beta))
             {
                 score rootEval = scoreForRootNode(transEntry->eval, curDepth);
-                if constexpr (!Root)
-                    return rootEval; // use evaluation emediately
+                if constexpr (Root)
+                    // if this is the root we need to first set the found move
+                    m_bestFoundMove = transEntry->move;
 
-                // if this is the root we need to first set the found move
-                m_bestFoundMove = transEntry->move;
                 // and then return the score
                 return rootEval;
             }
@@ -195,30 +193,41 @@ namespace chess
         score originalAlpha = alpha;
         bool firstMove = true;
         bool evalFromFullSearch = false;
+        uint8_t fullDepth = remainingDepth - 1;
+        uint8_t moveIdx = -1;
         for (const Move &m : pseudoLegalMoves)
         {
+            moveIdx++;
             BoardState newBoard = curBoard;
             newBoard.makeMove(m);
             if (newBoard.kingAttacked(curBoard.whitesMove()))
                 continue; // skip since move was illegal
 
+            uint8_t depthReduction = lateMoveReduction(moveIdx, curDepth);
             score moveEval;
+
+            // Determine if we need to do a full search
+            bool fullSearch = true;
             if (!firstMove)
             {
-                // PVS null/zero window search
+                // PVS null/zero window search (with reduced depth)
                 score nextBeta = -alpha;
-                moveEval = -minimax<false>(newBoard, remainingDepth - 1, nextBeta - 1, nextBeta);
-                // check if we need a full search
-                evalFromFullSearch = moveEval > alpha && beta - alpha > 1;
-                if (evalFromFullSearch)
-                    // full search
-                    moveEval = moveEval = -minimax<false>(newBoard, remainingDepth - 1, -beta, -alpha);
+                moveEval = -minimax<false>(newBoard, fullDepth - depthReduction, nextBeta - 1, nextBeta);
+                // check if we need a full search anyways
+                bool fullDepthRequired = moveEval > alpha && beta - alpha > 1;
+                if (fullDepthRequired && depthReduction)
+                    // do a full depth null window search
+                    moveEval = -minimax<false>(newBoard, fullDepth, nextBeta - 1, nextBeta);
+
+                // check if we need a full search (full depth and not null window)
+                fullSearch = moveEval > alpha && beta - alpha > 1;
             }
-            else // is firstMove
+
+            // check if the full search is needed
+            if (fullSearch)
             {
                 // full search
-                moveEval = moveEval = -minimax<false>(newBoard, remainingDepth - 1, -beta, -alpha);
-                evalFromFullSearch = true;
+                moveEval = moveEval = -minimax<false>(newBoard, fullDepth, -beta, -alpha);
                 firstMove = false;
             }
 
@@ -230,6 +239,7 @@ namespace chess
             // (this prevents using pruned options)
             if (bestEval < moveEval)
             {
+                evalFromFullSearch = fullSearch;
                 bestEval = moveEval;
                 bestMove = m;
             }

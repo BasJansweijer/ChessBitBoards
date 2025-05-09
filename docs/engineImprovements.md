@@ -134,6 +134,9 @@ The indexing of moves by to-square + piece types gives 384 moves resulting in a 
 
 Now that the move ordering has been improved we make the assumption that moves that we order later are probably not that good. To save computation we therefore don't search these moves fully but instead decrease the search depth for these moves slightly. If it turns out in the null window search that the move is good we then need to do an full search anyways.
 
+## TODO REMOVE THE BUG (USE CORRECT ENDGAME TABLE IN line 51 in initEval.cpp)
+
+## ALSO: BUG: Incorrect Queen Material Addition in calculateEndGameNess()
 
 ## TODO:
 
