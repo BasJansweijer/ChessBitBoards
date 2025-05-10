@@ -48,7 +48,7 @@ namespace chess
             bitBoards::forEachBit(m_whiteBitBoards[pieceType], [&](square s)
                                   { 
                 m_middleGameScore += evalTables::middleGameWhite[pieceType][s];
-                m_endGameScore += evalTables::endGameBlack[pieceType][s]; });
+                m_endGameScore += evalTables::endGameWhite[pieceType][s]; });
 
             bitBoards::forEachBit(m_blackBitBoards[pieceType], [&](square s)
                                   { 
@@ -74,7 +74,7 @@ namespace chess
     {
         // Value the queen as more than usual
         m_whitePieceMaterial += m_whitePieceCounts[PieceType::Queen] * 300;
-        m_blackPieceMaterial += m_whitePieceCounts[PieceType::Queen] * 300;
+        m_blackPieceMaterial += m_blackPieceCounts[PieceType::Queen] * 300;
 
         // an offset of the highest material a side may have in an endgame
         constexpr int maxEndGameMaterial = pieceVals[PieceType::Rook] * 2;
