@@ -31,6 +31,6 @@ namespace chess
 
         // This has been tuned a bit by looking at the nodes searched at depth 8 on the starting position
 
-        return m_historyTable[idx];
+        return m_historyTable[board.whitesMove()][idx];
     }
 }

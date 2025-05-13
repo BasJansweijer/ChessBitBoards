@@ -131,7 +131,12 @@ The evaluation function contained two bugs:
 
 - White used blacks endgame tables (resulting in pawns becomming less valuable when they are pushed)
 - In the endgameness score calculation the bonus material for queens used the white queen count for both black and white.
-Masive improvement: 283 wins, 65 draws and 130 losses
+  Masive improvement: 283 wins, 65 draws and 130 losses
+
+## History table tweaks (v0.7.7)
+
+We make two adjustments to the history table. We split the history table into two (one for each color). Additionally we only add moves to the history table if they are quiet.
+Decent improvement: 129 wins, 65 draws and 88 losses.
 
 ## TODO:
 

@@ -30,6 +30,11 @@ namespace chess
             return from == 0 && to == 0;
         }
 
+        bool isQuiet() const
+        {
+            return !isCapture() && !isPromotion();
+        }
+
         constexpr Move(square from, square to, PieceType piece, bool takesPiece)
             : from(from), to(to),
               piece(piece), m_flags(takesPiece ? 0b1 : 0)

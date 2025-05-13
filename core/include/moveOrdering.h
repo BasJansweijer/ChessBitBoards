@@ -38,14 +38,18 @@ namespace chess
         // Put in this class because we can use info from the search to help the ordering
         score moveScore(Move move, const BoardState &board) const;
 
-        void registerBetaCutOff(Move m, uint8_t remainingDepth)
+        void registerBetaCutOff(Move m, bool whitesMove, uint8_t remainingDepth)
         {
+            // We only register the move in our tables if it is a quiet move
+            if (!m.isQuiet())
+                return;
+
             uint16_t idx = moveIdx(m);
             score bonus = remainingDepth * remainingDepth;
 
             // update history table
-            m_historyTable[idx] += bonus;
-            m_historyTable[idx] = std::min(m_historyTable[idx], TABLE_MAX);
+            m_historyTable[whitesMove][idx] += bonus;
+            m_historyTable[whitesMove][idx] = std::min(m_historyTable[whitesMove][idx], TABLE_MAX);
         }
 
         // Orders the moves in the move list
@@ -68,7 +72,8 @@ namespace chess
         }
 
     private:
-        score m_historyTable[NUM_MOVES];
+        // One table for each color (0 black 1 white)
+        score m_historyTable[2][NUM_MOVES];
     };
 
 }

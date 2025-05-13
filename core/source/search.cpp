@@ -239,7 +239,7 @@ namespace chess
                 bestMove = m;
 
                 // we register the move producing the cut off to improve future move ordering
-                m_moveScorer.registerBetaCutOff(m, remainingDepth);
+                m_moveScorer.registerBetaCutOff(m, curBoard.whitesMove(), remainingDepth);
                 break;
             }
 
