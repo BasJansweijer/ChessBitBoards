@@ -43,11 +43,18 @@ namespace chess
 
 int main()
 {
-    for (chess::square s = 0; s < 64; s++)
+    for (chess::square s1 = 0; s1 < 64; s1++)
     {
-        chess::bitBoards::showBitboardGUI(chess::mask::pawnSquare<true>(s));
+        for (chess::square s2 = 0; s2 < 64; s2++)
+        {
+            if (chess::mask::inBetween(s1, s2) == 0)
+                continue;
 
-        chess::bitBoards::showBitboardGUI(chess::mask::pawnSquare<false>(s));
+            chess::bitBoards::showBitboardGUI(1ULL << s1 | 1ULL << s2);
+
+            // Show the in between mask
+            chess::bitBoards::showBitboardGUI(chess::mask::inBetween(s1, s2));
         }
+    }
     testMaskOnFens("testing/fens10000.txt", chess::testMask);
 }

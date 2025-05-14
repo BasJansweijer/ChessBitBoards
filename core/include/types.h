@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cinttypes>
+#include <stdint.h>
 
 namespace chess
 {

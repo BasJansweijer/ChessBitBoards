@@ -1,5 +1,6 @@
 #include "bitBoard.h"
 #include "types.h"
+#include <stdint.h>
 
 namespace chess::mask
 {
@@ -117,6 +118,60 @@ namespace chess::mask
         return backwardArea & ourPawns;
     }
 
+    struct InBetweenTable
+    {
+        bitboard table[64][64];
+
+        constexpr InBetweenTable()
+        {
+            for (square s1 = 0; s1 < 64; s1++)
+                for (square s2 = 0; s2 < 64; s2++)
+                    table[s1][s2] = inBetweenHelper(s1, s2);
+        }
+
+        constexpr static bitboard inBetweenHelper(square s1, square s2)
+        {
+            if (s1 == s2)
+                return 0;
+
+            uint8_t s1File = s1 % 8;
+            uint8_t s1Rank = s1 / 8;
+            uint8_t s2File = s2 % 8;
+            uint8_t s2Rank = s2 / 8;
+            int8_t fileDiff = s2File - s1File;
+            int8_t rankDiff = s2Rank - s1Rank;
+
+            bool isStaight = fileDiff == 0 || rankDiff == 0;
+            bool isDiagonal = abs(fileDiff) == abs(rankDiff);
+
+            if (!isStaight && !isDiagonal)
+                return 0;
+
+            bitboard mask = 0;
+            int8_t fileStep = fileDiff == 0 ? 0 : (fileDiff > 0 ? 1 : -1);
+            int8_t rankStep = rankDiff == 0 ? 0 : (rankDiff > 0 ? 1 : -1);
+
+            square currentSquare = s1;
+            while (currentSquare != s2)
+            {
+                currentSquare += fileStep + rankStep * 8;
+                mask |= 1ULL << currentSquare;
+            }
+
+            // Remove the start and end squares
+            mask ^= 1ULL << s2;
+
+            return mask;
+        }
+    };
+
+    constexpr InBetweenTable inBetweenTable;
+
+    constexpr bitboard inBetween(square s1, square s2)
+    {
+        return inBetweenTable.table[s1][s2];
+    }
+
     // Returns a bitboard of all locations that were a single king move
     // away from the given squares
     constexpr bitboard oneStep(bitboard bb)
@@ -141,7 +196,6 @@ namespace chess::mask
         uint8_t stepsUntillQueening = isWhite ? 7 - rank : rank;
 
         bitboard squareMask = 1ULL << pawn;
-
         bitboard squareBorder = rankMask(isWhite ? rank - 1 : rank + 1);
 
         for (int i = 0; i < stepsUntillQueening; i++)
